@@ -128,10 +128,16 @@ body {
   height: 100%;
 }
 
-.sectionOfMemory:nth-child(odd) .leftDiv {
+.sectionOfMemory:nth-of-type(odd) .leftDiv {
   /* background-color: yellow; */
   order: 2;
 }
+.sectionOfMemory:first-of-type .leftDiv {
+  /* background-color: yellow; */
+  order: 1;
+}
+
+
 .floatMemory {
   /* border: 2px solid rgb(255, 255, 255); */
   max-width: 600px;
