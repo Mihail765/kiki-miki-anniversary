@@ -7,6 +7,10 @@
   font-family: "loveLight";
   src: url(FontsFavourite/LoveLight-Regular.ttf);
 }
+@font-face {
+  font-family: "inter";
+  src: url(fonts/Inter/Inter-VariableFont_opsz\,wght.ttf);
+}
 
 * {
   margin: 0;
@@ -76,7 +80,7 @@ header {
 }
 nav h1 {
   font-family: "loveLight";
-  font-size: clamp(32px, 4.5vw, 64px);
+  font-size: clamp(35px, 4.5vw, 64px);
   white-space: nowrap;
   color: rgb(255, 255, 255);
   font-weight: 400;
@@ -192,6 +196,10 @@ nav h1 {
   /* border: 2px solid red; */
   user-select: none;
 }
+
+#menu{
+  display: none;
+}
 @media (max-width: 900px) {
   .heartOfSec::before {
     width: 1px;
@@ -199,7 +207,17 @@ nav h1 {
   .listItemLink {
     display: none;
   }
-}
+  #logOut {
+    display: none;
+  }
+  /* .burger {
+    color: white;
+    font-size: 30px;
+  } */
+   #menu{
+    display: block;
+   }
+} 
 
 #kikimiki {
   width: 100%;
@@ -686,9 +704,11 @@ nav h1 {
     align-items: center;
     margin-top: 0;
     display: none;
+    user-select: none;
   }
   #textBox {
     height: 500px;
+    user-select: none;
     z-index: 998;
   }
 
@@ -880,8 +900,30 @@ nav h1 {
 
 #wrapperOfHearts {
   /* border: 2px solid green; */
-  height: 70dvh;
+  height: 69dvh;
   overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  #wrapperOfHearts {
+    height: 50dvh;
+  }
+}
+
+@media (max-width: 830px) {
+  #wrapperOfHearts {
+    height: 40dvh;
+  }
+}
+@media (max-width: 530px) {
+  #wrapperOfHearts {
+    height: 31dvh;
+  }
+}
+@media (max-width: 370px) {
+  #wrapperOfHearts {
+    height: 27dvh;
+  }
 }
 
 .heartHang {
@@ -1007,11 +1049,7 @@ nav h1 {
   }
 }
 
-.something {
-  /* border: 2px solid red; */
-  height: 100dvh;
-  background-color: #662244;
-}
+
 
 @media (max-width: 768px) {
   #slider {
@@ -1030,4 +1068,38 @@ nav h1 {
   .heartOfSec::before {
     width: 1px;
   }
+}
+
+
+.something {
+  /* border: 2px solid red; */
+  height: 600px;
+  background: linear-gradient(to bottom, #FFA3A3, #FFE4E1);
+}
+.forWhy{
+  color: rgb(0, 0, 0);
+  font-family: "inter";
+  text-align: center;
+  font-size: 36px;
+  font-weight: 400;
+  /* border: 2px solid blueviolet; */
+}
+.gornenTekst{
+  border: 2px solid blue;
+  height: 50px;
+}
+.points{
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  border: 2px solid red;
+  height: calc(100% - 50px);
+}
+
+
+.pointShow{
+  background-color: #E59A9A;
+  height: 300px;
+  width: 350px;
+  border: 2px solid green;
 }
