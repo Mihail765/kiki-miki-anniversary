@@ -99,7 +99,9 @@ nav h1 {
   color: #662244;
   /* color: #cc3366; */
   transition: all 0.3s ease;
-  cursor: url("cursor/Preppy\ Pinky\ Spider-Man\ Arrow--p.png") 0 0, auto;
+  cursor:
+    url("cursor/Preppy\ Pinky\ Spider-Man\ Arrow--p.png") 0 0,
+    auto;
   position: relative;
   /* border: 2px solid green; */
   white-space: nowrap;
@@ -153,7 +155,7 @@ nav h1 {
   justify-content: space-between;
   align-items: center;
 }
-.logOutIcon{
+.logOutIcon {
   display: none;
 }
 
@@ -190,22 +192,20 @@ nav h1 {
   /* border: 2px solid red; */
   user-select: none;
 }
-@media (max-width: 900px){
-  .heartOfSec::before{
+@media (max-width: 900px) {
+  .heartOfSec::before {
     width: 1px;
   }
-  .listItemLink{
+  .listItemLink {
     display: none;
   }
 }
-
-
 
 #kikimiki {
   width: 100%;
   /* background-image: url(sliki/adorable-hearts-ribbon-copy-space.jpg); */
   /* background-image: url(sliki/pozadina.jpg); */
-  background-image: url();
+  background-image: url(sliki/CompresedImages/Backgound.webp);
   filter: brightness(50%);
   background-position: center;
   background-size: cover;
@@ -495,7 +495,6 @@ nav h1 {
   height: 50%;
   z-index: 2;
   /* border: 2px solid red; */
-  
 }
 .backgroundEnvelopeUpAnimation {
   animation: backgroundUp 1.5s ease forwards;
@@ -693,25 +692,20 @@ nav h1 {
     position: relative;
     margin: 40px auto;
   }
-  #spin{
+  #spin {
     font-size: 0.7rem;
-      text-shadow: 1px 1px #ffffff;
-  border: 3px outset;
-}
+    text-shadow: 1px 1px #ffffff;
+    border: 3px outset;
+  }
   #spin:active {
     border: 3px inset;
   }
-
 }
 
-
-
-  #centarSpin {
+#centarSpin {
   width: calc(100% - 10px);
   /* border: 2px solid red; */
 }
-
-
 
 #boja {
   /* background-image: url("https://as2.ftcdn.net/jpg/02/44/61/83/1000_F_244618316_YPHrxgX9u76vE5ctT2697CXjXAEkYWAx.jpg"); */
@@ -859,14 +853,13 @@ nav h1 {
   transform: rotate(180deg);
 }
 
-
-#wrapperOfHearts{
+#wrapperOfHearts {
   /* border: 2px solid green; */
   height: 70dvh;
   overflow: hidden;
 }
 
-.heartHang{
+.heartHang {
   /* border: 2px solid red; */
   height: clamp(30vh, calc(20vh + 30vw), 60vh);
   display: flex;
@@ -874,11 +867,11 @@ nav h1 {
   align-items: center;
   position: relative;
   overflow: visible;
- /* overflow: hidden; */
+  /* overflow: hidden; */
   /* clip-path: inset(0px 0px -80px 0px ); */
   /* padding-bottom: 100px; */
 }
-.divOfHearts{
+.divOfHearts {
   /* border: 2px solid black; */
   width: 100%;
   height: 100%;
@@ -888,7 +881,7 @@ nav h1 {
   position: relative;
   /* overflow: hidden; */
 }
-.hanger{
+.hanger {
   /* border: 2px solid rgb(255, 0, 200); */
   overflow: visible;
   position: relative;
@@ -897,69 +890,69 @@ nav h1 {
   display: flex;
   justify-content: center;
   transform-origin: top center;
-    /* animation: swing 4.5s cubic-bezier(.36,0,.64,1) infinite; */
+  /* animation: swing 4.5s cubic-bezier(.36,0,.64,1) infinite; */
 }
-.heartOfSec{
+.heartOfSec {
   /* border: 2px solid green; */
   width: 70%;
   position: absolute;
   z-index: 2;
-  
 }
 
-.divOfHearts:nth-child(1) .hanger{
-      animation: swing 5s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(1) .hanger {
+  animation: swing 5s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
-.divOfHearts:nth-child(2) .hanger{
-      animation: swing 4.5s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(2) .hanger {
+  animation: swing 4.5s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
-.divOfHearts:nth-child(3) .hanger{
-      animation: swing 4s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(3) .hanger {
+  animation: swing 4s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
-.divOfHearts:nth-child(4) .hanger{
-      animation: swing 5s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(4) .hanger {
+  animation: swing 5s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
-.divOfHearts:nth-child(5) .hanger{
-      animation: swing 6s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(5) .hanger {
+  animation: swing 6s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
-.divOfHearts:nth-child(6) .hanger{
-      animation: swing 5.5s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(6) .hanger {
+  animation: swing 5.5s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
-.divOfHearts:nth-child(7) .hanger{
-      animation: swing 4.8s cubic-bezier(.36,0,.64,1) infinite;
+.divOfHearts:nth-child(7) .hanger {
+  animation: swing 4.8s cubic-bezier(0.36, 0, 0.64, 1) infinite;
 }
 
-
-.divOfHearts:nth-child(1) .heartOfSec{
+.divOfHearts:nth-child(1) .heartOfSec {
   top: 30%;
 }
-.divOfHearts:nth-child(2) .heartOfSec{
+.divOfHearts:nth-child(2) .heartOfSec {
   top: 80%;
 }
-.divOfHearts:nth-child(3) .heartOfSec{
+.divOfHearts:nth-child(3) .heartOfSec {
   top: 45%;
 }
-.divOfHearts:nth-child(4) .heartOfSec{
+.divOfHearts:nth-child(4) .heartOfSec {
   top: 10%;
 }
-.divOfHearts:nth-child(5) .heartOfSec{
+.divOfHearts:nth-child(5) .heartOfSec {
   top: 60%;
 }
-.divOfHearts:nth-child(6) .heartOfSec{
+.divOfHearts:nth-child(6) .heartOfSec {
   top: 40%;
 }
-.divOfHearts:nth-child(7) .heartOfSec{
+.divOfHearts:nth-child(7) .heartOfSec {
   top: 15%;
 }
 
-.heartOfSec img{
+.heartOfSec img {
   width: 100%;
   z-index: 50;
   user-select: none;
-  cursor: url("  /cursor/Preppy\ Pinky\ Spider-Man\ Arrow--p.png")0 0, auto;
+  cursor:
+    url("  /cursor/Preppy\ Pinky\ Spider-Man\ Arrow--p.png") 0 0,
+    auto;
 }
-.heartOfSec::before{
-  content: '';
+.heartOfSec::before {
+  content: "";
   position: absolute;
   width: 2px;
   background-color: black;
@@ -971,35 +964,29 @@ nav h1 {
   /* overflow: hidden; */
 }
 
-
-
- @keyframes swing{
-  0%{
+@keyframes swing {
+  0% {
     transform: rotate(10deg);
     z-index: -1;
     user-select: none;
-
   }
-  50%{
+  50% {
     transform: rotate(-10deg);
     z-index: -1;
     user-select: none;
-
   }
-  100%{
+  100% {
     transform: rotate(10deg);
     z-index: -1;
-  user-select: none;
-
+    user-select: none;
   }
 }
 
-.something{
+.something {
   /* border: 2px solid red; */
   height: 100dvh;
   background-color: #662244;
 }
-
 
 @media (max-width: 768px) {
   #slider {
@@ -1015,8 +1002,7 @@ nav h1 {
     height: 40px;
     justify-content: center;
   }
-  .heartOfSec::before{
+  .heartOfSec::before {
     width: 1px;
-}
-
+  }
 }
