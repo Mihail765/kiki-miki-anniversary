@@ -279,9 +279,15 @@
       checkAuthentication();
 
       function optimizeImage(url) {
-  if (!url) return "/sliki/default-placeholder.jpg";
-  return url.replace("/upload/", "/upload/f_auto,q_auto,w_800/");
-}
+        if (!url) return "/sliki/default-placeholder.jpg";
+
+  // Only optimize Cloudinary images
+        if (url.includes("res.cloudinary.com")) {
+          return url.replace("/upload/", "/upload/f_auto,q_auto,w_800/");
+        }
+
+        return url;
+      }
 
       // ============ DATABASE FUNCTIONS ============
 
@@ -306,8 +312,13 @@
         newSection.innerHTML = `
           <div class="leftDiv">
             <figure class="floatMemory">
-              <img class="imageTimeline" src="${optimizeImage(memory.imageUrl)}" alt="${memory.title} loading="lazy decoding="async
-              <figcaption class="imageTitle">${memory.title}</figcaption>
+            <img 
+              class="imageTimeline" 
+              src="${optimizeImage(memory.imageUrl)}" 
+              alt="${memory.title}" 
+              loading="lazy" 
+              decoding="async"
+            />              <figcaption class="imageTitle">${memory.title}</figcaption>
             </figure>
           </div>
           <div class="rightDiv"></div>
