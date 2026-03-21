@@ -188,7 +188,7 @@ nav h1 {
   font-family: "Quicksand", sans-serif;
   text-align: center;
   width: 40%;
-  font-size: clamp(16px, 5vw, 32px);
+  font-size: clamp(20px, 5vw, 32px);
   /* border: 2px solid red; */
   user-select: none;
 }
@@ -609,7 +609,6 @@ nav h1 {
   /* border: 2px solid black; */
 }
 #envelopeOutline {
-  
   /* border: 2px solid red; */
   width: clamp(260px, 80vw, 400px);
 }
@@ -671,7 +670,6 @@ nav h1 {
   background-color: black;
 }
 @media (max-width: 1056px) {
-
   #spinTheWheel {
     flex-direction: column;
   }
@@ -689,11 +687,11 @@ nav h1 {
     margin-top: 0;
     display: none;
   }
-  #textBox{
+  #textBox {
     height: 500px;
     z-index: 998;
   }
-  
+
   #bigCircle {
     border: 5px solid rgb(207, 207, 207);
     position: relative;
