@@ -483,6 +483,11 @@
       if (window.innerWidth > 1056) {
         spinText.style.display = "flex"; // always visible
         document.body.style.overflow = "visible";
+        spinText.style.background = "none";
+    }else {
+        spinText.style.display = "none"; // always visible
+        spinText.style.background = "radial-gradient(rgba(39, 39, 39, 0.7))";
+        
       }
     });
 
