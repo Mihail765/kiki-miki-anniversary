@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <link rel="stylesheet" href="timeline.css" />
-    <link rel="preload" href="corkboard/design-space-paper-textured-background.jpg" as="image">
+    <link rel="preload" href="corkboard/pozadina.webp" as="image">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@40,400,0,0&icon_names=add_2" />
  <!-- Firebase SDK (for text data) -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_2" />
@@ -278,6 +278,11 @@
       // Check authentication
       checkAuthentication();
 
+      function optimizeImage(url) {
+  if (!url) return "/sliki/default-placeholder.jpg";
+  return url.replace("/upload/", "/upload/f_auto,q_auto,w_800/");
+}
+
       // ============ DATABASE FUNCTIONS ============
 
       // Global variables
@@ -301,7 +306,7 @@
         newSection.innerHTML = `
           <div class="leftDiv">
             <figure class="floatMemory">
-              <img class="imageTimeline" src="${memory.imageUrl || "/sliki/default-placeholder.jpg"}" alt="${memory.title}">
+              <img class="imageTimeline" src="${optimizeImage(memory.imageUrl)}" alt="${memory.title} loading="lazy decoding="async
               <figcaption class="imageTitle">${memory.title}</figcaption>
             </figure>
           </div>
@@ -618,7 +623,7 @@ const isOdd = i === 0 ? false : i % 2 === 0;
                   document.getElementById("popupDescription").textContent =
                     data.description || "No description";
                   document.querySelector(".slika").src =
-                    data.imageUrl || "/sliki/default-placeholder.jpg";
+                    optimizeImage(data.imageUrl);
 
                   document.body.style.overflow = "hidden";
                   shadow.style.display = "block";
@@ -653,11 +658,11 @@ const isOdd = i === 0 ? false : i % 2 === 0;
 
       // ============ PAGE LOAD ============
 
-      window.addEventListener("load", async function () {
-        loader.style.display = "none";
-        await loadMemoriesFromDatabase();
-        drawLines();
-      });
+    window.addEventListener("load", async function () {
+      await loadMemoriesFromDatabase();
+      drawLines();
+      loader.style.display = "none";
+    });
 
       // Window resize and scroll
       let resizeTimeout;
@@ -670,42 +675,12 @@ const isOdd = i === 0 ? false : i % 2 === 0;
       });    
 
 
+      document.addEventListener("load", function (e) {
+        if (e.target.classList.contains("imageTimeline")) {
+          e.target.classList.add("loaded");
+        }
+      }, true);
 
-
-      // ================== CLOUDINARY BACKGROUND IMAGE OPTIMIZATION ==================
-function setOptimizedBackgrounds() {
-  const memories = document.querySelectorAll(".floatMemory");
-
-  memories.forEach(memory => {
-    const img = memory.querySelector(".imageTimeline");
-    if (!img) return;
-
-    // Get the current src (replace with your Cloudinary base URL if needed)
-    let originalSrc = img.getAttribute("src");
-
-    // Replace the img with a div background
-    const bgDiv = document.createElement("div");
-    bgDiv.className = "optimizedMemoryBg";
-
-    // Cloudinary optimized URL (f_auto = automatic format, q_auto = automatic quality)
-    // Replace <your-cloud-name> with your Cloudinary account name
-    const cloudinaryURL = originalSrc.includes("res.cloudinary.com")
-      ? originalSrc
-      : `https://res.cloudinary.com/<your-cloud-name>/image/upload/f_auto,q_auto/${originalSrc}`;
-
-    bgDiv.style.backgroundImage = `url('${cloudinaryURL}')`;
-    bgDiv.style.backgroundRepeat = "repeat"; // keep your repeated background
-    bgDiv.style.backgroundSize = "contain"; // no cropping
-    bgDiv.style.width = img.width + "px";
-    bgDiv.style.height = img.height + "px";
-
-    // Replace image with optimized div
-    img.parentNode.replaceChild(bgDiv, img);
-  });
-}
-
-// Call this function after DOM is loaded and memories are added
-window.addEventListener("load", setOptimizedBackgrounds);
     </script>
   </body>
 </html>

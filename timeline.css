@@ -986,3 +986,13 @@ input[type="date"] {
 
 
 }
+
+
+.imageTimeline {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.imageTimeline.loaded {
+  opacity: 1;
+}
