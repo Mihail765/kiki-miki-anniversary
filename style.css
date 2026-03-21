@@ -605,11 +605,12 @@ nav h1 {
   /* width: 50%; */
   flex: 1;
   margin: 40px auto;
+  display: visible;
   /* border: 2px solid black; */
 }
 #envelopeOutline {
   
-  border: 2px solid red;
+  /* border: 2px solid red; */
   width: clamp(260px, 80vw, 400px);
 }
 

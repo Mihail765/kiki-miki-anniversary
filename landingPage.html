@@ -453,6 +453,7 @@
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
                     document.body.style.overflow = "visible";
+                  } else {
                   }
                 }, 2000);
 
@@ -475,6 +476,14 @@
         startEnvelopeAnimation();
         // upTriangle.style.backgroundColor = "blue";
       }, 500);
+    });
+
+    window.addEventListener("resize", () => {
+      const spinText = document.getElementById("spinText");
+      if (window.innerWidth > 1056) {
+        spinText.style.display = "flex"; // always visible
+        document.body.style.overflow = "visible";
+      }
     });
 
     // loader
