@@ -686,6 +686,7 @@ nav h1 {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 0;
     display: none;
   }
   #textBox{
