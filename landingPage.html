@@ -415,51 +415,65 @@
     bigCircle.addEventListener("transitionend", function () {
       setTimeout(() => {
         let finalAngle = totalRotation % 360;
-
         let normalizedAngle = (360 - finalAngle) % 360;
-
         let adjustedAngle = (finalAngle + 7.5) % 360;
-
         let segmantIndex = Math.floor(adjustedAngle / 15);
 
-        // upTriangle.style.backgroundColor = "blue";
-        openEnvelopeTransition.classList.remove("rotateCloseAnimation");
-        openEnvelopeTransition.classList.add("rotateOpenAnimation");
-        backgroundOfEnvelope.classList.add("backgroundEnvelopeUpAnimation");
-        message.classList.add("fadeInAnimation");
-        setTimeout(() => {
-          messageOfTheSpin.classList.add("paperUpAnimation");
-          setTimeout(() => {
-            messageOfTheSpin.classList.remove("paperUpAnimation");
-            messageOfTheSpin.classList.add("paperDownAnimation");
-            setTimeout(() => {
-              backgroundOfEnvelope.classList.remove(
-                "backgroundEnvelopeUpAnimation",
-              );
-              backgroundOfEnvelope.classList.add(
-                "backgroundEnvelopeDownAnimation",
-              );
-              backgroundOfEnvelope.classList.remove(
-                "backgroundEnvelopeDownAnimation",
-              );
-              openEnvelopeTransition.classList.remove("rotateOpenAnimation");
-              messageOfTheSpin.classList.remove("paperDownAnimation");
-              openEnvelopeTransition.classList.add("rotateCloseAnimation");
-              message.classList.remove("fadeInAnimation");
-              clicked = false;
-            }, 2000);
-          }, 4000);
-        }, 2000);
+        const startEnvelopeAnimation = () => {
+          if (window.innerWidth <= 1056) {
+            document.getElementById("spinText").style.display = "flex";
+            document.body.style.overflow = "hidden";
+          }
 
-        mainReason.textContent = result[segmantIndex];
-        console.log(
-          "Final:",
-          finalAngle,
-          "Adjusted:",
-          adjustedAngle,
-          "Index:",
-          segmantIndex,
-        );
+          openEnvelopeTransition.classList.remove("rotateCloseAnimation");
+          openEnvelopeTransition.classList.add("rotateOpenAnimation");
+          backgroundOfEnvelope.classList.add("backgroundEnvelopeUpAnimation");
+          message.classList.add("fadeInAnimation");
+          setTimeout(() => {
+            messageOfTheSpin.classList.add("paperUpAnimation");
+            setTimeout(() => {
+              messageOfTheSpin.classList.remove("paperUpAnimation");
+              messageOfTheSpin.classList.add("paperDownAnimation");
+              setTimeout(() => {
+                backgroundOfEnvelope.classList.remove(
+                  "backgroundEnvelopeUpAnimation",
+                );
+                backgroundOfEnvelope.classList.add(
+                  "backgroundEnvelopeDownAnimation",
+                );
+                backgroundOfEnvelope.classList.remove(
+                  "backgroundEnvelopeDownAnimation",
+                );
+                openEnvelopeTransition.classList.remove("rotateOpenAnimation");
+                messageOfTheSpin.classList.remove("paperDownAnimation");
+                openEnvelopeTransition.classList.add("rotateCloseAnimation");
+                message.classList.remove("fadeInAnimation");
+
+                setTimeout(() => {
+                  if (window.innerWidth <= 1056) {
+                    document.getElementById("spinText").style.display = "none";
+                    document.body.style.overflow = "visible";
+                  }
+                }, 2000);
+
+                clicked = false;
+              }, 2000);
+            }, 4000);
+          }, 2000);
+
+          mainReason.textContent = result[segmantIndex];
+          console.log(
+            "Final:",
+            finalAngle,
+            "Adjusted:",
+            adjustedAngle,
+            "Index:",
+            segmantIndex,
+          );
+        };
+
+        startEnvelopeAnimation();
+        // upTriangle.style.backgroundColor = "blue";
       }, 500);
     });
 

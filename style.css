@@ -587,14 +587,14 @@ nav h1 {
 
 #forKikica,
 #fromMikica {
-  font-size: 1.2rem;
+  font-size: clamp(0.9rem, 1.8vw, 1.2rem);
   font-style: italic;
   color: #cc3366;
   margin-bottom: 1rem;
 }
 
 #mainReason {
-  font-size: 1.4rem;
+  font-size: clamp(1rem, 2vw, 1.4rem);
   font-weight: normal;
   margin-bottom: 1rem;
   color: #662244;
@@ -602,9 +602,15 @@ nav h1 {
 }
 
 #spinText {
-  width: 50%;
+  /* width: 50%; */
+  flex: 1;
   margin: 40px auto;
-  border: 2px solid black;
+  /* border: 2px solid black; */
+}
+#envelopeOutline {
+  
+  border: 2px solid red;
+  width: clamp(260px, 80vw, 400px);
 }
 
 #spinCollection {
@@ -664,9 +670,28 @@ nav h1 {
   background-color: black;
 }
 @media (max-width: 1056px) {
+
   #spinTheWheel {
     flex-direction: column;
   }
+  #spinText {
+    position: fixed;
+    background: radial-gradient(rgba(39, 39, 39, 0.7));
+    z-index: 997;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    display: none;
+  }
+  #textBox{
+    height: 500px;
+    z-index: 998;
+  }
+  
   #bigCircle {
     border: 5px solid rgb(207, 207, 207);
     position: relative;
