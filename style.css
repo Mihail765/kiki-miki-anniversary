@@ -53,17 +53,31 @@ header {
   align-items: center;
   box-shadow: 0 0 15px white;
   position: fixed;
+  transition: all 0.3s ease;
 }
 
 .navigation {
   /* border: 2px solid green; */
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  flex-direction: column;
+  /* justify-content: space-between; */
   align-items: center;
   width: 100%;
   height: 100%;
   padding: 0 1rem;
+}
+.firstHalf {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  /* border: 2px solid rgb(43, 255, 0); */
+  width: 100%;
+  height: 90px !important;
+}
+#logOutSimple {
+  /* border: 2px solid red; */
+  height: 38px;
 }
 .navlist {
   position: relative;
@@ -78,9 +92,9 @@ header {
   height: 100%;
   /* float: right; */
 }
-nav h1 {
+.pageTitle {
   font-family: "loveLight";
-  font-size: clamp(35px, 4.5vw, 64px);
+  font-size: clamp(40px, 4.5vw, 64px);
   white-space: nowrap;
   color: rgb(255, 255, 255);
   font-weight: 400;
@@ -91,7 +105,8 @@ nav h1 {
   /* border: 2px solid red; */
   margin-left: 1%;
 }
-.listItemLink {
+.listItemLink,
+.listItemLinkDrop {
   text-decoration: none;
   text-transform: uppercase;
   font-family: "Quicksand", sans-serif;
@@ -110,7 +125,8 @@ nav h1 {
   /* border: 2px solid green; */
   white-space: nowrap;
 }
-.listItemLink::before {
+.listItemLink::before,
+.listItemLinkDrop::before {
   content: "";
   position: absolute;
   display: block;
@@ -122,10 +138,12 @@ nav h1 {
   transform: translateX(-50%);
   transition: all 0.2s ease-in-out;
 }
-.listItemLink:hover::before {
+.listItemLink:hover::before,
+.listItemLinkDrop:hover::before {
   width: 100%;
 }
-.listItemLink:hover {
+.listItemLink:hover,
+.listItemLinkDrop:hover {
   text-shadow: 2px 2px 2px #ffc6cc;
   color: #cc3366;
 }
@@ -140,7 +158,7 @@ nav h1 {
   text-decoration: none;
 }
 
-#logOut {
+.logOut {
   /* margin-right: 1%; */
   padding: 8px 22px;
   font-size: clamp(0.5rem, 1.5vw, 1rem);
@@ -163,14 +181,14 @@ nav h1 {
   display: none;
 }
 
-#logOut:hover {
+.logOut:hover {
   background: #cc3366;
   color: white;
   box-shadow: 0 0 15px rgba(255, 180, 200, 0.7);
   transform: translateY(-2px);
 }
 
-#logOut:active {
+.logOut:active {
   transform: translateY(0);
   box-shadow: 0 0 10px rgba(255, 150, 180, 0.5);
 }
@@ -197,9 +215,30 @@ nav h1 {
   user-select: none;
 }
 
-#menu{
+#menu {
   display: none;
 }
+.rotateMenuNow{
+  animation-name: rotateMenuNow;
+  animation-duration: 0.2s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: 1;
+}
+@keyframes rotateMenuNow {
+  0%{
+    transform: rotateZ(0deg);
+  }
+  100%{
+    transform: rotateZ(180deg);
+  }
+}
+#menu:hover {
+  cursor: url("cursor/Preppy Pinky Spider-Man Arrow--p.png"), auto;
+}
+#colectionOfDrop {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .heartOfSec::before {
     width: 1px;
@@ -207,17 +246,93 @@ nav h1 {
   .listItemLink {
     display: none;
   }
-  #logOut {
+  #logOutSimple {
     display: none;
   }
   /* .burger {
     color: white;
     font-size: 30px;
   } */
-   #menu{
+  #menu {
     display: block;
-   }
-} 
+  }
+
+  #colectionOfDrop {
+    /* border: 2px solid blue; */
+    width: 100%;
+    display: flex;
+    flex: 1;
+    height: 50%;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    display: none;
+    transition: all 0.3s ease;
+  }
+
+  #logOutDrop {
+    width: 80%;
+    /* border: 2px solid yellow; */
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+  #logOutDrop:hover {
+    filter: drop-shadow(2px 2px 1px white);
+    border: 1px solid white;
+  }
+  #logOutDrop span {
+    margin-right: auto;
+    margin-left: auto;
+  }
+  #navlistDrop {
+    /* border: 2px solid rgb(30, 255, 0); */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    list-style-type: none;
+  }
+  #navlistDrop li {
+    /* border: 2px solid red; */
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    gap: 10px;
+  }
+
+  #navlistDrop a {
+    /* border: 2px solid black; */
+    background: linear-gradient(
+      190deg,
+      rgba(255, 154, 162, 0.5) 0%,
+      rgba(255, 198, 204, 0.5) 70%,
+      rgba(255, 228, 225, 0.5) 100%
+    );
+    border-radius: 5px;
+    width: 90%;
+    text-shadow: none;
+    color: #662244;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    /* font-family: "inter"; */
+    filter: drop-shadow(2px 2px 1px white);
+  }
+  #navlistDrop a:hover {
+    color: #cc3366;
+    border: 1px solid white;
+    text-shadow: 2px 2px white;
+  }
+  .pageTitle {
+    /* border: 2px solid red; */
+    font-size: 60px;
+    width: 100%;
+  }
+}
+
 
 #kikimiki {
   width: 100%;
@@ -1049,8 +1164,6 @@ nav h1 {
   }
 }
 
-
-
 @media (max-width: 768px) {
   #slider {
     height: auto;
@@ -1070,13 +1183,12 @@ nav h1 {
   }
 }
 
-
 .something {
   /* border: 2px solid red; */
   height: 600px;
-  background: linear-gradient(to bottom, #FFA3A3, #FFE4E1);
+  background: linear-gradient(to bottom, #ffa3a3, #ffe4e1);
 }
-.forWhy{
+.forWhy {
   color: rgb(0, 0, 0);
   font-family: "inter";
   text-align: center;
@@ -1084,11 +1196,11 @@ nav h1 {
   font-weight: 400;
   /* border: 2px solid blueviolet; */
 }
-.gornenTekst{
+.gornenTekst {
   border: 2px solid blue;
   height: 50px;
 }
-.points{
+.points {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
@@ -1096,9 +1208,8 @@ nav h1 {
   height: calc(100% - 50px);
 }
 
-
-.pointShow{
-  background-color: #E59A9A;
+.pointShow {
+  background-color: #e59a9a;
   height: 300px;
   width: 350px;
   border: 2px solid green;

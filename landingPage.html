@@ -48,19 +48,38 @@
   <body>
     <header>
       <nav class="navigation">
-          <h1 id="pageTitle">The Bowling Date</h1>
+        <div class="firstHalf">
+          <h1 class="pageTitle">The Bowling Date</h1>
           <ul class="navlist">
-              <li><a class="listItemLink" href="timeline.html">Timeline</a></li>
-              <li><a class="listItemLink" href="favourites.html">Favourites</a></li>
-              <li><a class="listItemLink" href="#">sdf</a></li>
-              <li><a class="listItemLink" href="#">Letters</a></li>
-              <li><a class="listItemLink" href="#">Quiz of Us</a></li>
-            </ul>
-            <button id="logOut">Log out</button>
-            <div id="menu">
-              <img src="sliki/icons/burgerWhite.png" alt="">
-            </div>
-        </nav>
+            <li><a class="listItemLink" href="timeline.html">Timeline</a></li>
+            <li>
+              <a class="listItemLink" href="favourites.html">Favourites</a>
+            </li>
+            <li><a class="listItemLink" href="#">sdf</a></li>
+            <li><a class="listItemLink" href="#">Letters</a></li>
+            <li><a class="listItemLink" href="#">Quiz of Us</a></li>
+          </ul>
+          <div id="menu">
+            <img id="menuChange" class="rotateMenu" src="sliki/icons/burgerBig.png" alt="menu" />
+          </div>
+          <button id="logOutSimple" class="logOut">Log out</button>
+        </div>
+
+        <div id="colectionOfDrop" class="colectionOfDrop">
+          <ul id="navlistDrop">
+            <a class="listItemLinkDrop" href="timeline.html"><li>
+              Timeline
+            </li></a>
+            <a class="listItemLinkDrop" href="favourites.html"><li>
+              Favourites
+            </li></a>
+            <a class="listItemLinkDrop" href="#"><li>sdf</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
+            <button id="logOutDrop" class="logOut"><span>Log out</span></button>
+          </ul>
+        </div>
+      </nav>
     </header>
     <div id="timeTogether">
       <div id="kikimiki"></div>
@@ -202,26 +221,16 @@
     </section>
 
     <section class="something">
-        <div class="gornenTekst">
-            <h2 class="forWhy">Зошто те одбрав ТЕБЕ</h2>
-        </div>
-        <div class="points">
-            <div id="pointFirst" class="pointShow">
-
-            </div>
-            <div id="pointSecond" class="pointShow">
-
-            </div>
-            <div id="pointThird" class="pointShow">
-
-            </div>
-            <div id="pointForth" class="pointShow">
-
-            </div>
-            <div id="pointFifth" class="pointShow">
-
-            </div>
-        </div>
+      <div class="gornenTekst">
+        <h2 class="forWhy">Зошто те одбрав ТЕБЕ</h2>
+      </div>
+      <div class="points">
+        <div id="pointFirst" class="pointShow"></div>
+        <div id="pointSecond" class="pointShow"></div>
+        <div id="pointThird" class="pointShow"></div>
+        <div id="pointForth" class="pointShow"></div>
+        <div id="pointFifth" class="pointShow"></div>
+      </div>
     </section>
 
     <div id="loader">
@@ -600,8 +609,27 @@
     // Create floating hearts periodically
     setInterval(createFloatingHeart, 2000);
 
+    let toggelMenu = document.getElementById("colectionOfDrop");
+    let header = document.querySelector("header");
+    let menuChange = document.getElementById("menuChange");
+    document.getElementById("menu").addEventListener("click", function () {
+      toggelMenu.style.display = toggelMenu.style.display === "block" ? "none" : "block";
+      header.style.height = header.style.height === "400px" ? "90px" : "400px";
+      if(menuChange.getAttribute("src") === "sliki/icons/burgerBig.png"){
+        menuChange.setAttribute("src", "sliki/icons/close.png");
+      }else{
+        menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
+      }
+
+      menuChange.classList.add("rotateMenuNow");
+
+      menuChange.addEventListener("animationend", () => {
+        menuChange.classList.remove("rotateMenuNow");
+      })
+    });
+
     // logout
-    document.getElementById("logOut").addEventListener("click", () => {
+    document.querySelector(".logOut").addEventListener("click", () => {
       let loggedIn = sessionStorage.getItem("loggedIn");
       sessionStorage.removeItem("loggedIn");
       window.location.replace("index.html");
