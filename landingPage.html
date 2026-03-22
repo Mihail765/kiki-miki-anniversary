@@ -645,10 +645,12 @@
     }
 
     // logout
-    document.querySelector(".logOut").addEventListener("click", () => {
-      let loggedIn = sessionStorage.getItem("loggedIn");
-      sessionStorage.removeItem("loggedIn");
-      window.location.replace("index.html");
-    });
+    document.querySelectorAll(".logOut").forEach(btn => {
+      btn.addEventListener("click", () => {
+        let loggedIn = sessionStorage.getItem("loggedIn");
+        sessionStorage.removeItem("loggedIn");
+        window.location.replace("index.html");
+      });
+    })
   </script>
 </html>
