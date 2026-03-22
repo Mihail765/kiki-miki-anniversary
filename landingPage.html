@@ -458,8 +458,8 @@
         let segmantIndex = Math.floor(adjustedAngle / 15);
 
         const startEnvelopeAnimation = () => {
-          document.body.style.overflow = "hidden";
           if (window.innerWidth <= 1056) {
+            document.body.style.overflow = "hidden";
             document.getElementById("spinText").style.display = "flex";
           }
 
@@ -490,8 +490,8 @@
                 setTimeout(() => {
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
+                    document.body.style.overflow = "";
                   }
-                  document.body.style.overflow = "";
                 }, 2000);
 
                 clicked = false;
