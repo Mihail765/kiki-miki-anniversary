@@ -427,158 +427,87 @@ document
     }
   });      // ============ EXISTING FUNCTIONS ============
 
-      function drawLines() {
-        const svg = document.getElementById("connectionSVG");
-        const memories = document.querySelectorAll(".floatMemory");
-        const wrapper = document.getElementById("timelineWrapper");
+function drawLines() {
+  const svg = document.getElementById("connectionSVG");
+  const memories = document.querySelectorAll(".floatMemory");
+  const wrapper = document.getElementById("timelineWrapper");
+  const isNarrow = window.innerWidth <= 1100;
 
-        svg.innerHTML = "";
+  svg.innerHTML = "";
+  svg.setAttribute("height", wrapper.scrollHeight);
+  svg.setAttribute("width", wrapper.scrollWidth);
 
-        const wrapperRect = wrapper.getBoundingClientRect();
-        svg.setAttribute("height", wrapper.scrollHeight);
-        svg.setAttribute("width", wrapper.scrollWidth);
+  const wrapperRect = wrapper.getBoundingClientRect();
 
-        const position = Array.from(memories).map((memory, index) => {
-          const rect = memory.getBoundingClientRect();
-          const wrapperTop = wrapperRect.top + window.scrollY;
-          const wrapperLeft = wrapperRect.left + window.scrollX;
+  const position = Array.from(memories).map((memory) => {
+    const rect = memory.getBoundingClientRect();
+    const wrapperTop = wrapperRect.top + window.scrollY;
+    const wrapperLeft = wrapperRect.left + window.scrollX;
+    return {
+      top:     rect.top    + window.scrollY - wrapperTop,
+      bottom:  rect.bottom + window.scrollY - wrapperTop,
+      centerX: rect.left   + rect.width / 2 + window.scrollX - wrapperLeft,
+      centerY: rect.top    + rect.height / 2 + window.scrollY - wrapperTop,
+      leftX:   rect.left   + window.scrollX - wrapperLeft,
+      rightX:  rect.right  + window.scrollX - wrapperLeft,
+    };
+  });
 
-          return {
-            top: rect.top + window.scrollY - wrapperTop,
-            bottom: rect.bottom + window.scrollY - wrapperTop,
-            centerX: rect.left + rect.width / 2 + window.scrollX - wrapperLeft,
-            centerY: rect.top + rect.height / 2 + window.scrollY - wrapperTop,
-            leftX: rect.left + window.scrollX - wrapperLeft,
-            rightX: rect.right + window.scrollX - wrapperLeft,
-            width: rect.width,
-            index: index,
-          };
-        });
+  function makeLine(x1, y1, x2, y2) {
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1);
+    line.setAttribute("y1", y1);
+    line.setAttribute("x2", x2);
+    line.setAttribute("y2", y2);
+    line.setAttribute("stroke", "white");
+    line.setAttribute("stroke-width", "3");
+    line.setAttribute("stroke-linecap", "round");
+    svg.appendChild(line);
+  }
 
-        for (let i = 0; i < position.length - 1; i++) {
-          const current = position[i];
-          const next = position[i + 1];
+  // ── Line from top of screen down to first memory center ──
+  if (position.length > 0) {
+    const first = position[0];
+    makeLine(first.centerX, -wrapper.offsetTop, first.centerX, first.centerY);
+  }
 
-const isOdd = i === 0 ? false : i % 2 === 0;
-          const startX = isOdd ? current.rightX : current.leftX;
-          const startY = current.centerY;
+  // ── Connections between memories ──
+  for (let i = 0; i < position.length - 1; i++) {
+    const curr = position[i];
+    const next = position[i + 1];
 
-          const horizontalEndX = next.centerX;
-          const horizontalEndY = startY;
+    if (isNarrow) {
+      makeLine(curr.centerX, curr.centerY, next.centerX, next.centerY);
+    } else {
+      const exitRight = i % 2 === 0;
+      const exitX = exitRight ? curr.rightX : curr.leftX;
 
-          const verticalEndX = next.centerX;
-          const verticalEndY = next.top;
+      makeLine(curr.centerX, curr.centerY, exitX, curr.centerY);
+      makeLine(exitX, curr.centerY, next.centerX, curr.centerY);
+      makeLine(next.centerX, curr.centerY, next.centerX, next.centerY);
+    }
+  }
 
-          const horizontalLine = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "line",
-          );
-          horizontalLine.setAttribute("x1", startX);
-          horizontalLine.setAttribute("y1", startY);
-          horizontalLine.setAttribute("x2", horizontalEndX);
-          horizontalLine.setAttribute("y2", horizontalEndY);
-          horizontalLine.setAttribute("stroke", "white");
-          horizontalLine.setAttribute("stroke-width", "3");
-          horizontalLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(horizontalLine);
+  // ── Line from last memory center down to bottom ──
+  if (position.length > 0) {
+    const last = position[position.length - 1];
+    const bottomY = wrapper.scrollHeight;
 
-          const verticalLine = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "line",
-          );
-          verticalLine.setAttribute("x1", horizontalEndX);
-          verticalLine.setAttribute("y1", horizontalEndY);
-          verticalLine.setAttribute("x2", verticalEndX);
-          verticalLine.setAttribute("y2", verticalEndY);
-          verticalLine.setAttribute("stroke", "white");
-          verticalLine.setAttribute("stroke-width", "3");
-          verticalLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(verticalLine);
-        }
+    if (isNarrow) {
+      makeLine(last.centerX, last.centerY, last.centerX, bottomY);
+    } else {
+      const exitRight = (position.length - 1) % 2 === 0;
+      const exitX = exitRight ? last.rightX : last.leftX;
+      const alignX = position.length >= 2
+        ? position[position.length - 2].centerX
+        : last.centerX;
 
-
-// ===== Line from FIRST memory to top of screen =====
-        if (position.length > 0) {
-          const firstMemory = position[0];
-          
-          // Start from center of first memory going straight up
-          const firstCenterX = firstMemory.centerX;
-          const firstStartY = firstMemory.top;
-          
-          // Calculate the actual distance to the top of the screen
-          // The wrapper has margin-top: 5%, plus navbar height (90px)
-          const wrapperOffsetTop = wrapper.offsetTop; // Gets the actual offset from top including margins
-          const topY = -wrapperOffsetTop;
-          
-          // Draw VERTICAL line from first memory center UP to top of screen
-          const firstVerticalLine = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "line"
-          );
-          firstVerticalLine.setAttribute("x1", firstCenterX);
-          firstVerticalLine.setAttribute("y1", firstStartY);
-          firstVerticalLine.setAttribute("x2", firstCenterX);
-          firstVerticalLine.setAttribute("y2", topY);
-          firstVerticalLine.setAttribute("stroke", "white");
-          firstVerticalLine.setAttribute("stroke-width", "3");
-          firstVerticalLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(firstVerticalLine);
-        }
-        // ===== L-shaped line from LAST memory to bottom =====
-        if (position.length > 0) {
-          const lastMemory = position[position.length - 1];
-          const isLastOdd = (position.length - 1) % 2 === 0;
-
-          // Start from the side of the last memory (left or right edge)
-          const lastStartX = isLastOdd ? lastMemory.rightX : lastMemory.leftX;
-          const lastStartY = lastMemory.centerY;
-
-          // Get the element ABOVE this one to align with its center
-          let horizontalEndX;
-          if (position.length >= 2) {
-            // If there's an element above, align with its center
-            const elementAbove = position[position.length - 2];
-            horizontalEndX = elementAbove.centerX;
-          } else {
-            // If this is the first/only element, use its own center
-            horizontalEndX = lastMemory.centerX;
-          }
-
-          // Bottom of the screen
-          const bottomY = wrapper.scrollHeight;
-
-          // 1. Draw HORIZONTAL line from last memory edge to align with element above
-          const lastHorizontalLine = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "line"
-          );
-          lastHorizontalLine.setAttribute("x1", lastStartX);
-          lastHorizontalLine.setAttribute("y1", lastStartY);
-          lastHorizontalLine.setAttribute("x2", horizontalEndX);
-          lastHorizontalLine.setAttribute("y2", lastStartY);
-          lastHorizontalLine.setAttribute("stroke", "white");
-          lastHorizontalLine.setAttribute("stroke-width", "3");
-          lastHorizontalLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(lastHorizontalLine);
-
-          // 2. Draw VERTICAL line from that point down to bottom
-          const lastVerticalLine = document.createElementNS(
-            "http://www.w3.org/2000/svg",
-            "line"
-          );
-          lastVerticalLine.setAttribute("x1", horizontalEndX);
-          lastVerticalLine.setAttribute("y1", lastStartY);
-          lastVerticalLine.setAttribute("x2", horizontalEndX);
-          lastVerticalLine.setAttribute("y2", bottomY);
-          lastVerticalLine.setAttribute("stroke", "white");
-          lastVerticalLine.setAttribute("stroke-width", "3");
-          lastVerticalLine.setAttribute("stroke-linecap", "round");
-          svg.appendChild(lastVerticalLine);
-        }
-
-      }
-
-      // ============ EVENT LISTENERS ============
+      makeLine(last.centerX, last.centerY, exitX, last.centerY);
+      makeLine(exitX, last.centerY, alignX, last.centerY);
+      makeLine(alignX, last.centerY, alignX, bottomY);
+    }
+  }
+}      // ============ EVENT LISTENERS ============
 
       // Add memory button click
       addMemoryBtn.addEventListener("click", function () {
@@ -679,11 +608,12 @@ const isOdd = i === 0 ? false : i % 2 === 0;
       let resizeTimeout;
       window.addEventListener("resize", () => {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(drawLines, 100);
+        resizeTimeout = setTimeout(drawLines, 30); // down from 100ms
       });
+
       window.addEventListener("scroll", () => {
-        requestAnimationFrame(drawLines);
-      });    
+        drawLines(); // no rAF wrapper, call directly
+      });
 
 
       document.addEventListener("load", function (e) {
