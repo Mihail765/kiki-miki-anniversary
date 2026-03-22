@@ -1034,6 +1034,11 @@ header {
   #wrapperOfHearts {
     height: 31dvh;
   }
+  .pageTitle {
+    /* border: 2px solid red; */
+    font-size: 47px;
+    width: 100%;
+  }
 }
 @media (max-width: 370px) {
   #wrapperOfHearts {
