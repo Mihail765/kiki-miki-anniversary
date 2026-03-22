@@ -645,25 +645,25 @@ header {
 }
 .backgroundEnvelopeUpAnimation {
   animation: backgroundUp 1.5s ease forwards;
-  animation-delay: 250ms;
+  animation-delay: 300ms;
   animation-iteration-count: 1;
 }
 .backgroundEnvelopeDownAnimation {
   animation: backgroundDown 2s ease forwards;
   animation-iteration-count: 1;
-  animation-delay: 1s;
+  animation-delay: 1.5s;
 }
 @keyframes backgroundUp {
   from {
     margin-top: 0px;
   }
   to {
-    margin-top: 0px;
+    margin-top: -1px;
   }
 }
 @keyframes backgroundDown {
   from {
-    margin-top: 0px;
+    margin-top: -1px;
   }
   to {
     margin-top: 0px;
@@ -1027,7 +1027,7 @@ header {
 
 #wrapperOfHearts {
   /* border: 2px solid green; */
-  min-height: clamp(250px, 69vh, 800px);
+  min-height: clamp(250px, 69vh, 900px);
   height: auto;
   overflow: hidden;
 }
