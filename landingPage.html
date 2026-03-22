@@ -446,6 +446,8 @@
           if (window.innerWidth <= 1056) {
             document.getElementById("spinText").style.display = "flex";
             document.body.style.overflow = "hidden";
+            document.body.style.position = "fixed";
+            document.body.style.width = "100%";
           }
 
           openEnvelopeTransition.classList.remove("rotateCloseAnimation");
@@ -476,6 +478,8 @@
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
                     document.body.style.overflow = "visible";
+                    document.body.style.position = "";
+                    document.body.style.width = "";
                   } else {
                   }
                 }, 2000);
