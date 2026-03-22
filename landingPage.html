@@ -60,19 +60,24 @@
             <li><a class="listItemLink" href="#">Quiz of Us</a></li>
           </ul>
           <div id="menu">
-            <img id="menuChange" class="rotateMenu" src="sliki/icons/burgerBig.png" alt="menu" />
+            <img
+              id="menuChange"
+              class="rotateMenu"
+              src="sliki/icons/burgerBig.png"
+              alt="menu"
+            />
           </div>
           <button id="logOutSimple" class="logOut">Log out</button>
         </div>
 
         <div id="colectionOfDrop" class="colectionOfDrop">
           <ul id="navlistDrop">
-            <a class="listItemLinkDrop" href="timeline.html"><li>
-              Timeline
-            </li></a>
-            <a class="listItemLinkDrop" href="favourites.html"><li>
-              Favourites
-            </li></a>
+            <a class="listItemLinkDrop" href="timeline.html"
+              ><li>Timeline</li></a
+            >
+            <a class="listItemLinkDrop" href="favourites.html"
+              ><li>Favourites</li></a
+            >
             <a class="listItemLinkDrop" href="#"><li>sdf</li></a>
             <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
             <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
@@ -453,11 +458,9 @@
         let segmantIndex = Math.floor(adjustedAngle / 15);
 
         const startEnvelopeAnimation = () => {
+          document.body.style.overflow = "hidden";
           if (window.innerWidth <= 1056) {
             document.getElementById("spinText").style.display = "flex";
-            document.body.style.overflow = "hidden";
-            document.body.style.position = "fixed";
-            document.body.style.width = "100%";
           }
 
           openEnvelopeTransition.classList.remove("rotateCloseAnimation");
@@ -487,10 +490,8 @@
                 setTimeout(() => {
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
-                    document.body.style.overflow = "";
-                    document.body.style.position = "";
-                    document.body.style.width = "";
-                  } 
+                  }
+                  document.body.style.overflow = "";
                 }, 2000);
 
                 clicked = false;
@@ -518,7 +519,6 @@
       const spinText = document.getElementById("spinText");
       if (window.innerWidth > 1056) {
         spinText.style.display = "flex"; // always visible
-        document.body.style.overflow = "";
         spinText.style.background = "none";
       } else {
         spinText.style.display = "none"; // always visible
@@ -615,13 +615,14 @@
     let shadow = document.getElementById("shadow");
 
     document.getElementById("menu").addEventListener("click", function () {
-      toggelMenu.style.display = toggelMenu.style.display === "block" ? "none" : "block";
+      toggelMenu.style.display =
+        toggelMenu.style.display === "block" ? "none" : "block";
       header.style.height = header.style.height === "400px" ? "90px" : "400px";
 
-      if(menuChange.getAttribute("src") === "sliki/icons/burgerBig.png"){
+      if (menuChange.getAttribute("src") === "sliki/icons/burgerBig.png") {
         menuChange.setAttribute("src", "sliki/icons/close.png");
         openShadow();
-      }else{
+      } else {
         menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
         closeShadow();
       }
@@ -630,18 +631,17 @@
 
       menuChange.addEventListener("animationend", () => {
         menuChange.classList.remove("rotateMenuNow");
-      })
+      });
     });
 
-    function openShadow(){
+    function openShadow() {
       shadow.style.display = "block";
       document.body.style.overflow = "hidden";
     }
-    function closeShadow(){
+    function closeShadow() {
       shadow.style.display = "none";
       document.body.style.overflow = "";
     }
-
 
     // logout
     document.querySelector(".logOut").addEventListener("click", () => {

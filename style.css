@@ -829,6 +829,8 @@ header {
     margin-top: 0;
     display: none;
     user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
   }
   #textBox {
     height: 500px;
