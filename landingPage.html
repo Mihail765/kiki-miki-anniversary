@@ -454,7 +454,7 @@
 
         const startEnvelopeAnimation = () => {
           if (window.innerWidth <= 1056) {
-            document.getElementById("spinText").style.display = "flex";
+            document.getElementById("spinText").style.display = "block";
             document.body.style.overflow = "hidden";
             document.body.style.position = "fixed";
             document.body.style.width = "100%";
@@ -487,11 +487,10 @@
                 setTimeout(() => {
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
-                    document.body.style.overflow = "visible";
+                    document.body.style.overflow = "";
                     document.body.style.position = "";
                     document.body.style.width = "";
-                  } else {
-                  }
+                  } 
                 }, 2000);
 
                 clicked = false;
@@ -519,7 +518,7 @@
       const spinText = document.getElementById("spinText");
       if (window.innerWidth > 1056) {
         spinText.style.display = "flex"; // always visible
-        document.body.style.overflow = "visible";
+        document.body.style.overflow = "";
         spinText.style.background = "none";
       } else {
         spinText.style.display = "none"; // always visible
