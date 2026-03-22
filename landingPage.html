@@ -90,6 +90,7 @@
         <span id="spanSecond"></span>
       </h1>
     </div>
+    <div id="shadow"></div>
 
     <section id="spinTheWheel">
       <div id="spinText">
@@ -612,13 +613,18 @@
     let toggelMenu = document.getElementById("colectionOfDrop");
     let header = document.querySelector("header");
     let menuChange = document.getElementById("menuChange");
+    let shadow = document.getElementById("shadow");
+
     document.getElementById("menu").addEventListener("click", function () {
       toggelMenu.style.display = toggelMenu.style.display === "block" ? "none" : "block";
       header.style.height = header.style.height === "400px" ? "90px" : "400px";
+
       if(menuChange.getAttribute("src") === "sliki/icons/burgerBig.png"){
         menuChange.setAttribute("src", "sliki/icons/close.png");
+        openShadow();
       }else{
         menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
+        closeShadow();
       }
 
       menuChange.classList.add("rotateMenuNow");
@@ -627,6 +633,16 @@
         menuChange.classList.remove("rotateMenuNow");
       })
     });
+
+    function openShadow(){
+      shadow.style.display = "block";
+      document.body.style.overflow = "hidden";
+    }
+    function closeShadow(){
+      shadow.style.display = "none";
+      document.body.style.overflow = "";
+    }
+
 
     // logout
     document.querySelector(".logOut").addEventListener("click", () => {
