@@ -490,8 +490,8 @@
                 setTimeout(() => {
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
-                    document.body.style.overflow = "";
                   }
+                  document.body.style.overflow = "";
                 }, 2000);
 
                 clicked = false;
@@ -615,11 +615,12 @@
     let shadow = document.getElementById("shadow");
 
     document.getElementById("menu").addEventListener("click", function () {
-      toggelMenu.style.display =
-        toggelMenu.style.display === "block" ? "none" : "block";
-      header.style.height = header.style.height === "400px" ? "90px" : "400px";
+      // header.style.height = header.style.height === "400px" ? "90px" : "400px";
+      const isOpen = header.classList.toggle("menu-open");
+      toggelMenu.style.display =  isOpen ? "block" : "none";
 
-      if (menuChange.getAttribute("src") === "sliki/icons/burgerBig.png") {
+
+      if (isOpen) {
         menuChange.setAttribute("src", "sliki/icons/close.png");
         openShadow();
       } else {

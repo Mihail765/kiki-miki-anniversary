@@ -218,6 +218,9 @@ header {
 #menu {
   display: none;
 }
+.menu-open {
+  height: 400px;
+}
 .rotateMenuNow {
   animation-name: rotateMenuNow;
   animation-duration: 0.2s;
@@ -1026,8 +1029,8 @@ header {
 }
 
 #wrapperOfHearts {
-  /* border: 2px solid green; */
-  min-height: clamp(250px, 69vh, 900px);
+  /* border: 3px solid rgb(0, 255, 0); */
+   padding-bottom: clamp(20px, 2vw, 50px);
   height: auto;
   overflow: hidden;
 }
@@ -1067,6 +1070,7 @@ header {
   align-items: center;
   position: relative;
   overflow: visible;
+  z-index: 2;
   /* overflow: hidden; */
   /* clip-path: inset(0px 0px -80px 0px ); */
   /* padding-bottom: 100px; */

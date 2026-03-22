@@ -415,6 +415,7 @@ body {
   display: none;
   box-sizing: border-box;
 }
+
 .imageHolder {
   width: 50%;
   height: 100%;
@@ -531,6 +532,7 @@ body {
   display: none;
   box-sizing: border-box;
 }
+
 #titleAndBtn {
   display: flex;
   flex-direction: row;
@@ -996,3 +998,5 @@ input[type="date"] {
 .imageTimeline.loaded {
   opacity: 1;
 }
+
+
