@@ -1030,7 +1030,7 @@ header {
 
 #wrapperOfHearts {
   /* border: 3px solid rgb(0, 255, 0); */
-   padding-bottom: clamp(20px, 2vw, 50px);
+  padding-bottom: clamp(10px, 6vw, 85px);
   height: auto;
   overflow: hidden;
 }
