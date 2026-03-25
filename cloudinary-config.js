@@ -1,140 +1,139 @@
-// Cloudinary Configuration for Image Uploads
-// Your personalized settings - High Quality, No Cropping!
-
 const CLOUDINARY_CONFIG = {
-  cloudName: "dc59eomk8", // Your cloud name
-  uploadPreset: "anniversary_uploads", // Your upload preset
+  cloudName: "dc59eomk8",
+  uploadPreset: "anniversary_uploads",
 };
 
-// ===== HIGH QUALITY IMAGE COMPRESSION SETTINGS =====
-// These settings compress images while maintaining excellent quality
+// ===== WHY THESE SETTINGS =====
+// Max 1920px: timeline cards display at ~800px wide, 1920px gives 2x for retina screens
+//             — going to 2560px just wastes storage with zero visible benefit
+// Quality 82: WebP at 82% is visually identical to JPEG at 92% but ~50% smaller
+//             — human eyes cannot tell the difference on photos at this level
+// No cropping: aspect ratio is always preserved, image is only scaled down if too large
+// WebP first:  supported by 97%+ of browsers — falls back to JPEG only if needed
+
 const IMAGE_SETTINGS = {
-  maxWidth: 2560, // Higher resolution (2K) for better quality
-  maxHeight: 2560, // Maintains aspect ratio, no cropping
-  quality: 0.92, // 92% quality = excellent quality, smaller size
-  format: "image/jpeg", // JPEG works best for photos
+  maxWidth: 1920,
+  maxHeight: 1920,
+  webpQuality: 0.82,
+  jpegQuality: 0.85, // slightly higher for JPEG fallback since it compresses less efficiently
 };
 
-// ===== COMPRESS IMAGE WHILE MAINTAINING QUALITY =====
-// This resizes images proportionally - NO CROPPING!
+// ===== CHECK WEBP ENCODING SUPPORT =====
+function supportsWebP() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  return canvas.toDataURL("image/webp").startsWith("data:image/webp");
+}
+
+// ===== RESIZE PROPORTIONALLY — NO CROPPING =====
+function getResizedDimensions(width, height) {
+  const max = IMAGE_SETTINGS.maxWidth;
+
+  if (width <= max && height <= max) {
+    // Already small enough — don't upscale, keep original size
+    return { width: Math.round(width), height: Math.round(height) };
+  }
+
+  // Scale down the longer side to max, shorter side follows aspect ratio
+  const ratio = Math.min(max / width, max / height);
+  return {
+    width: Math.round(width * ratio),
+    height: Math.round(height * ratio),
+  };
+}
+
+// ===== COMPRESS + CONVERT TO WEBP (or JPEG fallback) =====
 async function compressImage(file) {
   return new Promise((resolve, reject) => {
+    const useWebP = supportsWebP();
+    const outputFormat = useWebP ? "image/webp" : "image/jpeg";
+    const outputQuality = useWebP
+      ? IMAGE_SETTINGS.webpQuality
+      : IMAGE_SETTINGS.jpegQuality;
+    const outputExtension = useWebP ? ".webp" : ".jpg";
+
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read file"));
 
     reader.onload = (e) => {
       const img = new Image();
+      img.onerror = () => reject(new Error("Failed to load image"));
 
       img.onload = () => {
+        const { width, height } = getResizedDimensions(img.width, img.height);
+
         const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        // Only resize if image is larger than max dimensions
-        // This maintains the aspect ratio - NO CROPPING!
-        if (
-          width > IMAGE_SETTINGS.maxWidth ||
-          height > IMAGE_SETTINGS.maxHeight
-        ) {
-          const aspectRatio = width / height;
-
-          if (width > height) {
-            // Landscape or square
-            if (width > IMAGE_SETTINGS.maxWidth) {
-              width = IMAGE_SETTINGS.maxWidth;
-              height = width / aspectRatio;
-            }
-          } else {
-            // Portrait
-            if (height > IMAGE_SETTINGS.maxHeight) {
-              height = IMAGE_SETTINGS.maxHeight;
-              width = height * aspectRatio;
-            }
-          }
-        }
-
         canvas.width = width;
         canvas.height = height;
 
         const ctx = canvas.getContext("2d");
-
-        // Enable image smoothing for better quality
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
-
-        // Draw image with high quality
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to blob with high quality
         canvas.toBlob(
           (blob) => {
-            if (blob) {
-              const compressedFile = new File(
-                [blob],
-                file.name.replace(/\.[^/.]+$/, ".jpg"),
-                { type: IMAGE_SETTINGS.format },
-              );
-
-              const originalSize = (file.size / 1024 / 1024).toFixed(2);
-              const compressedSize = (blob.size / 1024 / 1024).toFixed(2);
-              const savings = ((1 - blob.size / file.size) * 100).toFixed(0);
-
-              console.log(
-                `📦 Image optimized: ${originalSize}MB → ${compressedSize}MB (${savings}% smaller)`,
-              );
-              console.log(
-                `   Dimensions: ${Math.round(width)}x${Math.round(height)}px`,
-              );
-              console.log(
-                `   Quality: ${IMAGE_SETTINGS.quality * 100}% (High Quality)`,
-              );
-
-              resolve(compressedFile);
-            } else {
-              reject(new Error("Compression failed"));
+            if (!blob) {
+              reject(new Error("Canvas toBlob failed"));
+              return;
             }
+
+            const newName = file.name.replace(/\.[^/.]+$/, outputExtension);
+            const compressedFile = new File([blob], newName, {
+              type: outputFormat,
+            });
+
+            const originalMB = (file.size / 1024 / 1024).toFixed(2);
+            const compressedMB = (blob.size / 1024 / 1024).toFixed(2);
+            const savings = ((1 - blob.size / file.size) * 100).toFixed(0);
+
+            console.log(`📦 Image compressed`);
+            console.log(
+              `   Format:     ${outputFormat} at ${outputQuality * 100}% quality`,
+            );
+            console.log(
+              `   Dimensions: ${img.width}x${img.height}px → ${width}x${height}px`,
+            );
+            console.log(
+              `   File size:  ${originalMB}MB → ${compressedMB}MB (${savings}% smaller)`,
+            );
+
+            resolve(compressedFile);
           },
-          IMAGE_SETTINGS.format,
-          IMAGE_SETTINGS.quality, // 92% quality for excellent results
+          outputFormat,
+          outputQuality,
         );
       };
 
-      img.onerror = () => reject(new Error("Failed to load image"));
       img.src = e.target.result;
     };
 
-    reader.onerror = () => reject(new Error("Failed to read file"));
     reader.readAsDataURL(file);
   });
 }
 
-// ===== UPLOAD IMAGE TO CLOUDINARY =====
+// ===== UPLOAD TO CLOUDINARY =====
 async function uploadImageToCloudinary(file, folder = "memories") {
   try {
-    console.log(`📤 Uploading to Cloudinary...`);
-    console.log(`   Original file: ${file.name}`);
-    console.log(`   Original size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    console.log(
+      `📤 Uploading: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB original)`,
+    );
 
-    // Compress image first (maintains quality, no cropping!)
     const compressedFile = await compressImage(file);
 
-    // Create form data
     const formData = new FormData();
     formData.append("file", compressedFile);
     formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
     formData.append("folder", folder);
 
-    // Upload to Cloudinary
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
-      },
+      { method: "POST", body: formData },
     );
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("❌ Upload error:", errorData);
       throw new Error(
         "Upload failed: " + (errorData.error?.message || response.statusText),
       );
@@ -142,25 +141,25 @@ async function uploadImageToCloudinary(file, folder = "memories") {
 
     const data = await response.json();
 
-    console.log(`✅ Uploaded successfully!`);
-    console.log(`   URL: ${data.secure_url}`);
-    console.log(`   Final size: ${(data.bytes / 1024 / 1024).toFixed(2)}MB`);
-    console.log(`   Stored dimensions: ${data.width}x${data.height}px`);
+    console.log(`✅ Uploaded`);
+    console.log(`   Stored format: ${data.format}`);
+    console.log(`   Stored size:   ${(data.bytes / 1024 / 1024).toFixed(2)}MB`);
+    console.log(`   Dimensions:    ${data.width}x${data.height}px`);
+    console.log(`   URL:           ${data.secure_url}`);
 
     return data.secure_url;
   } catch (error) {
-    console.error("❌ Cloudinary upload error:", error);
+    console.error("❌ Upload error:", error);
     throw error;
   }
 }
 
-console.log("✅ Cloudinary configured with HIGH QUALITY settings!");
-console.log(`   Cloud Name: ${CLOUDINARY_CONFIG.cloudName}`);
-console.log(`   Upload Preset: ${CLOUDINARY_CONFIG.uploadPreset}`);
+console.log("✅ Cloudinary ready");
 console.log(
-  `   Max Resolution: ${IMAGE_SETTINGS.maxWidth}x${IMAGE_SETTINGS.maxHeight}px (2K quality)`,
+  `   Max resolution: ${IMAGE_SETTINGS.maxWidth}x${IMAGE_SETTINGS.maxHeight}px (retina-safe)`,
 );
 console.log(
-  `   Quality: ${IMAGE_SETTINGS.quality * 100}% (No visible quality loss)`,
+  `   WebP quality:   ${IMAGE_SETTINGS.webpQuality * 100}% (visually lossless)`,
 );
-console.log(`   Cropping: DISABLED (maintains aspect ratio)`);
+console.log(`   JPEG fallback:  ${IMAGE_SETTINGS.jpegQuality * 100}%`);
+console.log(`   Cropping:       disabled`);
