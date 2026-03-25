@@ -472,6 +472,7 @@ body {
   width: calc(100% - 10%);
   border: 2px solid red;
   gap: 10px;
+  overflow-y: auto;
 }
 #divOfText p {
   margin: 0;
@@ -532,6 +533,8 @@ body {
     justify-content: flex-start;
     align-items: center;
     /* border: 2px solid rgb(17, 0, 255); */
+    font-size: clamp(20px, 5vw, 32px);
+    /* font-size: 32px; */
     margin: 0;
     padding: 10px;
     text-align: center;
@@ -549,12 +552,14 @@ body {
     margin-right: auto;
     margin-left: auto;
     /* flex: 8; */
-    flex: 1;
+    /* flex: 1; */
+    /* height: 50%; */
     width: 100%;
     border: 2px solid rgb(255, 0, 0);
     /* display: none; */
     margin: 0;
     padding: 0;
+    overflow-y: scroll;
   }
 }
 #additionSign {
@@ -716,7 +721,7 @@ body {
 }
 .memoryText {
   color: #cc3366;
-  font-size: 1.25em;
+  font-size: clamp(1em, 2.5vw, 1.25em);
   word-break: break-word;
   overflow-wrap: break-word;
 }
@@ -726,7 +731,9 @@ body {
   display: block;
 }
 .boldText {
-  font-size: 1.25em;
+  font-size: clamp(1.1em, 2.8vw, 1.25em);
+  margin: 0;
+  padding: 0;
 }
 #bothInps {
   /* border: 2px solid green; */
