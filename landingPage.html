@@ -529,9 +529,15 @@
     // loader
 
     let loader = document.getElementById("loader");
-    window.onload = function () {
+    if (document.readyState === "loading") {
+      document.body.style.overflow = "hidden";
+      console.log("still loading");
+    }
+    window.addEventListener("load", () => {
       loader.style.display = "none";
-    };
+      document.body.style.overflow = "";
+      console.log("page loaded");
+    });
 
     // image slider
 
@@ -617,8 +623,7 @@
     document.getElementById("menu").addEventListener("click", function () {
       // header.style.height = header.style.height === "400px" ? "90px" : "400px";
       const isOpen = header.classList.toggle("menu-open");
-      
-      
+
       if (isOpen) {
         menuChange.setAttribute("src", "sliki/icons/close.png");
         setTimeout(() => {
@@ -647,26 +652,25 @@
       document.body.style.overflow = "";
     }
 
-
-    let cards = document.querySelectorAll(".pointShow").forEach(card => {
-      card.addEventListener("mouseover", function(){
+    let cards = document.querySelectorAll(".pointShow").forEach((card) => {
+      card.addEventListener("mouseover", function () {
         card.classList.add("animatedCards");
-      })
-      card.addEventListener("mouseleave", function() {
+      });
+      card.addEventListener("mouseleave", function () {
         setTimeout(() => {
           card.classList.remove("animatedCards");
         }, 1000);
         card.classList.add("mouseleaveClass");
-      })
-    })
-    
+      });
+    });
+
     // logout
-    document.querySelectorAll(".logOut").forEach(btn => {
+    document.querySelectorAll(".logOut").forEach((btn) => {
       btn.addEventListener("click", () => {
         let loggedIn = sessionStorage.getItem("loggedIn");
         sessionStorage.removeItem("loggedIn");
         window.location.replace("index.html");
       });
-    })
+    });
   </script>
 </html>

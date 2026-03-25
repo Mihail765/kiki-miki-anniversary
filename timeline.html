@@ -302,7 +302,6 @@
       let popupOfInp = document.getElementById("popUpWindowInsertionOfMemory");
       let addMemoryBtn = document.getElementById("memoryAdd");
       let backbtnInpWindow = document.querySelectorAll(".backGo");
-      let loader = document.getElementById("loader");
 
       // Function to add memory to DOM
       function addMemoryToDOM(memory) {
@@ -603,12 +602,21 @@ function drawLines() {
 
       // ============ PAGE LOAD ============
 
-    window.addEventListener("load", async function () {
+
+    let loader = document.getElementById("loader");
+    if (document.readyState === "loading") {
+      document.body.style.overflow = "hidden";
+      console.log("still loading");
+    }
+    window.addEventListener("load", async () => {
       await loadMemoriesFromDatabase();
       drawLines();
-      loader.style.display = "none";
-    });
 
+      loader.style.display = "none";
+      document.body.style.overflow = "";
+      console.log("page loaded");
+    });
+    
       // Window resize and scroll
       let resizeTimeout;
       window.addEventListener("resize", () => {
