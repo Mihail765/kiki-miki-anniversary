@@ -175,7 +175,8 @@
       <div id="addInpMemory">
         <div id="titleAndBtn">
           <div class="empy">
-            <button id="backBtnMemory">Back</button>
+            <button class="backGo" id="backBtnMemory">Back</button>
+            <img class="backGo" id="imageBackArrow" src="sliki/icons/close3.png" alt="backArrow">
           </div>
 
           <h1 id="titleOfPopUpInpDesc">A NEW MEMORY OF US</h1>
@@ -216,39 +217,40 @@
     </div>
 
     <div id="popUpWindow">
+      <h1 id="titleOfPopUp" class="titleOfPopUpClass">Our first trip</h1>
       <div class="imageHolder">
         <img class="slika" />
       </div>
       <div class="btnHolder">
-        <div id="divOfTitle">
-          <h1 id="titleOfPopUp">Our first trip</h1>
+        <div id="divOfTitle" >
+          <h1 id="titleOfPopUp2" class="titleOfPopUpClass hiddenTextOfTitle">Our first trip</h1>
         </div>
         <div id="divOfText">
-        <p>
-          <b class="boldText">City: </b
-          ><span id="popupCity" class="memoryText">Budva</span>
-        </p>
-        <p>
-          <b class="boldText">Country: </b
-            ><span id="popupCountry" class="memoryText">N/A</span>
+          <p>
+            <b class="boldText">City: </b
+            ><span id="popupCity" class="memoryText">Budva</span>
           </p>
           <p>
-            <b class="boldText">Place: </b
-            ><span id="popupPlace" class="memoryText">Montenegro</span>
+            <b class="boldText">Country: </b
+              ><span id="popupCountry" class="memoryText">N/A</span>
+            </p>
+            <p>
+              <b class="boldText">Place: </b
+              ><span id="popupPlace" class="memoryText">Montenegro</span>
+            </p>
+          <p>
+            <b class="boldText">Date: </b
+            ><span id="popupDate" class="memoryText">26.04.2024</span>
           </p>
-        <p>
-          <b class="boldText">Date: </b
-          ><span id="popupDate" class="memoryText">26.04.2024</span>
-        </p>
-            <b class="boldText">Description: </b><br />
-            <span
-              class="memoryText descriptionTextMemory"
-              id="popupDescription"
-            >
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae
-              voluptatum velit recusandae repellat aliquid debitis, enim, nulla
-              doloribus amet numquam sint laudantium animi ducimus, odit cum
-              similique atque vel nemo!
+              <b class="boldText">Description: </b>
+              <span
+                class="memoryText descriptionTextMemory"
+                id="popupDescription"
+              >
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Beatae
+                voluptatum velit recusandae repellat aliquid debitis, enim, nulla
+                doloribus amet numquam sint laudantium animi ducimus, odit cum
+                similique atque vel nemo!
             </span>
           </p>
         </div>
@@ -299,7 +301,7 @@
       let popUpWindow = document.getElementById("popUpWindow");
       let popupOfInp = document.getElementById("popUpWindowInsertionOfMemory");
       let addMemoryBtn = document.getElementById("memoryAdd");
-      let backbtnInpWindow = document.getElementById("backBtnMemory");
+      let backbtnInpWindow = document.querySelectorAll(".backGo");
       let loader = document.getElementById("loader");
 
       // Function to add memory to DOM
@@ -517,11 +519,13 @@ function drawLines() {
       });
 
       // Back button on add memory popup
-      backbtnInpWindow.addEventListener("click", function () {
-        popupOfInp.style.display = "none";
-        shadow.style.display = "none";
-        document.body.style.overflow = "visible";
-      });
+      backbtnInpWindow.forEach(backClick => {
+        backClick.addEventListener("click", function () {
+          popupOfInp.style.display = "none";
+          shadow.style.display = "none";
+          document.body.style.overflow = "visible";
+        })
+      })
 
       // Back button on view memory popup
       document.getElementById("backBnt").addEventListener("click", function () {
@@ -551,8 +555,9 @@ function drawLines() {
                   const data = doc.data();
                   currentMemoryId = memoryId;
 
-                  document.getElementById("titleOfPopUp").textContent =
-                    data.title;
+                  document.querySelectorAll(".titleOfPopUpClass").forEach(pop => {
+                    pop.textContent = data.title;
+                  })
                   document.getElementById("popupCity").textContent =
                     data.city || "N/A";
                   document.getElementById("popupPlace").textContent =

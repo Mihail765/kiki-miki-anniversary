@@ -617,14 +617,17 @@
     document.getElementById("menu").addEventListener("click", function () {
       // header.style.height = header.style.height === "400px" ? "90px" : "400px";
       const isOpen = header.classList.toggle("menu-open");
-      toggelMenu.style.display =  isOpen ? "block" : "none";
-
-
+      
+      
       if (isOpen) {
         menuChange.setAttribute("src", "sliki/icons/close.png");
+        setTimeout(() => {
+          toggelMenu.style.display = "block";
+        }, 150);
         openShadow();
       } else {
         menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
+        toggelMenu.style.display = "none";
         closeShadow();
       }
 
@@ -644,6 +647,19 @@
       document.body.style.overflow = "";
     }
 
+
+    let cards = document.querySelectorAll(".pointShow").forEach(card => {
+      card.addEventListener("mouseover", function(){
+        card.classList.add("animatedCards");
+      })
+      card.addEventListener("mouseleave", function() {
+        setTimeout(() => {
+          card.classList.remove("animatedCards");
+        }, 1000);
+        card.classList.add("mouseleaveClass");
+      })
+    })
+    
     // logout
     document.querySelectorAll(".logOut").forEach(btn => {
       btn.addEventListener("click", () => {

@@ -1207,8 +1207,10 @@ header {
 
 .something {
   /* border: 2px solid red; */
-  height: 600px;
+  padding-bottom: 20px;
   background: linear-gradient(to bottom, #ffa3a3, #ffe4e1);
+  border-top: 1px solid #cc3366;
+  border-bottom: 1px solid #cc3366;
 }
 .forWhy {
   color: rgb(0, 0, 0);
@@ -1219,20 +1221,60 @@ header {
   /* border: 2px solid blueviolet; */
 }
 .gornenTekst {
-  border: 2px solid blue;
-  height: 50px;
+  /* border: 2px solid blue; */
+  height: auto;
+  margin-bottom: 20px;
 }
 .points {
   display: flex;
+  flex-flow: row wrap;
   justify-content: space-evenly;
   align-items: center;
-  border: 2px solid red;
+  /* border: 2px solid red; */
   height: calc(100% - 50px);
+  padding-bottom: 20px 0;
 }
 
 .pointShow {
   background-color: #e59a9a;
-  height: 300px;
-  width: 350px;
-  border: 2px solid green;
+  width: clamp(200px, 80%, 350px);
+  height: clamp(150px, 25vh, 250px);
+  /* border: 2px solid green; */
+  margin: 10px 20px;
+  border-radius: 15px;
+  border: 2px dashed #662244;
+  cursor: url("cursor/Preppy\ Pinky\ Spider-Man\ Arrow--p.png"), auto;
 }
+.pointShow:hover{
+  box-shadow: 0 0 10px white;
+  transform: scale(1.01);
+  perspective: 100px;
+  transition: all 0.3s ease;
+}
+.animatedCards{
+  animation: cardAni 2s ease-in-out;
+  animation-fill-mode: forwards;
+}
+@keyframes cardAni {
+  0%{
+    transform: translateY(-20px);
+  }
+  5%{
+    transform: translateY(-10px);
+  }
+  10%{
+    transform: translateY(-20px);
+  }
+  15%{
+    transform: translateY(-10px);
+  }
+  50%{
+    transform: rotateZ(180deg);
+    background-color: white;
+  }
+  100%{
+    transform: rotateZ(180deg);
+
+    background-color: white;
+  }
+} 
