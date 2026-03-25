@@ -619,6 +619,7 @@ body {
   font-size: 3.3em;
   font-family: "JejuHallasan";
   color: rgb(0, 0, 0);
+  /* border: 2px solid black; */
   font-weight: 400;
   word-spacing: 5px;
   width: fit-content;
@@ -627,6 +628,7 @@ body {
   flex: 5;
   margin-right: auto;
   margin-left: auto;
+  margin-bottom: 0;
   /* position: absolute;
   top: 0;
   left: 50%;
@@ -755,7 +757,7 @@ textarea {
   box-sizing: border-box;
 }
 #holderOfTextareaAndImg {
-  border: 2px solid red;
+  /* border: 2px solid red; */
   max-height: 250px;
   height: 100%;
   width: 100%;
@@ -1006,6 +1008,12 @@ input[type="date"] {
     font-size: 100px;
   }
 }
+@media (max-width: 1000px){
+  #holderOfTextareaAndImg{
+    padding: 2% 0;
+    /* border: 5px solid ghostwhite; */
+  }
+}
 @media (max-width: 650px) {
   #titleOfPopUpInpDesc {
     font-size: clamp(15px, 10vw, 40px);
@@ -1047,7 +1055,8 @@ input[type="date"] {
   #holderOfTextareaAndImg,
   textarea {
     /* border: 2px solid rgb(207, 0, 0); */
-    /* height: 200px; */
+    max-height: 200px;
+    height: 100%;
   }
   #submitMemoryBtn {
     width: 100%;
@@ -1086,4 +1095,13 @@ input[type="date"] {
 
 .imageTimeline.loaded {
   opacity: 1;
+}
+#dateInput:before {
+  content: attr(placeholder);
+  color: gray;
+}
+
+#dateInput:focus:before,
+#dateInput:valid:before {
+  content: "";
 }
