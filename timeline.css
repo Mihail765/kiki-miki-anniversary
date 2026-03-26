@@ -240,7 +240,7 @@ header {
     transition: all 0.3s ease;
   }
   #logOutDrop:hover {
-    filter: drop-shadow(2px 2px 1px white);
+    filter: drop-shadow(2px 2px 1px #eeaeca);
     border: 1px solid white;
   }
   #logOutDrop span {
