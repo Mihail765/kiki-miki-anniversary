@@ -22,11 +22,11 @@ body {
     auto;
   margin: 0;
   padding: 0;
-  background-image: url(corkboard/pozadinaKom.webp);
+  background-image: url(corkboard/pozadinaKomGotovo.webp);
   background-position: center;
-  background-size: contain;
+  background-size: 1500px;
   background-repeat: repeat;
-  height: 50dvh;
+  min-height: 100dvh;
   /* min-height: 100dvh; */
   position: relative;
   scroll-behavior: smooth;
@@ -40,6 +40,11 @@ header{
   width: 100%;
   top: 0;
   z-index: 999;
+  transition: all ease 0.3s;
+}
+.hideHeader{
+  top: -150px;
+  transition: all ease 0.3s;
 }
 .navbar {
   background-color: rgba(0, 0, 0, 0.5);

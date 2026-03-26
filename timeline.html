@@ -407,7 +407,9 @@ function drawLines() {
         popupOfInp.style.display = "block";
         shadow.style.display = "block";
         document.body.style.overflow = "hidden";
-          hideHeaderNow.style.display = "none";
+          // hideHeaderNow.style.display = "none";
+          hideHeaderNow.classList.add("hideHeader");
+
       });
 
       // Back button on add memory popup
@@ -416,7 +418,9 @@ function drawLines() {
           popupOfInp.style.display = "none";
           shadow.style.display = "none";
           document.body.style.overflow = "visible";
-          hideHeaderNow.style.display = "";
+          // hideHeaderNow.style.display = "";
+          hideHeaderNow.classList.remove("hideHeader");
+
         })
       })
 
@@ -426,7 +430,9 @@ function drawLines() {
         popUpWindow.style.display = "none";
         document.body.style.overflow = "visible";
         btnClicked = false;
-        hideHeaderNow.style.display = "";
+        // hideHeaderNow.style.display = "";
+        hideHeaderNow.classList.remove("hideHeader");
+
 
       });
 
@@ -468,7 +474,8 @@ function drawLines() {
                   document.body.style.overflow = "hidden";
                   shadow.style.display = "block";
                   popUpWindow.style.display = "flex";
-                  hideHeaderNow.style.display = "none";
+                  // hideHeaderNow.style.display = "none";
+                  hideHeaderNow.classList.add("hideHeader");
                   btnClicked = true;
                 }
               } catch (error) {
