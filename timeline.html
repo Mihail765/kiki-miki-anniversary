@@ -22,39 +22,41 @@
   </head>
 
   <body>
-    <nav class="navbar">
-      <h1 class="timelineH1">Our timeline</h1>
-      <ul class="navUl ul1">
-        <li><a href="landingPage.html">HOME</a></li>
-        <li><a href="favourites.html">Favourites</a></li>
-      </ul>
-      <ul class="navUl ul2">
-        <li><a href="landingPage.html">HOME</a></li>
-        <li><a href="favourites.html">Favourites</a></li>
-      </ul>
-      <div id="menu">
-        <img
-          id="menuChange"
-          class="rotateMenu"
-          src="sliki/icons/burgerBig.png"
-          alt="menu"
-        />
-      </div>
-      <div id="colectionOfDrop" class="colectionOfDrop">
-          <ul id="navlistDrop">
-            <a class="listItemLinkDrop" href="landingPage.html"
-              ><li>Home</li></a
-            >
-            <a class="listItemLinkDrop" href="favourites.html"
-              ><li>Favourites</li></a
-            >
-            <a class="listItemLinkDrop" href="#"><li>sdf</li></a>
-            <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
-            <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
-            <button id="logOutDrop" class="logOut"><span>Log out</span></button>
-          </ul>
+    <header id="hideHeader">
+      <nav class="navbar">
+        <h1 class="timelineH1">Our timeline</h1>
+        <ul class="navUl ul1">
+          <li><a href="landingPage.html">HOME</a></li>
+          <li><a href="favourites.html">Favourites</a></li>
+        </ul>
+        <ul class="navUl ul2">
+          <li><a href="landingPage.html">HOME</a></li>
+          <li><a href="favourites.html">Favourites</a></li>
+        </ul>
+        <div id="menu">
+          <img
+            id="menuChange"
+            class="rotateMenu"
+            src="sliki/icons/burgerBig.png"
+            alt="menu"
+          />
         </div>
-    </nav>
+        <div id="colectionOfDrop" class="colectionOfDrop">
+            <ul id="navlistDrop">
+              <a class="listItemLinkDrop" href="landingPage.html"
+                ><li>Home</li></a
+              >
+              <a class="listItemLinkDrop" href="favourites.html"
+                ><li>Favourites</li></a
+              >
+              <a class="listItemLinkDrop" href="#"><li>sdf</li></a>
+              <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
+              <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
+              <button id="logOutDrop" class="logOut"><span>Log out</span></button>
+            </ul>
+          </div>
+      </nav>
+    </header>
     <div id="shadow2"></div>
 
     <div class="upLine"></div>
@@ -191,6 +193,7 @@
       let popupOfInp = document.getElementById("popUpWindowInsertionOfMemory");
       let addMemoryBtn = document.getElementById("memoryAdd");
       let backbtnInpWindow = document.querySelectorAll(".backGo");
+      let hideHeaderNow = document.getElementById("hideHeader");
 
       // Function to add memory to DOM
       function addMemoryToDOM(memory) {
@@ -404,6 +407,7 @@ function drawLines() {
         popupOfInp.style.display = "block";
         shadow.style.display = "block";
         document.body.style.overflow = "hidden";
+          hideHeaderNow.style.display = "none";
       });
 
       // Back button on add memory popup
@@ -412,6 +416,7 @@ function drawLines() {
           popupOfInp.style.display = "none";
           shadow.style.display = "none";
           document.body.style.overflow = "visible";
+          hideHeaderNow.style.display = "";
         })
       })
 
@@ -421,6 +426,8 @@ function drawLines() {
         popUpWindow.style.display = "none";
         document.body.style.overflow = "visible";
         btnClicked = false;
+        hideHeaderNow.style.display = "";
+
       });
 
       // Click on memory to view details
@@ -461,6 +468,7 @@ function drawLines() {
                   document.body.style.overflow = "hidden";
                   shadow.style.display = "block";
                   popUpWindow.style.display = "flex";
+                  hideHeaderNow.style.display = "none";
                   btnClicked = true;
                 }
               } catch (error) {
