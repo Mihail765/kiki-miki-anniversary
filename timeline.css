@@ -33,17 +33,17 @@ body {
   box-sizing: border-box;
   /* border: 3px solid red; */
 }
-header{
+header {
   height: 90px;
   position: sticky;
   margin-top: 0;
   width: 100%;
   top: 0;
   z-index: 999;
-  transition: all ease 0.3s;
+  transition: transform ease 0.3s;
 }
-.hideHeader{
-  top: -150px;
+.hideHeader {
+  transform: translateY(-100%);
   transition: all ease 0.3s;
 }
 .navbar {
@@ -57,6 +57,8 @@ header{
   z-index: 999;
   text-transform: uppercase;
   align-items: center;
+  border-bottom: 2px solid white;
+  box-shadow: 0 0 15px white;
 }
 .timelineH1 {
   order: 2;
@@ -1206,7 +1208,7 @@ input[type="date"] {
 }
 @media (max-width: 350px) {
   .timelineH1 {
-    font-size: 25px;    
+    font-size: 25px;
     margin-top: 30px;
 
     /* border: 2px solid red; */
