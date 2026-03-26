@@ -39,11 +39,11 @@ body {
   height: 90px;
   /* border: 1px solid white; */
   display: flex;
-  align-items: center;
   justify-content: center;
   position: relative;
-  z-index: 900;
+  z-index: 999;
   text-transform: uppercase;
+  align-items: center;
 }
 .timelineH1 {
   order: 2;
@@ -53,13 +53,18 @@ body {
   white-space: nowrap;
   text-align: center;
   width: fit-content;
-  margin-right: auto;
-  margin-left: auto;
   text-shadow: 0 0 10px black;
   letter-spacing: 5px;
+  font-weight: 600;
   /* border: 1px solid red; */
   flex: 1;
+  margin: 0;
+  padding: 0;
+  /* border: 2px solid red; */
+  margin-top: -5px;
+
 }
+
 .navUl {
   display: flex;
   flex-flow: row wrap;
@@ -73,6 +78,36 @@ body {
 }
 .ul2 {
   order: 3;
+}
+#menu {
+  /* border: 2px solid red; */
+  position: absolute;
+  top: 25px;
+  right: 10px;
+  display: flex;
+  justify-self: center;
+  align-items: center;
+  display: none;
+}
+#menu:hover {
+  cursor: url("cursor/Preppy Pinky Spider-Man Arrow--p.png"), auto;
+}
+.menu-open {
+  height: 400px;
+}
+.rotateMenuNow {
+  animation-name: rotateMenuNow;
+  animation-duration: 0.2s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: 1;
+}
+@keyframes rotateMenuNow {
+  0% {
+    transform: rotateZ(0deg);
+  }
+  100% {
+    transform: rotateZ(180deg);
+  }
 }
 .navUl li {
   list-style-type: none;
@@ -88,11 +123,134 @@ body {
     url("cursor/Preppy\ Pinky\ Spider-Man\ Arrow--p.png") 0 0,
     auto;
 }
-@media (max-width: 650px) {
+#colectionOfDrop {
+  display: none;
+}
+@media (max-width: 900px) {
+  .timelineH1 {
+    /* border: 2px solid red; */
+    font-size: 45px;
+    font-weight: 100;
+    order: 0;
+    /* border: 2px solid yellow; */
+    margin: 0;
+    padding: 0;
+    margin-top: 13px;
+   }
   .navUl li a {
     display: none;
   }
+  .ul1, .ul2{
+    display: none;
+  }
+  #menu {
+    display: block;
+    /* border: 2px solid red; */
+    position: absolute;
+    /* border: 2px solid red; */
+    height: 40px;
+    width: 40px;
+  }
+  #menu img{
+    /* border: 2px solid blue; */
+    height: 100%;
+    width: 100%;
+  }
+  .navbar{
+    /* border: 2px solid red; */
+    flex-direction: column;
+    border-bottom: 2px solid white;
+    box-shadow: 0 0 15px white;
+  }
+   #colectionOfDrop {
+    /* border: 2px solid blue; */
+    width: 100%;
+    display: flex;
+    flex: 8;
+    /* height: 50%; */
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    display: none;
+    transition: all 0.3s ease;
+    
+  }
+  #navlistDrop {
+    /* border: 2px solid rgb(30, 255, 0); */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    list-style-type: none;
+    padding: 20px 0 0;
+    margin: 0;
+  }
+  #navlistDrop li {
+    /* border: 2px solid red; */
+    padding: 10px;
+    width: 100%;
+    text-align: center;
+    gap: 10px;
+  }
+
+  #navlistDrop a {
+    /* border: 2px solid black; */
+    box-shadow: inset 0 0 5px white;
+    border-radius: 5px;
+    width: 90%;
+    text-shadow: none;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    /* font-family: "inter"; */
+    filter: drop-shadow(2px 2px 1px white);
+    text-decoration: none;
+  }
+  #navlistDrop a:hover {
+    color: #cc3366;
+    border: 1px solid white;
+    text-shadow: 2px 2px white;
+  }
+   #logOutDrop {
+    width: 90%;
+    /* border: 2px solid yellow; */
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+  #logOutDrop:hover {
+    filter: drop-shadow(2px 2px 1px white);
+    border: 1px solid white;
+  }
+  #logOutDrop span {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  
 }
+@media (max-width: 450px) {
+  .timelineH1 {
+    font-size: 35px;
+    font-weight: 100;
+  }
+  #menu{
+    /* border: 2px solid red; */
+    top: 27px;
+    height: 36px;
+    width: 36px;
+  }
+}
+@media (max-width: 380px) {
+  .timelineH1 {
+    font-size: 30px;
+  }
+  
+}
+
 #timelineWrapper {
   /* border: 1px solid red; */
   position: relative;
@@ -229,75 +387,6 @@ body {
   overflow: visible;
 }
 
-/*
-.collectionOflines {
-  border: 3px solid yellowgreen; 
-  position: absolute;
-  width: 50%;
-  height: inherit;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-*/
-/*
-.glowingLine {
-  position: relative;
-  border: 2px solid rgb(255, 0, 179); 
-  height: 50%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  background-color: black; 
-  margin-top: 30%;
-}
-
-.line {
-  border-top: 2px solid rgb(0, 0, 0);
-  border-right: 2px solid rgb(0, 0, 0);
-  background-color: transparent;
-  box-shadow: 10px -10px 10px rgb(255, 255, 255),
-  -10px 10px 10px rgb(255, 255, 255) inset;
-  filter: 
-  drop-shadow(0 0 5px white)
-  drop-shadow(0 0 5px white);
-  width: 100%;
-  border-radius: 25px;
-  min-height: 50%;
-  min-height: 100%;
-  border: 2px solid blue; 
-  background-color: yellow;
-  transform: translateY(-2%);
-  border: 1px solid blue;
-  margin-bottom: 2px;
-}
-.line:first-child {
-  margin-top: 30%;
-}
-.line:nth-child(even) {
-  border-top: 2px solid rgb(0, 0, 0);
-  border-left: 2px solid rgb(0, 0, 0);
-  border-right: none;
-  border-bottom: none;
-  box-shadow: -10px -10px 10px rgb(255, 255, 255),
-  10px 10px 10px rgb(255, 255, 255) inset;
-   filter: 
-  drop-shadow(0 0 5px white)
-  drop-shadow(0 0 5px white); 
-   border: 2px solid blue; 
-   border: 1px solid blue; 
-}
- .line:last-child{
-  background-color: beige;
-  height: 100dvh;
-  margin-bottom: -50%;
-  border-radius: 25px 25px 0 0;
-  
-} 
-*/
-
 .downLineImageRight {
   position: absolute;
   border-top: 3px solid rgba(255, 255, 255, 0.9);
@@ -328,6 +417,18 @@ body {
   top: 0;
   left: 0;
   position: fixed;
+  display: none;
+
+}
+#shadow2 {
+  position: fixed;
+  background: radial-gradient(rgba(39, 39, 39, 0.7));
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 996;
+  overflow: hidden;
   display: none;
 }
 .searchFld {
@@ -1008,8 +1109,8 @@ input[type="date"] {
     font-size: 100px;
   }
 }
-@media (max-width: 1000px){
-  #holderOfTextareaAndImg{
+@media (max-width: 1000px) {
+  #holderOfTextareaAndImg {
     padding: 2% 0;
     /* border: 5px solid ghostwhite; */
   }
@@ -1066,6 +1167,7 @@ input[type="date"] {
 @media (max-width: 375px) {
   #titleOfPopUpInpDesc {
     font-size: 30px;
+    padding-top: 10px;
   }
   #bothInps {
     gap: 0px;
@@ -1079,12 +1181,18 @@ input[type="date"] {
   #holderOfTextareaAndImg,
   textarea {
     /* border: 2px solid rgb(207, 0, 0); */
-    /* height: 100px; */
+    height: 125px;
   }
   #submitMemoryBtn {
     width: 100%;
     max-height: 30px;
     height: 100%;
+  }
+}
+@media (max-width: 350px) {
+    .timelineH1 {
+    font-size: 25px;
+    /* border: 2px solid red; */
   }
 }
 

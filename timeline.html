@@ -23,154 +23,43 @@
 
   <body>
     <nav class="navbar">
+      <h1 class="timelineH1">Our timeline</h1>
       <ul class="navUl ul1">
         <li><a href="landingPage.html">HOME</a></li>
         <li><a href="favourites.html">Favourites</a></li>
       </ul>
-      <h1 class="timelineH1">Our timeline</h1>
       <ul class="navUl ul2">
         <li><a href="landingPage.html">HOME</a></li>
         <li><a href="favourites.html">Favourites</a></li>
       </ul>
+      <div id="menu">
+        <img
+          id="menuChange"
+          class="rotateMenu"
+          src="sliki/icons/burgerBig.png"
+          alt="menu"
+        />
+      </div>
+      <div id="colectionOfDrop" class="colectionOfDrop">
+          <ul id="navlistDrop">
+            <a class="listItemLinkDrop" href="landingPage.html"
+              ><li>Home</li></a
+            >
+            <a class="listItemLinkDrop" href="favourites.html"
+              ><li>Favourites</li></a
+            >
+            <a class="listItemLinkDrop" href="#"><li>sdf</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
+            <button id="logOutDrop" class="logOut"><span>Log out</span></button>
+          </ul>
+        </div>
     </nav>
+    <div id="shadow2"></div>
+
     <div class="upLine"></div>
     <div id="timelineWrapper">
       <svg id="connectionSVG"></svg>
-
-      <!-- <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/mikiKikipozaidna final image.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/mikiKikipozaidna final image.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img class="imageTimeline" src="sliki/Kikicaaa.jpg" alt="#" />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250603_173255.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250604_191541.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250607_105008.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250607_105008.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250604_191639.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250604_191639.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-
-      <div  class="sectionOfMemory">
-        <div class="leftDiv">
-          <figure class="floatMemory">
-            <img
-              class="imageTimeline"
-              src="sliki/MikiKiki/IMG_20250704_225204_1.jpg"
-              alt="#"
-            />
-            <figcaption class="imageTitle">First time we met</figcaption>
-          </figure>
-        </div>
-        <div class="rightDiv"></div>
-      </div>
-    </div> -->
-
     <div id="popUpWindowInsertionOfMemory">
       <div id="addInpMemory">
         <div id="titleAndBtn">
@@ -627,6 +516,44 @@ function drawLines() {
       window.addEventListener("scroll", () => {
         drawLines(); // no rAF wrapper, call directly
       });
+
+      
+    let toggelMenu = document.getElementById("colectionOfDrop");
+    let header = document.querySelector(".navbar");
+    let menuChange = document.getElementById("menuChange");
+    let shadow2 = document.getElementById("shadow2");
+
+    document.getElementById("menu").addEventListener("click", function () {
+      // header.style.height = header.style.height === "400px" ? "90px" : "400px";
+      const isOpen = header.classList.toggle("menu-open");
+
+      if (isOpen) {
+        menuChange.setAttribute("src", "sliki/icons/close.png");
+        setTimeout(() => {
+          toggelMenu.style.display = "block";
+        }, 150);
+        openShadow();
+      } else {
+        menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
+        toggelMenu.style.display = "none";
+        closeShadow();
+      }
+
+      menuChange.classList.add("rotateMenuNow");
+
+      menuChange.addEventListener("animationend", () => {
+        menuChange.classList.remove("rotateMenuNow");
+      });
+    });
+
+    function openShadow() {
+      shadow2.style.display = "block";
+      document.body.style.overflow = "hidden";
+    }
+    function closeShadow() {
+      shadow2.style.display = "none";
+      document.body.style.overflow = "";
+    }
 
 
       document.addEventListener("load", function (e) {

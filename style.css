@@ -253,6 +253,9 @@ header {
   display: none;
 }
 @media (max-width: 900px) {
+  .ul1, .ul2{
+    display: none;
+  }
   .heartOfSec::before {
     width: 1px;
   }
