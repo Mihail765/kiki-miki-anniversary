@@ -10,6 +10,9 @@
   font-family: "JejuHallasan";
   src: url(FontsTimeline/JejuHallasan-Regular.ttf);
 }
+:root{
+  --vh: 1vh;
+}
 ::-webkit-scrollbar {
   display: none;
 }
@@ -26,7 +29,7 @@ body {
   background-position: center;
   background-size: 1500px;
   background-repeat: repeat;
-  min-height: 100dvh;
+  min-height: calc(var(--vh) * 100);
   /* min-height: 100dvh; */
   position: relative;
   scroll-behavior: smooth;
@@ -273,7 +276,7 @@ header {
   /* border: 1px solid red; */
   position: relative;
   height: auto;
-  min-height: 100dvh;
+  min-height: calc(var(--vh) * 100);
   width: 80%;
   margin-right: auto;
   margin-left: auto;
@@ -1231,4 +1234,13 @@ input[type="date"] {
 #dateInput:focus:before,
 #dateInput:valid:before {
   content: "";
+}
+#popUpWindow,
+#popUpWindowInsertionOfMemory {
+  height: calc(var(--vh) * 70);
+}
+@media (max-width: 1024px){
+  #popUpWindow{
+    height: calc(var(--vh) * 85);
+  }
 }
