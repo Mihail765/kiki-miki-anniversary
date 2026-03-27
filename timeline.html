@@ -49,7 +49,7 @@
               <a class="listItemLinkDrop" href="favourites.html"
                 ><li>Favourites</li></a
               >
-              <a class="listItemLinkDrop" href="#"><li>sdf</li></a>
+              <a class="listItemLinkDrop" href="chat.html"><li>sdf</li></a>
               <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
               <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
               <button id="logOutDrop" class="logOut"><span>Log out</span></button>
@@ -582,6 +582,14 @@ function drawLines() {
           e.target.classList.add("loaded");
         }
       }, true);
+
+      document.querySelectorAll(".logOut").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        let loggedIn = sessionStorage.getItem("loggedIn");
+        sessionStorage.removeItem("loggedIn");
+        window.location.replace("index.html");
+      });
+    });
 
     </script>
   </body>
