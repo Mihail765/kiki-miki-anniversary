@@ -55,6 +55,10 @@ header {
   position: fixed;
   transition: all 0.3s ease;
 }
+.hideHeader {
+  transform: translateY(-100%);
+  transition: all ease 0.3s;
+}
 
 .navigation {
   /* border: 2px solid green; */

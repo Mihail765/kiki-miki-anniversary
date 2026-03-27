@@ -449,6 +449,7 @@
         bigCircle.style.transition = "all 2s ease-in-out";
       }
     }
+    let header = document.querySelector("header");
 
     bigCircle.addEventListener("transitionend", function () {
       setTimeout(() => {
@@ -461,6 +462,7 @@
           if (window.innerWidth <= 1056) {
             document.body.style.overflow = "hidden";
             document.getElementById("spinText").style.display = "flex";
+            header.classList.add("hideHeader");
           }
 
           openEnvelopeTransition.classList.remove("rotateCloseAnimation");
@@ -490,6 +492,7 @@
                 setTimeout(() => {
                   if (window.innerWidth <= 1056) {
                     document.getElementById("spinText").style.display = "none";
+                    header.classList.remove("hideHeader");
                   }
                   document.body.style.overflow = "";
                 }, 2000);
@@ -616,7 +619,6 @@
     setInterval(createFloatingHeart, 2000);
 
     let toggelMenu = document.getElementById("colectionOfDrop");
-    let header = document.querySelector("header");
     let menuChange = document.getElementById("menuChange");
     let shadow = document.getElementById("shadow");
 
