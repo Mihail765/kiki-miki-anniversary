@@ -58,7 +58,6 @@
     }
 
     .whoBtn {
-      /* mirrors .logInBtn sizing */
       flex: 1;
       max-width: 180px;
       height: 60px;
@@ -142,7 +141,7 @@
       window.location.replace("landingPage.html");
     }
 
-    // ── Number-only input handling (unchanged from original) ──────
+    // ── Number-only input handling ────────────────────────────────
     document.getElementById("day").addEventListener("input", numbered);
     document.getElementById("month").addEventListener("input", numbered);
     document.getElementById("year").addEventListener("input", numbered);
@@ -160,7 +159,7 @@
       this.value = vrednost.slice(0, 5);
     }
 
-    // ── Auto-advance focus (unchanged) ───────────────────────────
+    // ── Auto-advance focus ────────────────────────────────────────
     document.getElementById("day").addEventListener("input", function () {
       if (this.value.length === 2) document.getElementById("month").focus();
     });
@@ -175,7 +174,7 @@
       if (this.value.length === 4) document.getElementById("time").focus();
     });
 
-    // ── Date check (same logic as original) ──────────────────────
+    // ── Date check ───────────────────────────────────────────────
     document.getElementById("logInBtn").addEventListener("click", Najava);
     document.addEventListener("keydown", function (e) {
       if (e.key === "Enter") Najava();
@@ -198,7 +197,6 @@
         year  === correctYear  &&
         correctTime.includes(hrMin)
       ) {
-        // ✅ Correct — hide date step, show identity step
         document.getElementById("logInLowerPart").style.display = "none";
         document.getElementById("logInUpperPart").querySelector("h3").textContent = "Almost there… just one more step 💕";
         document.getElementById("logInUpperPart").querySelector("h1").textContent = "Who are you?";
@@ -209,10 +207,20 @@
       }
     }
 
-    // ── Step 2: set identity and go ──────────────────────────────
+    // ── Step 2: set identity and navigate ────────────────────────
     function loginAs(who) {
       sessionStorage.setItem("loggedIn", "true");
       sessionStorage.setItem("user", who);
+
+      // ── KEY FIX: also write to localStorage ──────────────────
+      // sessionStorage is cleared by Android/iOS when the browser tab is
+      // backgrounded or the screen locks. The Service Worker that handles
+      // push notifications runs in a separate context with no sessionStorage
+      // at all. localStorage persists across tab backgrounds and is readable
+      // by the chat page when it wakes up — so notifications always know
+      // who the user is.
+      localStorage.setItem("mk_user", who);
+
       window.location.replace("landingPage.html");
     }
   </script>
