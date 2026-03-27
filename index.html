@@ -57,7 +57,24 @@
             this.value = vrednost.slice(0, 5);
         }
 
+        document.getElementById("day").addEventListener("input", function(){
+            if(this.value.length === 2){
+                document.getElementById("month").focus();
+            }
+        })
+        document.getElementById("month").addEventListener("input", function(){
+            if(this.value.length === 1 && this.value !== '0'){
+                document.getElementById("year").focus();
+            }else if(this.value.length === 2){
+                document.getElementById("year").focus();
 
+            }
+        })
+        document.getElementById("year").addEventListener("input", function (){
+            if(this.value.length === 4){
+                document.getElementById("time").focus();
+            }
+        })
 
 
 
