@@ -9,7 +9,7 @@ console.log("🔧 Loading database-helpers.js...");
 function checkAuthentication() {
   const loggedIn = sessionStorage.getItem("loggedIn");
   if (loggedIn !== "true") {
-    window.location.replace("index.html");
+    window.location.replace("/index.html");
   }
 }
 
