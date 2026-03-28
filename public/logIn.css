@@ -25,7 +25,7 @@ body {
   overflow: hidden;
   touch-action: none;
   cursor:
-    url(/public/cursor/Preppy-Pinky-Spider-Man-Arrow--c.png) 0 0,
+    url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--c.png") 0 0,
     auto;
       user-select: none;
   -webkit-user-select: none;
@@ -117,7 +117,7 @@ body {
   font-family: Rochester;
   border-radius: 5px;
   cursor:
-    url(/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
   transition: all 0.2s ease-in-out;
 }

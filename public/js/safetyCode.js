@@ -17,5 +17,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Not logged in at all
-  window.location.replace("/index.html");
+  window.location.replace("index.html");
 });
