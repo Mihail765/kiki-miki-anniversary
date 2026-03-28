@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <link rel="stylesheet" href="timeline.css" />
-    <link rel="preload" href="/public/corkboard/pozadinaKom.webp" as="image">
+    <link rel="preload" href="corkboard/pozadinaKom.webp" as="image">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@40,400,0,0&icon_names=add_2" />
  <!-- Firebase SDK (for text data) -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_2" />
@@ -13,12 +13,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <!-- Configurations -->
-    <script src="/public/js/firebase-config.js"></script>
-    <script src="/public/js/cloudinary-config.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/cloudinary-config.js"></script>
 
     <!-- Database Helpers -->
-    <script src="/public/js/database-helpers.js"></script>
-    <script src="/public/js/safetyCode.js"></script>
+    <script src="js/database-helpers.js"></script>
+    <script src="js/safetyCode.js"></script>
   </head>
 
   <body>
@@ -26,12 +26,12 @@
       <nav class="navbar">
         <h1 class="timelineH1">Our timeline</h1>
         <ul class="navUl ul1">
-          <li><a href="/public/landingPage.html">HOME</a></li>
-          <li><a href="/public/favourites.html">Favourites</a></li>
+          <li><a href="landingPage.html">HOME</a></li>
+          <li><a href="favourites.html">Favourites</a></li>
         </ul>
         <ul class="navUl ul2">
-          <li><a href="/public/landingPage.html">Letters</a></li>
-          <li><a href="/public/favourites.html">Quiz of Us</a></li>
+          <li><a href="landingPage.html">Letters</a></li>
+          <li><a href="favourites.html">Quiz of Us</a></li>
         </ul>
         <div id="menu">
           <img
@@ -43,13 +43,13 @@
         </div>
         <div id="colectionOfDrop" class="colectionOfDrop">
             <ul id="navlistDrop">
-              <a class="listItemLinkDrop" href="/public/landingPage.html"
+              <a class="listItemLinkDrop" href="landingPage.html"
                 ><li>Home</li></a
               >
-              <a class="listItemLinkDrop" href="/public/favourites.html"
+              <a class="listItemLinkDrop" href="favourites.html"
                 ><li>Favourites</li></a
               >
-              <a class="listItemLinkDrop" href="/public/chat.html"><li>sdf</li></a>
+              <a class="listItemLinkDrop" href="chat.html"><li>sdf</li></a>
               <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
               <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
               <button id="logOutDrop" class="logOut"><span>Log out</span></button>

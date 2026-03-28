@@ -1,14 +1,14 @@
 @font-face {
   font-family: "loveLight";
-  src: url(/public/FontsFavourite/LoveLight-Regular.ttf);
+  src: url(FontsFavourite/LoveLight-Regular.ttf);
 }
 @font-face {
   font-family: "ribeyeMarrow";
-  src: url(/public/FontsFavourite/RibeyeMarrow-Regular.ttf);
+  src: url(FontsFavourite/RibeyeMarrow-Regular.ttf);
 }
 @font-face {
   font-family: "addBtn";
-  src: url(/public/FontsFavourite/SchibstedGrotesk-VariableFont_wght.ttf);
+  src: url(FontsFavourite/SchibstedGrotesk-VariableFont_wght.ttf);
 }
 * {
   cursor:

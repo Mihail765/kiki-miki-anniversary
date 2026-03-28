@@ -1,14 +1,14 @@
 @font-face {
   font-family: "Monofett";
-  src: url(/public/FontsTimeline/Monofett-Regular.ttf);
+  src: url(FontsTimeline/Monofett-Regular.ttf);
 }
 @font-face {
   font-family: "Monoton";
-  src: url(/public/FontsTimeline/Monoton-Regular.ttf);
+  src: url(FontsTimeline/Monoton-Regular.ttf);
 }
 @font-face {
   font-family: "JejuHallasan";
-  src: url(/public/FontsTimeline/JejuHallasan-Regular.ttf);
+  src: url(FontsTimeline/JejuHallasan-Regular.ttf);
 }
 :root {
   --vh: 1vh;
@@ -25,7 +25,7 @@ body {
     auto;
   margin: 0;
   padding: 0;
-  background-image: url(/public/corkboard/pozadinaKomGotovo.webp);
+  background-image: url(corkboard/pozadinaKomGotovo.webp);
   background-position: center;
   background-size: 1500px;
   background-repeat: repeat;
