@@ -1150,7 +1150,21 @@
         </button>
       </div>
     </div>
-    <button onclick="debugToken()" style="position:fixed;bottom:100px;right:10px;z-index:9999;background:red;color:white;padding:10px;border-radius:8px;border:none;font-size:14px;">
+    <button
+      onclick="debugToken()"
+      style="
+        position: fixed;
+        bottom: 100px;
+        right: 10px;
+        z-index: 9999;
+        background: red;
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        font-size: 14px;
+      "
+    >
       Test Token
     </button>
 
@@ -1272,8 +1286,9 @@
       async function initNotifications() {
         if ("serviceWorker" in navigator) {
           try {
-            swRegistration =
-              await navigator.serviceWorker.register("sw-notif.js");
+            swRegistration = await navigator.serviceWorker.register(
+              "/firebase-messaging-sw.js",
+            );
           } catch (e) {
             console.warn("SW registration failed:", e);
           }
@@ -2071,26 +2086,34 @@
         }
       }
       async function debugToken() {
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    const messaging = firebase.messaging();
-    const token = await messaging.getToken({
-      vapidKey: "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
-      serviceWorkerRegistration: reg,
-    });
-    if (token) {
-      await db.collection("fcmTokens").doc(WHO).set({
-        token, user: WHO,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-      alert("✅ Token saved for " + WHO + "!\n\n" + token.substring(0, 40) + "...");
-    } else {
-      alert("❌ No token returned — is notification permission granted?");
-    }
-  } catch(e) {
-    alert("❌ Error: " + e.message);
-  }
-}
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const messaging = firebase.messaging();
+          const token = await messaging.getToken({
+            vapidKey:
+              "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
+            serviceWorkerRegistration: reg,
+          });
+          if (token) {
+            await db.collection("fcmTokens").doc(WHO).set({
+              token,
+              user: WHO,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+            alert(
+              "✅ Token saved for " +
+                WHO +
+                "!\n\n" +
+                token.substring(0, 40) +
+                "...",
+            );
+          } else {
+            alert("❌ No token returned — is notification permission granted?");
+          }
+        } catch (e) {
+          alert("❌ Error: " + e.message);
+        }
+      }
 
       // ─── INIT ────────────────────────────────────────────────────────
       initNotifications();
