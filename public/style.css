@@ -21,9 +21,9 @@
 body {
   position: relative;
   font-family: "Quicksand", sans-serif;
-  cursor: url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--c.png"), auto;
+  cursor: url("cursor/Preppy-Pinky-Spider-Man-Arrow--c.png"), auto;
   display: none;
-    user-select: none;
+  user-select: none;
   -webkit-user-select: none;
 }
 
@@ -125,7 +125,7 @@ header {
   /* color: #cc3366; */
   transition: all 0.3s ease;
   cursor:
-    url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
   position: relative;
   /* border: 2px solid green; */
@@ -174,7 +174,9 @@ header {
   /* border: 2px solid #cc3366; */
   border: none;
   border-radius: 10px;
-  cursor: url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png")0 0, auto;
+  cursor:
+    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    auto;
   transition: all 0.25s ease-in-out;
   letter-spacing: 0.5px;
   box-shadow: 0 0 10px rgba(255, 200, 215, 0.4);
@@ -242,7 +244,9 @@ header {
   }
 }
 #menu:hover {
-  cursor: url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png")0 0 , auto;
+  cursor:
+    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    auto;
 }
 #colectionOfDrop {
   display: none;
@@ -386,7 +390,7 @@ header {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  cursor: url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
+  cursor: url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
   color: #cc3366;
   text-shadow: 2px 2px #ffffff;
   font-size: 1.5rem;
@@ -1025,7 +1029,7 @@ header {
   display: flex;
   justify-content: center;
   align-items: center;
-  cursor: url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
+  cursor: url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
 }
 
 .arrowR,
@@ -1162,7 +1166,7 @@ header {
   z-index: 50;
   user-select: none;
   cursor:
-    url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
 }
 .heartOfSec::before {
@@ -1253,7 +1257,7 @@ header {
   margin: 10px 20px;
   border-radius: 15px;
   border: 2px dashed #662244;
-  cursor: url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
+  cursor: url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
 }
 .pointShow:hover {
   box-shadow: 0 0 10px white;
