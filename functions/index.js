@@ -1,3 +1,4 @@
+// v2 - eur3 region fix - 28032026
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -5,9 +6,14 @@ admin.initializeApp();
 const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 
 exports.sendChatNotification = onDocumentCreated(
-  "chats/mikica_kikica_chat/messages/{msgId}",
+  {
+    document: "chats/mikica_kikica_chat/messages/{msgId}",
+    region: "europe-west1",
+  },
   async (event) => {
     const msg = event.data.data();
+    if (!msg || !msg.sender) return null;
+
     const partner = msg.sender === "mikica" ? "kikica" : "mikica";
 
     const tokenDoc = await admin
@@ -42,14 +48,36 @@ exports.sendChatNotification = onDocumentCreated(
         },
         fcmOptions: { link: "/chat.html" },
       },
-      android: { priority: "high" },
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default",
+          channelId: "chat_messages",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: `${senderName} 💌`,
+              body,
+            },
+            sound: "default",
+            badge: 1,
+          },
+        },
+        headers: {
+          "apns-priority": "10",
+          "apns-push-type": "alert",
+        },
+      },
     };
 
     try {
       const response = await admin.messaging().send(payload);
-      console.log("Push sent successfully:", response);
+      console.log("✅ Push sent successfully:", response);
     } catch (err) {
-      console.error("FCM send error:", err.code, err.message);
+      console.error("❌ FCM send error:", err.code, err.message);
       if (
         err.code === "messaging/registration-token-not-registered" ||
         err.code === "messaging/invalid-registration-token"

@@ -1,3 +1,4 @@
+// v2 - eur3 region fix - 28032026
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 admin.initializeApp();
