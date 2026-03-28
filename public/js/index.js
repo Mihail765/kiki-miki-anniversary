@@ -8,6 +8,8 @@ exports.sendChatNotification = onDocumentCreated(
   "chats/mikica_kikica_chat/messages/{msgId}",
   async (event) => {
     const msg = event.data.data();
+    if (!msg || !msg.sender) return null;
+
     const partner = msg.sender === "mikica" ? "kikica" : "mikica";
 
     const tokenDoc = await admin
@@ -42,7 +44,31 @@ exports.sendChatNotification = onDocumentCreated(
         },
         fcmOptions: { link: "/chat.html" },
       },
-      android: { priority: "high" },
+      // ← ADDED: wakes Android even when battery saver / Doze mode is active
+      android: {
+        priority: "high",
+        notification: {
+          sound: "default",
+          channelId: "chat_messages",
+        },
+      },
+      // ← ADDED: required for iOS PWA (Add to Home Screen) push support
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: `${senderName} 💌`,
+              body,
+            },
+            sound: "default",
+            badge: 1,
+          },
+        },
+        headers: {
+          "apns-priority": "10", // 10 = immediate delivery
+          "apns-push-type": "alert",
+        },
+      },
     };
 
     try {
