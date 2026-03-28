@@ -1,8 +1,11 @@
+// firebase-messaging-sw.js
+// Required by FCM — must be at the root of your site, named exactly this.
+
 importScripts(
-  "https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js",
+  "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js",
 );
 importScripts(
-  "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js",
+  "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js",
 );
 
 firebase.initializeApp({
@@ -16,31 +19,43 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Handle background messages (app is closed or in background)
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || "💌 New message";
-  const body = payload.notification?.body || "You have a new message";
-  return self.registration.showNotification(title, {
-    body,
+  console.log(
+    "[firebase-messaging-sw.js] Background message received:",
+    payload,
+  );
+
+  const notificationTitle = payload.notification?.title || "💌 New message";
+  const notificationOptions = {
+    body: payload.notification?.body || "",
     icon: "/favicon.ico",
     badge: "/favicon.ico",
     tag: "chat-message",
     renotify: true,
-    data: { url: "/chat.html" },
-  });
+    data: { url: payload.fcmOptions?.link || "/chat.html" },
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// When user taps the notification, open/focus the chat
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/chat.html";
+  const targetUrl = event.notification.data?.url || "/chat.html";
+
   event.waitUntil(
-    self.clients
+    clients
       .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) => {
-        for (const client of clients) {
-          if (client.url.includes("chat.html") && "focus" in client)
+      .then((clientList) => {
+        for (const client of clientList) {
+          if (client.url.includes(targetUrl) && "focus" in client) {
             return client.focus();
+          }
         }
-        if (self.clients.openWindow) return self.clients.openWindow(url);
+        if (clients.openWindow) {
+          return clients.openWindow(targetUrl);
+        }
       }),
   );
 });
