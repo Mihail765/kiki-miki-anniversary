@@ -5,7 +5,10 @@ admin.initializeApp();
 const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 
 exports.sendChatNotification = onDocumentCreated(
-  "chats/mikica_kikica_chat/messages/{msgId}",
+  {
+    document: "chats/mikica_kikica_chat/messages/{msgId}",
+    region: "eur3",
+  },
   async (event) => {
     const msg = event.data.data();
     if (!msg || !msg.sender) return null;
@@ -44,7 +47,6 @@ exports.sendChatNotification = onDocumentCreated(
         },
         fcmOptions: { link: "/chat.html" },
       },
-      // ← ADDED: wakes Android even when battery saver / Doze mode is active
       android: {
         priority: "high",
         notification: {
@@ -52,7 +54,6 @@ exports.sendChatNotification = onDocumentCreated(
           channelId: "chat_messages",
         },
       },
-      // ← ADDED: required for iOS PWA (Add to Home Screen) push support
       apns: {
         payload: {
           aps: {
@@ -65,7 +66,7 @@ exports.sendChatNotification = onDocumentCreated(
           },
         },
         headers: {
-          "apns-priority": "10", // 10 = immediate delivery
+          "apns-priority": "10",
           "apns-push-type": "alert",
         },
       },
@@ -73,9 +74,9 @@ exports.sendChatNotification = onDocumentCreated(
 
     try {
       const response = await admin.messaging().send(payload);
-      console.log("Push sent successfully:", response);
+      console.log("✅ Push sent successfully:", response);
     } catch (err) {
-      console.error("FCM send error:", err.code, err.message);
+      console.error("❌ FCM send error:", err.code, err.message);
       if (
         err.code === "messaging/registration-token-not-registered" ||
         err.code === "messaging/invalid-registration-token"
