@@ -21,7 +21,7 @@
 }
 body {
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--c.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--c.png) 0 0,
     auto;
   margin: 0;
   padding: 0;
@@ -110,7 +110,7 @@ header {
 }
 #menu:hover {
   cursor:
-    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
 }
 .menu-open {
@@ -133,7 +133,7 @@ header {
 .navUl li {
   list-style-type: none;
   cursor:
-    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
 }
 .navUl li a {
@@ -141,7 +141,7 @@ header {
   text-decoration: none;
   color: white;
   cursor:
-    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
 }
 #colectionOfDrop {
@@ -234,7 +234,7 @@ header {
     color: #eeaeca;
     border: 1px solid white;
     cursor:
-      url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+      url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
       auto;
     /* text-shadow: 2px 2px white; */
   }
@@ -343,7 +343,7 @@ header {
   will-change: transform;
   overflow: hidden;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   z-index: 50;
 }
@@ -505,7 +505,7 @@ header {
   padding: 10px 20px;
   border-radius: 15px;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   transition: all 0.3s ease-in-out;
   color: #ffffff;
@@ -619,7 +619,7 @@ header {
   z-index: 955;
   background-color: rgba(0, 0, 0, 0.541);
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   transition: all 0.2s ease-in-out;
   color: #ffffff;
@@ -767,7 +767,7 @@ header {
   float: left;
   height: min-content;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   border-radius: 25px;
   font-size: large;
@@ -823,7 +823,7 @@ header {
   justify-content: center;
   align-items: center;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   font-family: "JejuHallasan";
   font-size: 1.7em;
@@ -912,7 +912,7 @@ textarea {
   outline: none;
   border: 2px dotted black;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   border-radius: 3px;
   box-sizing: border-box;
@@ -929,12 +929,12 @@ textarea {
 }
 input[type="date"] {
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
 }
 ::-webkit-calendar-picker-indicator {
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
 }
 #submitMemoryBtn {
@@ -946,7 +946,7 @@ input[type="date"] {
   color: white;
   border-radius: 25px;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   transition: all 0.2s ease-in-out;
 }
@@ -1110,7 +1110,7 @@ input[type="date"] {
   #imageBackArrow {
     display: block;
     cursor:
-      url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+      url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
       auto;
     transition: all 0.3s ease-in-out;
     width: clamp(15px, 4vw, 25px);

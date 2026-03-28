@@ -12,7 +12,7 @@
 }
 * {
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--c.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--c.png) 0 0,
     auto;
   margin: 0;
   padding: 0;
@@ -21,7 +21,7 @@
 
 ::-webkit-scrollbar {
   /* background: #f3eced; */
-  /* cursor: url('cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto;  */
+  /* cursor: url('/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto;  */
   display: none;
 }
 /* ::-webkit-scrollbar-thumb{
@@ -32,20 +32,20 @@
   background-image: url("/FontsFavourite/images/4a0b8f60-d6b6-49a8-8fad-661d636ecd11.jpg");
   background-size: contain;
   background-position: cover;
-  cursor: url('cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto; 
+  cursor: url('/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto; 
    background-clip: content-box;
 }
 ::-webkit-scrollbar-track{
  background-color: #eeaeca; 
   border-radius: 15%;
-    cursor: url('cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto; 
+    cursor: url('/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto; 
 
 }
 ::-webkit-scrollbar-button{
   border-radius: 15px;
   border: 1px dashed black;
   background: linear-gradient(to right, #ffe4e1 100%, #ffc6cc 70%, #ff9aa2 0%);
-  cursor: url('cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto; 
+  cursor: url('/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png')0 0, auto; 
 
   
 } */
@@ -107,7 +107,7 @@ nav h1 {
   margin-right: 2%;
   /* border: 1px solid red; */
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   transition: all 0.3s ease-in-out;
 }
@@ -116,7 +116,7 @@ nav h1 {
 }
 .material-symbols-outlined {
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   margin-left: 3px;
 }
@@ -139,7 +139,7 @@ nav h1 {
   border-radius: 20px;
   transition: transform 0.2s ease-in-out;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
 }
 .exampleDiv:hover {
@@ -199,7 +199,7 @@ nav h1 {
 .searchFld:hover,
 .searchBtn:hover {
   cursor:
-    url("cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+    url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
     auto;
 }
 .searchHolder {
@@ -232,7 +232,7 @@ nav h1 {
   padding: 10px 20px;
   border-radius: 15px;
   cursor:
-    url(cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
     auto;
   transition: all 0.3s ease-in-out;
   color: #ffffff;
