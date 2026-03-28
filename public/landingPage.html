@@ -246,23 +246,6 @@
     <div id="boja"></div>
 
     <section id="FirstImageSlider">
-      <div id="slider">
-        <div id="leftA">
-          <!-- <img
-            class="arrowL"
-            src="sliki/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.png"
-            alt=""
-          /> -->
-        </div>
-        <div id="imageContainer"></div>
-        <div id="rightA">
-          <img
-            class="arrowR"
-            src="sliki/icons/arrow_forward_ios_24dp_000000_FILL0_wght400_GRAD0_opsz24.png"
-            alt=""
-          />
-        </div>
-      </div>
       <p>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam
         provident velit nisi. Inventore, vero blanditiis suscipit saepe aut
@@ -270,6 +253,44 @@
         neque.
       </p>
     </section>
+
+    <section id="songOrText">
+
+    </section>
+
+    <section id="moonTime">
+      <div id="moonHolderDiv">
+        <div id="moon1" class="moonImgHolder">
+          <div class="imageDiv">
+            <img class="moonImg" src="sliki/moon-03-10-2023.jpg" alt="Slika od mesecinata na denot koga se zaposnavme">
+          </div>
+          <div class="captionText">
+            <h2 class="moonTextUnderImage">03.10.2023 / 20:00</h2>
+          </div>
+        </div>
+        <div id="moon2" class="moonImgHolder">
+          <div class="imageDiv">
+            <img class="moonImg" src="sliki/moon-26-04-2024.jpg" alt="Slika od mesecinata na denot koga se fativme">
+          </div>
+          <div class="captionText">
+            <h2 class="moonTextUnderImage">26.04.2024 / 21:51</h2>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident excepturi ducimus delectus sint quasi magnam cupiditate vitae neque, repellat, harum, laudantium corporis! Illum incidunt tenetur asperiores obcaecati enim. Officiis, in?
+      Ducimus beatae aliquid consectetur accusamus tempore ex, in quae pariatur reprehenderit esse cum fuga quod tenetur cumque, dolorum aut! Possimus deleniti tempora officiis, vitae natus iste quisquam impedit deserunt tempore!
+      Suscipit ipsum quisquam officia ducimus nisi vel commodi qui alias. Tenetur repellat, error est aperiam iste voluptatibus! Cum earum architecto magnam minima dolores explicabo, ipsam odio. Odit dolores quo nesciunt!
+      Aperiam atque, recusandae eius cupiditate repellat, excepturi commodi totam eum non nemo aliquam. Vitae tempore sit praesentium iste iure eum repellat dolorem maxime ut, qui magnam facere, voluptatum unde expedita.
+      Aliquid aliquam, consequuntur corrupti expedita beatae, nam laborum, perferendis tenetur quia quae quo? Alias at, eum quo aspernatur, magnam accusamus doloribus eos nemo dolorum sequi quibusdam consectetur doloremque rerum esse!
+      Cum necessitatibus iste dolores possimus corporis voluptatem molestiae a? Atque, numquam ab asperiores voluptatibus nam corporis distinctio aliquam soluta enim hic temporibus minus neque perferendis autem dolorum! Sunt, hic officiis!
+      Nihil dolorum cumque voluptate quisquam vel sequi eum corrupti quis nobis asperiores. Sed, repellat voluptatum ea natus tenetur ipsam hic neque repudiandae enim animi nemo aperiam? Veritatis adipisci necessitatibus odit.
+      Aperiam, asperiores maxime voluptatem possimus dignissimos ipsum! Ipsam laboriosam necessitatibus impedit magni possimus delectus fuga voluptate quibusdam! Temporibus, perferendis repudiandae. Minima, numquam dicta nemo nobis molestiae eveniet doloribus exercitationem rem!
+      Minus quasi maiores in. Perspiciatis repellat eveniet esse facilis nisi magni recusandae iusto placeat ullam minus ex corrupti voluptatem, ratione illum distinctio, odit dignissimos modi delectus natus sunt optio similique?
+      Doloribus sit perferendis reprehenderit magnam quia hic fugit praesentium perspiciatis placeat quis consequuntur corporis, laboriosam error obcaecati nostrum facilis dignissimos itaque ea numquam culpa eius! Iste quia ipsam eum corrupti.</p>
+    </section>
+
   </body>
   <script>
     checkAuthentication();
@@ -542,38 +563,6 @@
       console.log("page loaded");
     });
 
-    // image slider
-
-    let back = document
-      .getElementById("leftA")
-      .addEventListener("click", slideBack);
-    let forward = document
-      .getElementById("rightA")
-      .addEventListener("click", slideForward);
-    let imagesContainer = document.getElementById("imageContainer");
-    let currentIndex = 0;
-    let imageArr = [
-      "https://wallpapers.com/images/high/heart-background-i8fncw7b0c6a5x99.webp",
-      "https://www.fg-a.com/wallpapers/2020-pink-hearts-image.jpg",
-      "https://media.istockphoto.com/id/1183183791/photo/talented-female-artist-works-on-abstract-oil-painting-using-paint-brush-she-creates-modern.jpg?s=2048x2048&w=is&k=20&c=dJJrGrY-BS5Flffk3JEBPKEhw5kR_fRoIbYsgiINKeQ=",
-    ];
-
-    imagesContainer.style.backgroundImage = `url("${imageArr[currentIndex]}")`;
-
-    function slideForward() {
-      currentIndex++;
-      if (currentIndex >= imageArr.length) {
-        currentIndex = 0;
-      }
-      imagesContainer.style.backgroundImage = `url("${imageArr[currentIndex]}")`;
-    }
-    function slideBack() {
-      currentIndex--;
-      if (currentIndex < 0) {
-        currentIndex += imageArr.length;
-      }
-      imagesContainer.style.backgroundImage = `url("${imageArr[currentIndex]}")`;
-    }
 
     // heart animation
     // Add floating hearts animation
