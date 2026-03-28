@@ -1150,23 +1150,7 @@
         </button>
       </div>
     </div>
-    <button
-      onclick="debugToken()"
-      style="
-        position: fixed;
-        bottom: 100px;
-        right: 10px;
-        z-index: 9999;
-        background: red;
-        color: white;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        font-size: 14px;
-      "
-    >
-      Test Token
-    </button>
+    
 
     <!-- Hidden canvas for camera snap -->
     <canvas id="snap-canvas" style="display: none"></canvas>
@@ -2085,33 +2069,37 @@
           history.back();
         }
       }
-      async function debugToken() {
+      async function registerFCMToken() {
         try {
-          const reg = await navigator.serviceWorker.ready;
           const messaging = firebase.messaging();
           const token = await messaging.getToken({
             vapidKey:
               "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
-            serviceWorkerRegistration: reg,
+            serviceWorkerRegistration: swRegistration,
           });
           if (token) {
-            await db.collection("fcmTokens").doc(WHO).set({
-              token,
-              user: WHO,
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-            alert(
-              "✅ Token saved for " +
-                WHO +
-                "!\n\n" +
-                token.substring(0, 40) +
-                "...",
-            );
-          } else {
-            alert("❌ No token returned — is notification permission granted?");
+            const docRef = db.collection("fcmTokens").doc(WHO);
+            const doc = await docRef.get();
+            const existingTokens =
+              doc.exists && doc.data().tokens ? doc.data().tokens : [];
+            if (!existingTokens.includes(token)) {
+              await docRef.set({
+                tokens: [...existingTokens, token],
+                user: WHO,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+              console.log(
+                "FCM token added for",
+                WHO,
+                "— total devices:",
+                existingTokens.length + 1,
+              );
+            } else {
+              console.log("FCM token already registered for", WHO);
+            }
           }
-        } catch (e) {
-          alert("❌ Error: " + e.message);
+        } catch (err) {
+          console.warn("FCM token registration failed:", err);
         }
       }
 
