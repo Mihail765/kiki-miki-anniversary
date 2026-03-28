@@ -1,0 +1,2086 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our Little Corner 💌</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="/public/js/safetyCode.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <!-- ↓ ADDED: Firebase Cloud Messaging SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+    <script src="/public/js/firebase-config.js"></script>
+    <script src="/public/js/cloudinary-config.js"></script>
+
+    <style>
+      :root {
+        --rose: #e8638a;
+        --rose-light: #ffd6e4;
+        --rose-pale: #fff0f5;
+        --rose-dark: #cc3366;
+        --mikica-bubble: linear-gradient(135deg, #e8638a 0%, #cc3366 100%);
+        --kikica-bubble: #ffffff;
+        --text-main: #3a1a28;
+        --text-muted: #9e7089;
+        --bg: #fff0f5;
+        --header-h: 70px;
+        --input-h: 76px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        font-family: "Quicksand", sans-serif;
+        background: var(--bg);
+        color: var(--text-main);
+        overflow: hidden;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--c.png"), auto;
+      }
+
+      /* ─── LOADER ─── */
+      #loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        animation: loaderBg 1s ease infinite;
+      }
+      #loader .heart-loader {
+        width: 50px;
+        height: 45px;
+        position: relative;
+        transform: rotate(-45deg);
+        background: #ffb6c1;
+        animation: beat 1s ease infinite;
+      }
+      #loader .heart-loader::before,
+      #loader .heart-loader::after {
+        content: "";
+        position: absolute;
+        background: #ffb6c1;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+      }
+      #loader .heart-loader::before {
+        top: -25px;
+        left: 0;
+      }
+      #loader .heart-loader::after {
+        top: 0;
+        left: 25px;
+      }
+      @keyframes beat {
+        0%,
+        100% {
+          transform: rotate(-45deg) scale(1);
+        }
+        50% {
+          transform: rotate(-45deg) scale(0.7);
+        }
+      }
+      @keyframes loaderBg {
+        50% {
+          background: #ffe6f2;
+        }
+      }
+
+      /* ─── LAYOUT ─── */
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+      }
+
+      /* ─── HEADER ─── */
+      #chat-header {
+        height: var(--header-h);
+        flex-shrink: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 154, 162, 0.9) 0%,
+          rgba(232, 99, 138, 0.9) 100%
+        );
+        backdrop-filter: blur(12px);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 4px 20px rgba(204, 51, 102, 0.2);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 14px;
+        position: relative;
+        z-index: 10;
+      }
+      #back-btn {
+        background: rgba(255, 255, 255, 0.25);
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        font-size: 18px;
+        color: white;
+      }
+      #back-btn:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      .header-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffd6e4, #ffb6c1);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+      }
+      .header-info {
+        flex: 1;
+      }
+      .header-name {
+        font-family: "Pacifico", cursive;
+        color: white;
+        font-size: 1.1rem;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      }
+      .header-status {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.85);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #7fff7f;
+        box-shadow: 0 0 5px #7fff7f;
+        animation: pulse-dot 2s ease infinite;
+      }
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* typing indicator in header */
+      #typing-indicator {
+        display: none;
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-style: italic;
+        animation: fadeIn 0.3s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* ─── NOTIFICATION PERMISSION BANNER ─── */
+      #notif-banner {
+        display: none;
+        background: linear-gradient(135deg, #fff0f5, #ffd6e4);
+        border-bottom: 1px solid var(--rose-light);
+        padding: 10px 16px;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        animation: slideDown 0.3s ease;
+      }
+      #notif-banner.visible {
+        display: flex;
+      }
+      @keyframes slideDown {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      #notif-banner span {
+        flex: 1;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+      }
+      #notif-allow-btn {
+        background: var(--rose);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-family: "Quicksand", sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background 0.2s,
+          transform 0.15s;
+      }
+      #notif-allow-btn:hover {
+        background: var(--rose-dark);
+        transform: scale(1.03);
+      }
+      #notif-dismiss-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 18px;
+        cursor: pointer;
+        padding: 2px 4px;
+        line-height: 1;
+      }
+
+      /* ─── MESSAGE AREA ─── */
+      #messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 16px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        scroll-behavior: smooth;
+        background:
+          radial-gradient(
+            ellipse at 20% 10%,
+            rgba(255, 182, 193, 0.18) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 80% 90%,
+            rgba(232, 99, 138, 0.12) 0%,
+            transparent 50%
+          ),
+          var(--bg);
+      }
+      #messages-container::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* date separator */
+      .date-separator {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+        color: var(--text-muted);
+        font-size: 0.72rem;
+      }
+      .date-separator::before,
+      .date-separator::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: rgba(204, 51, 102, 0.15);
+      }
+
+      /* ─── BUBBLES ─── */
+      .msg-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        animation: bubbleIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+      }
+      @keyframes bubbleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.85) translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      .msg-row.sent {
+        flex-direction: row-reverse;
+      }
+      .msg-row.recv {
+        flex-direction: row;
+      }
+
+      .bubble-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffd6e4, #ffb6c1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+        border: 1.5px solid rgba(204, 51, 102, 0.2);
+      }
+      .msg-row.sent .bubble-avatar {
+        background: linear-gradient(135deg, #e8638a, #cc3366);
+      }
+
+      .bubble-wrap {
+        max-width: min(72%, 420px);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .msg-row.sent .bubble-wrap {
+        align-items: flex-end;
+      }
+      .msg-row.recv .bubble-wrap {
+        align-items: flex-start;
+      }
+
+      .bubble {
+        padding: 10px 14px;
+        border-radius: 18px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        word-break: break-word;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+      .msg-row.sent .bubble {
+        background: var(--mikica-bubble);
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+      .msg-row.recv .bubble {
+        background: var(--kikica-bubble);
+        color: var(--text-main);
+        border: 1px solid rgba(232, 99, 138, 0.15);
+        border-bottom-left-radius: 4px;
+      }
+
+      /* consecutive messages */
+      .msg-row.sent.consecutive .bubble {
+        border-top-right-radius: 6px;
+      }
+      .msg-row.recv.consecutive .bubble {
+        border-top-left-radius: 6px;
+      }
+
+      /* ─── MULTI-IMAGE GRID ─── */
+      .img-grid {
+        display: grid;
+        gap: 3px;
+        border-radius: 14px;
+        overflow: hidden;
+        max-width: 280px;
+      }
+      .img-grid.count-1 {
+        grid-template-columns: 1fr;
+      }
+      .img-grid.count-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .img-grid.count-3 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .img-grid.count-3 .grid-img:first-child {
+        grid-column: 1 / -1;
+      }
+      .img-grid.count-4 {
+        grid-template-columns: 1fr 1fr;
+      }
+      .img-grid.count-many {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .grid-img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), pointer;
+        transition:
+          transform 0.2s,
+          brightness 0.2s;
+        position: relative;
+      }
+      .img-grid.count-1 .grid-img {
+        aspect-ratio: auto;
+        max-height: 260px;
+        object-fit: contain;
+      }
+      .grid-img:hover {
+        filter: brightness(0.92);
+      }
+
+      .img-grid-wrap {
+        position: relative;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .more-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        border-radius: 14px;
+      }
+
+      .bubble-text {
+        margin-top: 4px;
+      }
+      .img-grid-wrap + .bubble-text {
+        margin-top: 8px;
+      }
+
+      .msg-time {
+        font-size: 0.67rem;
+        color: var(--text-muted);
+        padding: 0 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* ─── READ STATUS ─── */
+      .read-status {
+        font-size: 0.72rem;
+        display: inline-flex;
+        align-items: center;
+      }
+      .tick {
+        color: var(--text-muted);
+      }
+      .tick.delivered {
+        color: var(--text-muted);
+      }
+      .tick.read {
+        color: #4fc3f7;
+      }
+
+      /* ─── UNREAD DIVIDER ─── */
+      .unread-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+        color: var(--rose);
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .unread-divider::before,
+      .unread-divider::after {
+        content: "";
+        flex: 1;
+        height: 1.5px;
+        background: rgba(232, 99, 138, 0.3);
+      }
+
+      /* ─── IMAGE PREVIEW BAR (multi) ─── */
+      #img-preview-bar {
+        display: none;
+        background: rgba(255, 240, 245, 0.97);
+        border-top: 1px solid var(--rose-light);
+        padding: 10px 12px;
+        flex-direction: column;
+        gap: 8px;
+        flex-shrink: 0;
+        max-height: 160px;
+      }
+      #img-preview-bar.visible {
+        display: flex;
+      }
+
+      #preview-scroll {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      #preview-scroll::-webkit-scrollbar {
+        height: 3px;
+      }
+      #preview-scroll::-webkit-scrollbar-thumb {
+        background: var(--rose-light);
+        border-radius: 4px;
+      }
+
+      .preview-item {
+        position: relative;
+        flex-shrink: 0;
+      }
+      .preview-item img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 2px solid var(--rose-light);
+        display: block;
+      }
+      .preview-remove {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--rose-dark);
+        color: white;
+        border: none;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      #add-more-btn {
+        flex-shrink: 0;
+        width: 70px;
+        height: 70px;
+        border-radius: 10px;
+        border: 2px dashed var(--rose-light);
+        background: var(--rose-pale);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        font-size: 10px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      #add-more-btn:hover {
+        border-color: var(--rose);
+        background: #ffe0ec;
+      }
+      #add-more-btn .plus {
+        font-size: 20px;
+        color: var(--rose);
+      }
+
+      #preview-info {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #clear-all-btn {
+        background: none;
+        border: none;
+        color: var(--rose-dark);
+        font-size: 0.78rem;
+        cursor: pointer;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 600;
+      }
+      #clear-all-btn:hover {
+        text-decoration: underline;
+      }
+
+      /* ─── INPUT BAR ─── */
+      #input-bar {
+        flex-shrink: 0;
+        height: var(--input-h);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-top: 1.5px solid var(--rose-light);
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 10px;
+        box-shadow: 0 -4px 16px rgba(232, 99, 138, 0.08);
+      }
+
+      .input-icon-btn {
+        background: none;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), pointer;
+        transition:
+          background 0.2s,
+          transform 0.15s;
+        color: var(--rose);
+        font-size: 20px;
+        flex-shrink: 0;
+      }
+      .input-icon-btn:hover {
+        background: var(--rose-light);
+        transform: scale(1.1);
+      }
+
+      #msg-input {
+        flex: 1;
+        background: var(--rose-pale);
+        border: 1.5px solid rgba(232, 99, 138, 0.2);
+        border-radius: 24px;
+        padding: 10px 16px;
+        font-family: "Quicksand", sans-serif;
+        font-size: 0.95rem;
+        color: var(--text-main);
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        resize: none;
+        max-height: 56px;
+        line-height: 1.4;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), text;
+      }
+      #msg-input:focus {
+        border-color: var(--rose);
+        box-shadow: 0 0 0 3px rgba(232, 99, 138, 0.12);
+      }
+      #msg-input::placeholder {
+        color: var(--text-muted);
+      }
+
+      #send-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e8638a, #cc3366);
+        border: none;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+        box-shadow: 0 4px 12px rgba(204, 51, 102, 0.35);
+        color: white;
+        font-size: 16px;
+      }
+      #send-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 16px rgba(204, 51, 102, 0.45);
+      }
+      #send-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* ─── EMOJI PICKER ─── */
+      #emoji-tray {
+        display: none;
+        position: fixed;
+        bottom: calc(var(--input-h) + 8px);
+        left: 12px;
+        background: white;
+        border: 1.5px solid var(--rose-light);
+        border-radius: 18px;
+        padding: 12px;
+        box-shadow: 0 8px 32px rgba(204, 51, 102, 0.18);
+        z-index: 100;
+        flex-wrap: wrap;
+        max-width: 280px;
+        gap: 8px;
+      }
+      #emoji-tray.open {
+        display: flex;
+      }
+      .emoji-btn {
+        font-size: 22px;
+        background: none;
+        border: none;
+        cursor:
+          url("/public/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), pointer;
+        border-radius: 8px;
+        padding: 4px;
+        transition:
+          transform 0.15s,
+          background 0.15s;
+      }
+      .emoji-btn:hover {
+        transform: scale(1.3);
+        background: var(--rose-pale);
+      }
+
+      /* ─── CAMERA MODAL ─── */
+      #camera-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.92);
+        z-index: 9000;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      #camera-modal.open {
+        display: flex;
+      }
+
+      #camera-feed {
+        width: 100%;
+        max-width: 480px;
+        max-height: 65vh;
+        object-fit: cover;
+        border-radius: 20px;
+        box-shadow: 0 0 40px rgba(232, 99, 138, 0.3);
+        transition: transform 0.2s;
+      }
+      #camera-feed.mirrored {
+        transform: scaleX(-1);
+      }
+
+      #camera-controls {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-top: 24px;
+      }
+      #snap-btn {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: white;
+        border: 5px solid var(--rose);
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.2s;
+        box-shadow: 0 0 0 6px rgba(232, 99, 138, 0.25);
+      }
+      #snap-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 10px rgba(232, 99, 138, 0.2);
+      }
+      #snap-btn:active {
+        transform: scale(0.94);
+        background: var(--rose-light);
+      }
+
+      .cam-control-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        color: white;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .cam-control-btn:hover {
+        background: rgba(255, 255, 255, 0.28);
+      }
+
+      #camera-preview-wrap {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      #camera-preview-wrap.visible {
+        display: flex;
+      }
+      #camera-preview-img {
+        max-width: 100%;
+        max-height: 65vh;
+        border-radius: 20px;
+        box-shadow: 0 0 30px rgba(232, 99, 138, 0.3);
+      }
+      #camera-preview-btns {
+        display: flex;
+        gap: 16px;
+      }
+      .cam-action-btn {
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-family: "Quicksand", sans-serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s;
+      }
+      .cam-action-btn:hover {
+        transform: scale(1.05);
+      }
+      #retake-btn {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+      }
+      #use-photo-btn {
+        background: var(--rose);
+        color: white;
+      }
+
+      /* ─── IMAGE LIGHTBOX ─── */
+      #lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.88);
+        z-index: 9998;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 14px;
+      }
+      #lightbox.open {
+        display: flex;
+      }
+      #lightbox img {
+        max-width: 92vw;
+        max-height: 85vh;
+        border-radius: 16px;
+        box-shadow: 0 0 50px rgba(255, 182, 193, 0.3);
+        object-fit: contain;
+      }
+      #lightbox-close {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: white;
+        font-size: 26px;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      #lightbox-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      #lightbox-nav {
+        display: flex;
+        gap: 10px;
+      }
+      .lb-nav-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: white;
+        font-size: 22px;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .lb-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .lb-nav-btn:disabled {
+        opacity: 0.3;
+        pointer-events: none;
+      }
+      #lightbox-counter {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.82rem;
+        display: flex;
+        align-items: center;
+      }
+
+      /* ─── EMPTY STATE ─── */
+      #empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex: 1;
+        color: var(--text-muted);
+        text-align: center;
+        padding: 40px 20px;
+      }
+      #empty-state .big-heart {
+        font-size: 56px;
+        animation: beat 1.5s ease infinite;
+      }
+      #empty-state h3 {
+        font-family: "Pacifico", cursive;
+        color: var(--rose);
+        font-size: 1.3rem;
+      }
+      #empty-state p {
+        font-size: 0.88rem;
+        max-width: 220px;
+      }
+
+      /* ─── UPLOAD PROGRESS ─── */
+      #upload-progress {
+        display: none;
+        height: 3px;
+        background: var(--rose-light);
+        flex-shrink: 0;
+      }
+      #upload-progress-bar {
+        height: 100%;
+        background: var(--rose);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      /* ─── RESPONSIVE ─── */
+      @media (max-width: 600px) {
+        #chat-header {
+          padding: 0 12px;
+          gap: 10px;
+        }
+        .header-name {
+          font-size: 1rem;
+        }
+        #messages-container {
+          padding: 14px 10px 6px;
+        }
+        .bubble-wrap {
+          max-width: 82%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- LOADER -->
+    <div id="loader">
+      <div class="heart-loader"></div>
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div id="lightbox">
+      <button id="lightbox-close">✕</button>
+      <img id="lightbox-img" src="" alt="Full size" />
+      <div id="lightbox-nav">
+        <button class="lb-nav-btn" id="lb-prev">‹</button>
+        <span id="lightbox-counter"></span>
+        <button class="lb-nav-btn" id="lb-next">›</button>
+      </div>
+    </div>
+
+    <!-- CAMERA MODAL -->
+    <div id="camera-modal">
+      <div
+        id="camera-live-wrap"
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+          width: 100%;
+          max-width: 480px;
+          padding: 0 16px;
+        "
+      >
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <div id="camera-controls">
+          <button class="cam-control-btn" id="close-camera-btn" title="Cancel">
+            ✕
+          </button>
+          <button id="snap-btn" title="Take photo"></button>
+          <button
+            class="cam-control-btn"
+            id="flip-camera-btn"
+            title="Flip camera"
+          >
+            🔄
+          </button>
+        </div>
+      </div>
+      <div id="camera-preview-wrap">
+        <img id="camera-preview-img" src="" alt="Photo preview" />
+        <div id="camera-preview-btns">
+          <button class="cam-action-btn" id="retake-btn">Retake</button>
+          <button class="cam-action-btn" id="use-photo-btn">
+            Use Photo 💌
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMOJI TRAY -->
+    <div id="emoji-tray"></div>
+
+    <!-- MAIN APP -->
+    <div id="app">
+      <!-- HEADER -->
+      <header id="chat-header">
+        <a href="landingPage.html" id="back-btn">‹</a>
+        <div class="header-avatar">💌</div>
+        <div class="header-info">
+          <div class="header-name">Кикица & Микица</div>
+          <div class="header-status">
+            <span class="status-dot"></span>
+            <span id="status-text">Just the two of us ❤️</span>
+            <span id="typing-indicator"></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- NOTIFICATION PERMISSION BANNER -->
+      <div id="notif-banner">
+        <span>🔔 Allow notifications to know when a new message arrives!</span>
+        <button id="notif-allow-btn">Allow</button>
+        <button id="notif-dismiss-btn">✕</button>
+      </div>
+
+      <!-- UPLOAD PROGRESS -->
+      <div id="upload-progress">
+        <div id="upload-progress-bar"></div>
+      </div>
+
+      <!-- MESSAGES -->
+      <div id="messages-container">
+        <div id="empty-state">
+          <div class="big-heart">💌</div>
+          <h3>Your little corner</h3>
+          <p>Send your first message and make it special ✨</p>
+        </div>
+      </div>
+
+      <!-- IMAGE PREVIEW BAR (multi) -->
+      <div id="img-preview-bar">
+        <div id="preview-info">
+          <span id="preview-count-label">0 image(s) selected</span>
+          <button id="clear-all-btn">Remove all</button>
+        </div>
+        <div id="preview-scroll">
+          <button id="add-more-btn">
+            <span class="plus">＋</span>
+            <span>Add</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- INPUT BAR -->
+      <div id="input-bar">
+        <button class="input-icon-btn" id="emoji-toggle-btn" title="Emoji">
+          😊
+        </button>
+
+        <label
+          class="input-icon-btn"
+          for="file-input"
+          title="Send image"
+          id="gallery-label"
+        >
+          📎
+          <input type="file" id="file-input" hidden accept="image/*" multiple />
+        </label>
+
+        <button class="input-icon-btn" id="camera-btn" title="Camera">
+          📷
+        </button>
+
+        <textarea
+          id="msg-input"
+          placeholder="Write something sweet…"
+          rows="1"
+        ></textarea>
+        <button id="send-btn" title="Send">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden canvas for camera snap -->
+    <canvas id="snap-canvas" style="display: none"></canvas>
+
+    <script>
+      // ─── WHO AM I? ───────────────────────────────────────────────────
+      const WHO =
+        sessionStorage.getItem("user") ||
+        localStorage.getItem("mk_user") ||
+        "mikica";
+      if (sessionStorage.getItem("user")) localStorage.setItem("mk_user", WHO);
+      const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
+      const AVATARS = { mikica: "💙", kikica: "💗" };
+      const CHAT_ID = "mikica_kikica_chat";
+
+      // ─── FIREBASE REFS ───────────────────────────────────────────────
+      const storage = firebase.storage();
+      const messagesRef = db
+        .collection("chats")
+        .doc(CHAT_ID)
+        .collection("messages");
+      const typingRef = db
+        .collection("chats")
+        .doc(CHAT_ID)
+        .collection("typing");
+      const readRef = db
+        .collection("chats")
+        .doc(CHAT_ID)
+        .collection("readStatus");
+
+      // ─── ELEMENTS ────────────────────────────────────────────────────
+      const msgContainer = document.getElementById("messages-container");
+      const emptyState = document.getElementById("empty-state");
+      const msgInput = document.getElementById("msg-input");
+      const sendBtn = document.getElementById("send-btn");
+      const fileInput = document.getElementById("file-input");
+      const imgPreviewBar = document.getElementById("img-preview-bar");
+      const previewScroll = document.getElementById("preview-scroll");
+      const previewCountLabel = document.getElementById("preview-count-label");
+      const clearAllBtn = document.getElementById("clear-all-btn");
+      const addMoreBtn = document.getElementById("add-more-btn");
+      const emojiToggleBtn = document.getElementById("emoji-toggle-btn");
+      const emojiTray = document.getElementById("emoji-tray");
+      const lightbox = document.getElementById("lightbox");
+      const lightboxImg = document.getElementById("lightbox-img");
+      const lightboxClose = document.getElementById("lightbox-close");
+      const lightboxCounter = document.getElementById("lightbox-counter");
+      const lbPrev = document.getElementById("lb-prev");
+      const lbNext = document.getElementById("lb-next");
+      const typingIndicator = document.getElementById("typing-indicator");
+      const uploadProgress = document.getElementById("upload-progress");
+      const uploadProgressBar = document.getElementById("upload-progress-bar");
+      const loader = document.getElementById("loader");
+      const notifBanner = document.getElementById("notif-banner");
+      const notifAllowBtn = document.getElementById("notif-allow-btn");
+      const notifDismissBtn = document.getElementById("notif-dismiss-btn");
+
+      // Camera elements
+      const cameraBtn = document.getElementById("camera-btn");
+      const cameraModal = document.getElementById("camera-modal");
+      const cameraFeed = document.getElementById("camera-feed");
+      const cameraLiveWrap = document.getElementById("camera-live-wrap");
+      const cameraPreviewWrap = document.getElementById("camera-preview-wrap");
+      const cameraPreviewImg = document.getElementById("camera-preview-img");
+      const snapBtn = document.getElementById("snap-btn");
+      const snapCanvas = document.getElementById("snap-canvas");
+      const closeCameraBtn = document.getElementById("close-camera-btn");
+      const flipCameraBtn = document.getElementById("flip-camera-btn");
+      const retakeBtn = document.getElementById("retake-btn");
+      const usePhotoBtn = document.getElementById("use-photo-btn");
+
+      // ─── STATE ───────────────────────────────────────────────────────
+      let selectedFiles = [];
+      let lastDate = null;
+      let lastSender = null;
+      let typingTimeout = null;
+      let isTyping = false;
+      let firstLoad = true;
+      let partnerReadTime = null;
+      let lbImages = [];
+      let lbIndex = 0;
+      let cameraStream = null;
+      let facingMode = "environment";
+      let capturedBlob = null;
+      let unreadInserted = false;
+      let lastReadTimestamp = null;
+
+      // ─── FCM TOKEN REGISTRATION ──────────────────────────────────────
+      async function registerFCMToken() {
+        try {
+          const messaging = firebase.messaging();
+          const token = await messaging.getToken({
+            vapidKey:
+              "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
+            serviceWorkerRegistration: swRegistration,
+          });
+          if (token) {
+            await db.collection("fcmTokens").doc(WHO).set({
+              token,
+              user: WHO,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log("FCM token saved for", WHO);
+          }
+        } catch (err) {
+          console.warn("FCM token registration failed:", err);
+        }
+      }
+
+      // ─── NOTIFICATIONS ───────────────────────────────────────────────
+      const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+      const isInStandaloneMode =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      let swRegistration = null;
+
+      async function initNotifications() {
+        if ("serviceWorker" in navigator) {
+          try {
+            swRegistration =
+              await navigator.serviceWorker.register("sw-notif.js");
+          } catch (e) {
+            console.warn("SW registration failed:", e);
+          }
+        }
+
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "granted") {
+          // Already granted — silently register FCM token in case it's missing
+          await registerFCMToken();
+          return;
+        }
+        if (Notification.permission === "denied") return;
+
+        if (isIOS && !isInStandaloneMode) {
+          notifBanner.querySelector("span").textContent =
+            '📲 To get message notifications on iPhone, tap Share → "Add to Home Screen", then open from there!';
+          notifAllowBtn.style.display = "none";
+          setTimeout(() => notifBanner.classList.add("visible"), 1800);
+          return;
+        }
+
+        setTimeout(() => notifBanner.classList.add("visible"), 1500);
+      }
+
+      notifAllowBtn.addEventListener("click", async () => {
+        let perm;
+        try {
+          perm = await Notification.requestPermission();
+        } catch (e) {
+          perm = await new Promise((resolve) =>
+            Notification.requestPermission(resolve),
+          );
+        }
+        notifBanner.classList.remove("visible");
+        if (perm === "granted") {
+          showMiniNotif(
+            "🔔 Notifications enabled! You'll know when a message arrives 💌",
+          );
+          await registerFCMToken(); // ← saves token to Firestore for Cloud Function
+          setTimeout(
+            () =>
+              sendBrowserNotif(
+                "System",
+                "Notifications are working! 💌",
+                null,
+                true,
+              ),
+            800,
+          );
+        } else {
+          showMiniNotif("⚠️ Permission denied — check your browser settings");
+        }
+      });
+
+      notifDismissBtn.addEventListener("click", () => {
+        notifBanner.classList.remove("visible");
+      });
+
+      async function sendBrowserNotif(
+        senderName,
+        text,
+        imageUrl,
+        force = false,
+      ) {
+        if (Notification.permission !== "granted") return;
+        if (!force && !document.hidden) return;
+
+        const title = `${senderName} 💌`;
+        const body = text || (imageUrl ? "📷 Sent a photo" : "New message");
+
+        if (swRegistration && swRegistration.active) {
+          try {
+            swRegistration.active.postMessage({
+              type: "NOTIFY",
+              title,
+              body,
+              icon: "favicon.ico",
+              tag: "chat-message",
+              url: window.location.href,
+            });
+            return;
+          } catch (e) {
+            console.warn("SW postMessage failed, falling back:", e);
+          }
+        }
+
+        try {
+          const notif = new Notification(title, {
+            body,
+            icon: "favicon.ico",
+            badge: "favicon.ico",
+            tag: "chat-message",
+            renotify: true,
+          });
+          notif.onclick = () => {
+            window.focus();
+            notif.close();
+          };
+          setTimeout(() => notif.close(), 6000);
+        } catch (e) {
+          console.warn("Notification failed:", e);
+        }
+      }
+
+      function showMiniNotif(text) {
+        const el = document.createElement("div");
+        el.style.cssText = `
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    background:var(--rose);color:white;
+    padding:8px 18px;border-radius:20px;font-size:0.82rem;
+    box-shadow:0 4px 16px rgba(204,51,102,0.3);
+    z-index:9997;animation:fadeIn 0.3s ease;
+    font-family:'Quicksand',sans-serif;font-weight:600;
+    white-space:nowrap;
+  `;
+        el.textContent = text;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 3000);
+      }
+
+      // ─── READ STATUS ─────────────────────────────────────────────────
+      function updateMyReadTime() {
+        readRef.doc(WHO).set({
+          lastRead: firebase.firestore.FieldValue.serverTimestamp(),
+          user: WHO,
+        });
+      }
+
+      const partner = WHO === "mikica" ? "kikica" : "mikica";
+      readRef.doc(partner).onSnapshot((snap) => {
+        if (snap.exists) {
+          const data = snap.data();
+          partnerReadTime = data.lastRead ? data.lastRead.toDate() : null;
+          updateAllTicks();
+        }
+      });
+
+      function updateAllTicks() {
+        if (!partnerReadTime) return;
+        document.querySelectorAll(".msg-row.sent[data-ts]").forEach((row) => {
+          const ts = new Date(parseInt(row.dataset.ts));
+          const tickEl = row.querySelector(".tick");
+          if (!tickEl) return;
+          if (partnerReadTime >= ts) {
+            tickEl.textContent = "✓✓";
+            tickEl.className = "tick read";
+            tickEl.title = "Read";
+          } else {
+            tickEl.textContent = "✓✓";
+            tickEl.className = "tick delivered";
+            tickEl.title = "Delivered";
+          }
+        });
+      }
+
+      // ─── EMOJIS ──────────────────────────────────────────────────────
+      const EMOJIS = [
+        "❤️",
+        "💕",
+        "💖",
+        "💗",
+        "😍",
+        "🥰",
+        "😘",
+        "💋",
+        "🌹",
+        "✨",
+        "😊",
+        "🥺",
+        "💌",
+        "🎀",
+        "🌸",
+        "💞",
+        "💓",
+        "💝",
+        "😂",
+        "🙈",
+        "🫶",
+        "💑",
+        "🥂",
+        "🌙",
+        "⭐",
+        "🎶",
+        "🤍",
+        "💭",
+        "🫠",
+        "🩷",
+      ];
+      EMOJIS.forEach((e) => {
+        const btn = document.createElement("button");
+        btn.className = "emoji-btn";
+        btn.textContent = e;
+        btn.addEventListener("click", () => {
+          insertAtCursor(msgInput, e);
+          msgInput.focus();
+        });
+        emojiTray.appendChild(btn);
+      });
+      emojiToggleBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        emojiTray.classList.toggle("open");
+      });
+      document.addEventListener("click", () =>
+        emojiTray.classList.remove("open"),
+      );
+
+      function insertAtCursor(el, text) {
+        const s = el.selectionStart,
+          e = el.selectionEnd;
+        el.value = el.value.slice(0, s) + text + el.value.slice(e);
+        el.selectionStart = el.selectionEnd = s + text.length;
+      }
+
+      // ─── AUTO-RESIZE TEXTAREA ────────────────────────────────────────
+      msgInput.addEventListener("input", () => {
+        msgInput.style.height = "auto";
+        msgInput.style.height = Math.min(msgInput.scrollHeight, 80) + "px";
+        handleTyping();
+      });
+
+      // ─── MULTI-FILE SELECT ───────────────────────────────────────────
+      fileInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        addFilesToSelection(files);
+        fileInput.value = "";
+      });
+
+      addMoreBtn.addEventListener("click", () => fileInput.click());
+
+      function addFilesToSelection(files) {
+        selectedFiles = [...selectedFiles, ...files].slice(0, 10);
+        renderPreviewBar();
+      }
+
+      function renderPreviewBar() {
+        previewScroll
+          .querySelectorAll(".preview-item")
+          .forEach((el) => el.remove());
+
+        selectedFiles.forEach((file, idx) => {
+          const item = document.createElement("div");
+          item.className = "preview-item";
+
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "preview-remove";
+          removeBtn.textContent = "✕";
+          removeBtn.addEventListener("click", () => {
+            selectedFiles.splice(idx, 1);
+            renderPreviewBar();
+          });
+
+          item.appendChild(img);
+          item.appendChild(removeBtn);
+          previewScroll.insertBefore(item, addMoreBtn);
+        });
+
+        previewCountLabel.textContent = `${selectedFiles.length} image${selectedFiles.length !== 1 ? "s" : ""} selected`;
+
+        if (selectedFiles.length > 0) {
+          imgPreviewBar.classList.add("visible");
+        } else {
+          imgPreviewBar.classList.remove("visible");
+        }
+      }
+
+      clearAllBtn.addEventListener("click", () => {
+        selectedFiles = [];
+        renderPreviewBar();
+      });
+
+      // ─── TYPING INDICATOR ────────────────────────────────────────────
+      function handleTyping() {
+        if (!isTyping) {
+          isTyping = true;
+          typingRef.doc(WHO).set({
+            typing: true,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+          isTyping = false;
+          typingRef.doc(WHO).set({ typing: false });
+        }, 2000);
+      }
+
+      typingRef.doc(partner).onSnapshot((snap) => {
+        if (snap.exists && snap.data().typing) {
+          typingIndicator.textContent = SENDER_DISPLAY[partner] + " is typing…";
+          typingIndicator.style.display = "inline";
+        } else {
+          typingIndicator.style.display = "none";
+        }
+      });
+
+      // ─── SEND MESSAGE ────────────────────────────────────────────────
+      sendBtn.addEventListener("click", sendMessage);
+      msgInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      async function sendMessage() {
+        const text = msgInput.value.trim();
+        if (!text && selectedFiles.length === 0) return;
+
+        sendBtn.disabled = true;
+        msgInput.value = "";
+        msgInput.style.height = "";
+        isTyping = false;
+        typingRef.doc(WHO).set({ typing: false });
+
+        const filesToSend = [...selectedFiles];
+        selectedFiles = [];
+        renderPreviewBar();
+
+        try {
+          let imageUrls = [];
+          if (filesToSend.length > 0) {
+            imageUrls = await uploadImagesWithProgress(filesToSend);
+          }
+
+          await messagesRef.add({
+            sender: WHO,
+            text: text || null,
+            imageUrls: imageUrls.length > 0 ? imageUrls : null,
+            imageUrl: imageUrls.length === 1 ? imageUrls[0] : null,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            readBy: [WHO],
+          });
+
+          updateMyReadTime();
+        } catch (err) {
+          console.error("Send error:", err);
+          alert("Couldn't send message: " + err.message);
+        } finally {
+          sendBtn.disabled = false;
+          msgInput.focus();
+        }
+      }
+
+      // ─── UPLOAD IMAGES ───────────────────────────────────────────────
+      async function uploadImagesWithProgress(files) {
+        uploadProgress.style.display = "block";
+        const urls = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const progressBase = (i / files.length) * 100;
+          const progressChunk = (1 / files.length) * 100;
+          uploadProgressBar.style.width = progressBase + "%";
+          try {
+            const url = await uploadSingleImage(
+              file,
+              progressBase,
+              progressChunk,
+            );
+            urls.push(url);
+          } catch (e) {
+            console.error("Upload failed for one image:", e);
+          }
+        }
+        uploadProgressBar.style.width = "100%";
+        setTimeout(() => {
+          uploadProgress.style.display = "none";
+          uploadProgressBar.style.width = "0%";
+        }, 400);
+        return urls;
+      }
+
+      async function uploadSingleImage(file, progressBase, progressChunk) {
+        try {
+          const compressed = await compressImage(file);
+          const formData = new FormData();
+          formData.append("file", compressed);
+          formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
+          formData.append("folder", "chat");
+
+          const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
+            { method: "POST", body: formData },
+          );
+          if (!res.ok) throw new Error("Cloudinary upload failed");
+          const data = await res.json();
+          uploadProgressBar.style.width = progressBase + progressChunk + "%";
+          return data.secure_url;
+        } catch (err) {
+          const ref = storage.ref(`chat/${Date.now()}_${file.name}`);
+          const task = ref.put(file);
+          return new Promise((resolve, reject) => {
+            task.on(
+              "state_changed",
+              (snap) => {
+                const pct =
+                  progressBase +
+                  (snap.bytesTransferred / snap.totalBytes) * progressChunk;
+                uploadProgressBar.style.width = pct + "%";
+              },
+              reject,
+              async () => {
+                resolve(await task.snapshot.ref.getDownloadURL());
+              },
+            );
+          });
+        }
+      }
+
+      async function compressImage(file, maxW = 1200, quality = 0.82) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          const url = URL.createObjectURL(file);
+          img.onload = () => {
+            let w = img.naturalWidth,
+              h = img.naturalHeight;
+            if (w > maxW) {
+              h = Math.round((h * maxW) / w);
+              w = maxW;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+            canvas.toBlob(
+              (blob) => resolve(blob || file),
+              file.type || "image/jpeg",
+              quality,
+            );
+            URL.revokeObjectURL(url);
+          };
+          img.onerror = () => resolve(file);
+          img.src = url;
+        });
+      }
+
+      // ─── RENDER MESSAGE ──────────────────────────────────────────────
+      function renderMessage(msg, id, animate = true) {
+        if (emptyState.parentNode) emptyState.remove();
+
+        const isSent = msg.sender === WHO;
+        const ts = msg.timestamp ? msg.timestamp.toDate() : new Date();
+        const tsMs = ts.getTime();
+
+        const dateStr = ts.toLocaleDateString("mk-MK", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        });
+        if (dateStr !== lastDate) {
+          lastDate = dateStr;
+          const sep = document.createElement("div");
+          sep.className = "date-separator";
+          sep.textContent = dateStr;
+          msgContainer.appendChild(sep);
+          lastSender = null;
+        }
+
+        const consecutive = lastSender === msg.sender;
+        lastSender = msg.sender;
+
+        const row = document.createElement("div");
+        row.className = `msg-row ${isSent ? "sent" : "recv"}${consecutive ? " consecutive" : ""}`;
+        row.dataset.id = id;
+        if (isSent) row.dataset.ts = tsMs;
+        if (!animate) row.style.animation = "none";
+
+        const avatar = document.createElement("div");
+        avatar.className = "bubble-avatar";
+        avatar.textContent = consecutive ? "" : AVATARS[msg.sender] || "👤";
+        if (consecutive) avatar.style.visibility = "hidden";
+
+        const wrap = document.createElement("div");
+        wrap.className = "bubble-wrap";
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+
+        const images = msg.imageUrls
+          ? msg.imageUrls
+          : msg.imageUrl
+            ? [msg.imageUrl]
+            : [];
+
+        if (images.length > 0) {
+          const gridWrap = document.createElement("div");
+          gridWrap.className = "img-grid-wrap";
+
+          const MAX_SHOWN = 6;
+          const showCount = Math.min(images.length, MAX_SHOWN);
+          const countClass =
+            images.length === 1
+              ? "count-1"
+              : images.length === 2
+                ? "count-2"
+                : images.length === 3
+                  ? "count-3"
+                  : images.length === 4
+                    ? "count-4"
+                    : "count-many";
+
+          const grid = document.createElement("div");
+          grid.className = `img-grid ${countClass}`;
+
+          for (let i = 0; i < showCount; i++) {
+            const gridImg = document.createElement("img");
+            gridImg.className = "grid-img";
+            gridImg.src = images[i];
+            gridImg.alt = `Image ${i + 1}`;
+            gridImg.loading = "lazy";
+
+            if (i === MAX_SHOWN - 1 && images.length > MAX_SHOWN) {
+              const cellWrap = document.createElement("div");
+              cellWrap.style.position = "relative";
+              cellWrap.appendChild(gridImg);
+              const overlay = document.createElement("div");
+              overlay.className = "more-overlay";
+              overlay.textContent = `+${images.length - MAX_SHOWN + 1}`;
+              overlay.addEventListener("click", () =>
+                openLightbox(images, MAX_SHOWN - 1),
+              );
+              cellWrap.appendChild(overlay);
+              grid.appendChild(cellWrap);
+            } else {
+              const idx = i;
+              gridImg.addEventListener("click", () =>
+                openLightbox(images, idx),
+              );
+              grid.appendChild(gridImg);
+            }
+          }
+
+          gridWrap.appendChild(grid);
+          bubble.appendChild(gridWrap);
+        }
+
+        if (msg.text) {
+          const p = document.createElement("p");
+          p.className = "bubble-text";
+          p.textContent = msg.text;
+          bubble.appendChild(p);
+        }
+
+        wrap.appendChild(bubble);
+
+        const timeRow = document.createElement("span");
+        timeRow.className = "msg-time";
+        const timeText = document.createTextNode(
+          ts.toLocaleTimeString("mk-MK", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }) + " ",
+        );
+        timeRow.appendChild(timeText);
+
+        if (isSent) {
+          const tickSpan = document.createElement("span");
+          tickSpan.className = "read-status";
+          const tick = document.createElement("span");
+          tick.className = "tick delivered";
+          tick.textContent = "✓✓";
+          tick.title = "Delivered";
+          tickSpan.appendChild(tick);
+          timeRow.appendChild(tickSpan);
+        }
+
+        wrap.appendChild(timeRow);
+        row.appendChild(avatar);
+        row.appendChild(wrap);
+        msgContainer.appendChild(row);
+
+        if (isSent && partnerReadTime) updateAllTicks();
+      }
+
+      function scrollToBottom(smooth = true) {
+        msgContainer.scrollTo({
+          top: msgContainer.scrollHeight,
+          behavior: smooth ? "smooth" : "instant",
+        });
+      }
+
+      // ─── REAL-TIME LISTENER ──────────────────────────────────────────
+      messagesRef.orderBy("timestamp", "asc").onSnapshot((snap) => {
+        snap.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data();
+            const isNew = !firstLoad;
+            renderMessage(msg, change.doc.id, isNew);
+            if (
+              isNew ||
+              msgContainer.scrollHeight - msgContainer.scrollTop < 600
+            ) {
+              setTimeout(scrollToBottom, 50);
+            }
+            if (isNew && msg.sender !== WHO) {
+              sendBrowserNotif(
+                SENDER_DISPLAY[msg.sender] || msg.sender,
+                msg.text,
+                msg.imageUrls ? msg.imageUrls[0] : msg.imageUrl,
+              );
+              if (!document.hidden) updateMyReadTime();
+            }
+          }
+        });
+
+        if (firstLoad) {
+          firstLoad = false;
+          setTimeout(() => scrollToBottom(false), 80);
+          loader.style.display = "none";
+          updateMyReadTime();
+        }
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) updateMyReadTime();
+      });
+      window.addEventListener("focus", updateMyReadTime);
+
+      // ─── LIGHTBOX ────────────────────────────────────────────────────
+      function openLightbox(images, startIdx = 0) {
+        lbImages = images;
+        lbIndex = startIdx;
+        lightbox.classList.add("open");
+        document.body.style.overflow = "hidden";
+        showLightboxImage();
+      }
+
+      function showLightboxImage() {
+        lightboxImg.src = lbImages[lbIndex];
+        if (lbImages.length > 1) {
+          lightboxCounter.textContent = `${lbIndex + 1} / ${lbImages.length}`;
+          document.getElementById("lightbox-nav").style.display = "flex";
+        } else {
+          document.getElementById("lightbox-nav").style.display = "none";
+        }
+        lbPrev.disabled = lbIndex === 0;
+        lbNext.disabled = lbIndex === lbImages.length - 1;
+      }
+
+      lbPrev.addEventListener("click", () => {
+        if (lbIndex > 0) {
+          lbIndex--;
+          showLightboxImage();
+        }
+      });
+      lbNext.addEventListener("click", () => {
+        if (lbIndex < lbImages.length - 1) {
+          lbIndex++;
+          showLightboxImage();
+        }
+      });
+
+      let lbTouchStartX = null;
+      lightboxImg.addEventListener(
+        "touchstart",
+        (e) => {
+          lbTouchStartX = e.touches[0].clientX;
+        },
+        { passive: true },
+      );
+      lightboxImg.addEventListener(
+        "touchend",
+        (e) => {
+          if (lbTouchStartX === null) return;
+          const dx = e.changedTouches[0].clientX - lbTouchStartX;
+          if (Math.abs(dx) > 50) {
+            if (dx < 0 && lbIndex < lbImages.length - 1) {
+              lbIndex++;
+              showLightboxImage();
+            } else if (dx > 0 && lbIndex > 0) {
+              lbIndex--;
+              showLightboxImage();
+            }
+          }
+          lbTouchStartX = null;
+        },
+        { passive: true },
+      );
+
+      lightboxClose.addEventListener("click", closeLightbox);
+      lightbox.addEventListener("click", (e) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+      function closeLightbox() {
+        lightbox.classList.remove("open");
+        document.body.style.overflow = "";
+        lbImages = [];
+        lbIndex = 0;
+      }
+
+      // ─── CAMERA ──────────────────────────────────────────────────────
+      cameraBtn.addEventListener("click", openCamera);
+
+      async function startCameraStream() {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach((t) => t.stop());
+        }
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode,
+              width: { ideal: 1280 },
+              height: { ideal: 960 },
+            },
+            audio: false,
+          });
+          cameraFeed.srcObject = cameraStream;
+          if (facingMode === "user") {
+            cameraFeed.classList.add("mirrored");
+          } else {
+            cameraFeed.classList.remove("mirrored");
+          }
+        } catch (err) {
+          alert("Camera not available: " + err.message);
+          closeCamera();
+        }
+      }
+
+      flipCameraBtn.addEventListener("click", async () => {
+        facingMode = facingMode === "environment" ? "user" : "environment";
+        await startCameraStream();
+      });
+
+      snapBtn.addEventListener("click", () => {
+        const video = cameraFeed;
+        snapCanvas.width = video.videoWidth;
+        snapCanvas.height = video.videoHeight;
+        const ctx = snapCanvas.getContext("2d");
+        if (facingMode === "user") {
+          ctx.translate(snapCanvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        ctx.drawImage(video, 0, 0);
+        snapCanvas.toBlob(
+          (blob) => {
+            capturedBlob = blob;
+            cameraPreviewImg.src = URL.createObjectURL(blob);
+            cameraLiveWrap.style.display = "none";
+            cameraPreviewWrap.classList.add("visible");
+          },
+          "image/jpeg",
+          0.9,
+        );
+      });
+
+      retakeBtn.addEventListener("click", () => {
+        capturedBlob = null;
+        cameraPreviewWrap.classList.remove("visible");
+        cameraLiveWrap.style.display = "flex";
+      });
+
+      usePhotoBtn.addEventListener("click", () => {
+        if (!capturedBlob) return;
+        const file = new File([capturedBlob], `photo_${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        });
+        addFilesToSelection([file]);
+        closeCamera();
+      });
+
+      closeCameraBtn.addEventListener("click", closeCamera);
+
+      function pushCameraHistoryState() {
+        history.pushState({ cameraOpen: true }, "");
+      }
+
+      window.addEventListener("popstate", (e) => {
+        if (cameraModal.classList.contains("open")) {
+          e.preventDefault();
+          closeCamera();
+        }
+      });
+
+      async function openCamera() {
+        cameraModal.classList.add("open");
+        cameraLiveWrap.style.display = "flex";
+        cameraPreviewWrap.classList.remove("visible");
+        capturedBlob = null;
+        pushCameraHistoryState();
+        await startCameraStream();
+      }
+
+      function closeCamera() {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach((t) => t.stop());
+          cameraStream = null;
+        }
+        cameraModal.classList.remove("open");
+        document.body.style.overflow = "";
+        if (history.state && history.state.cameraOpen) {
+          history.back();
+        }
+      }
+
+      // ─── INIT ────────────────────────────────────────────────────────
+      initNotifications();
+      if (typeof checkAuthentication === "function") checkAuthentication();
+      setTimeout(() => {
+        loader.style.display = "none";
+      }, 4000);
+    </script>
+  </body>
+</html>
