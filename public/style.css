@@ -1329,11 +1329,11 @@ header {
   align-items: center;
   padding: clamp(20px, 4vw, 50px) 0;
 
-  width: 50%;
+  max-width: 50%;
 }
 .imageDiv {
   /* border: 2px solid yellowgreen; */
-  width: 800px;
+  width: clamp(250px, 40vw, 800px);
 }
 .moonImg {
   /* border: 2px solid coral; */
@@ -1342,9 +1342,9 @@ header {
 }
 .captionText {
   /* border: 2px solid #5c2a45; */
-  width: clamp(250px, 80vw, 800px);
+  width: clamp(250px, 40vw, 800px);
   text-align: center;
-  height: 80px;
+  height: clamp(40px, 6vw, 80px);
   display: grid;
   place-items: center;
   border: 1px solid white;
@@ -1353,9 +1353,9 @@ header {
   box-shadow: 0 0 15px inset white;
 }
 .moonTextUnderImage {
-  font-size: clamp(16px, 4.5vw, 28px);
+  font-size: clamp(16px, 2.5vw, 28px);
 }
-@media (max-width: 1630px) {
+@media (max-width: 768px) {
   #moonHolderDiv {
     flex-direction: column;
     justify-content: space-evenly;
@@ -1391,4 +1391,7 @@ header {
     display: grid;
     place-items: center;
   }
+  .moonTextUnderImage {
+  font-size: clamp(16px, 3.5vw, 28px);
+}
 }
