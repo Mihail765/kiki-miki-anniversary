@@ -7,16 +7,11 @@
     <link rel="stylesheet" href="timeline.css" />
     <link rel="preload" href="corkboard/pozadinaKomGotovo.webp" as="image">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@40,400,0,0&icon_names=add_2" />
- <!-- Firebase SDK (for text data) -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_2" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_2" />
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <!-- Configurations -->
     <script src="js/firebase-config.js"></script>
     <script src="js/cloudinary-config.js"></script>
-
-    <!-- Database Helpers -->
     <script src="js/database-helpers.js"></script>
     <script src="js/safetyCode.js"></script>
   </head>
@@ -42,19 +37,15 @@
           />
         </div>
         <div id="colectionOfDrop" class="colectionOfDrop">
-            <ul id="navlistDrop">
-              <a class="listItemLinkDrop" href="landingPage.html"
-                ><li>Home</li></a
-              >
-              <a class="listItemLinkDrop" href="favourites.html"
-                ><li>Favourites</li></a
-              >
-              <a class="listItemLinkDrop" href="chat.html"><li>sdf</li></a>
-              <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
-              <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
-              <button id="logOutDrop" class="logOut"><span>Log out</span></button>
-            </ul>
-          </div>
+          <ul id="navlistDrop">
+            <a class="listItemLinkDrop" href="landingPage.html"><li>Home</li></a>
+            <a class="listItemLinkDrop" href="favourites.html"><li>Favourites</li></a>
+            <a class="listItemLinkDrop" href="chat.html"><li>sdf</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
+            <button id="logOutDrop" class="logOut"><span>Log out</span></button>
+          </ul>
+        </div>
       </nav>
     </header>
     <div id="shadow2"></div>
@@ -62,134 +53,121 @@
     <div class="upLine"></div>
     <div id="timelineWrapper">
       <svg id="connectionSVG"></svg>
-    <div id="popUpWindowInsertionOfMemory">
-      <div id="addInpMemory">
-        <div id="titleAndBtn">
-          <div class="empy">
-            <button class="backGo" id="backBtnMemory">Back</button>
-            <img class="backGo" id="imageBackArrow" src="sliki/icons/close3.png" alt="backArrow">
-          </div>
-
-          <h1 id="titleOfPopUpInpDesc">A NEW MEMORY OF US</h1>
-          <div class="empy"></div>
-        </div>
-
-        <div id="wholeDiv">
-          <div id="leftSideOfPopUp">
-            <input type="file" class="imageInputFile" name="fileInp" id="fileInput" hidden accept="image/*"/>
-            <div id="imagePreviewHolder">
-              <img id="imagePreview" src="" alt="preview" />
-              <button id="removeImageBtn">✕</button>
+      <div id="popUpWindowInsertionOfMemory">
+        <div id="addInpMemory">
+          <div id="titleAndBtn">
+            <div class="empy">
+              <button class="backGo" id="backBtnMemory">Back</button>
+              <img class="backGo" id="imageBackArrow" src="sliki/icons/close3.png" alt="backArrow">
             </div>
-            <label for="fileInput" class="custom-file-btn" id="uploadLabelLeft">Upload an Image</label>
+            <h1 id="titleOfPopUpInpDesc">A NEW MEMORY OF US</h1>
+            <div class="empy"></div>
           </div>
 
-          <div id="rightSideOfPopUp">
-            <div id="divOfTextInp">
-              <div id="bothInps">
-                <input type="text" class="inps" name="city" id="cityInput" placeholder="City" />
-                <input type="text" class="inps" name="place" id="placeInput" placeholder="Place"/>
+          <div id="wholeDiv">
+            <div id="leftSideOfPopUp">
+              <input type="file" class="imageInputFile" name="fileInp" id="fileInput" hidden accept="image/*"/>
+              <div id="imagePreviewHolder">
+                <img id="imagePreview" src="" alt="preview" />
+                <button id="removeImageBtn">✕</button>
               </div>
-              <input type="text" class="inps" name="title" id="titleInput" placeholder="Title"/>
-              <input type="text" class="inps" name="country" id="countryInput" placeholder="Country"/>
-              <input type="date" class="inps" name="date" id="dateInput" placeholder="Select date"/>
-              <div id="holderOfTextareaAndImg">
-                <textarea class="inpDescription" id="textOfDescription" placeholder="Description"></textarea>
-                <div id="rightImageHolder">
-                  <input type="file" class="imageInputFile" name="fileInp" id="fileInput2" hidden accept="image/*"/>
-                  <label for="fileInput2" class="custom-file-btn">
-                    <span id="uploadImgDisap">Upload an Image</span>
-                   <span class="material-symbols-outlined ">add_2</span>
-                  </label>
+              <label for="fileInput" class="custom-file-btn" id="uploadLabelLeft">Upload an Image</label>
+            </div>
+
+            <div id="rightSideOfPopUp">
+              <div id="divOfTextInp">
+                <div id="bothInps">
+                  <input type="text" class="inps" name="city" id="cityInput" placeholder="City" />
+                  <input type="text" class="inps" name="place" id="placeInput" placeholder="Place"/>
                 </div>
+                <input type="text" class="inps" name="title" id="titleInput" placeholder="Title"/>
+                <input type="text" class="inps" name="country" id="countryInput" placeholder="Country"/>
+                <input type="date" class="inps" name="date" id="dateInput" placeholder="Select date"/>
+                <div id="holderOfTextareaAndImg">
+                  <textarea class="inpDescription" id="textOfDescription" placeholder="Description"></textarea>
+                  <div id="rightImageHolder">
+                    <input type="file" class="imageInputFile" name="fileInp" id="fileInput2" hidden accept="image/*"/>
+                    <label for="fileInput2" class="custom-file-btn">
+                      <span id="uploadImgDisap">Upload an Image</span>
+                      <span class="material-symbols-outlined">add_2</span>
+                    </label>
+                  </div>
+                </div>
+                <button id="submitMemoryBtn">ADD OUR MEMORY</button>
               </div>
-              <button id="submitMemoryBtn">ADD OUR MEMORY</button>
             </div>
           </div>
+          <div id="rightColor"></div>
         </div>
-        <div id="rightColor"></div>
       </div>
-    </div>
 
-    <div id="popUpWindow">
-      <h1 id="titleOfPopUp" class="titleOfPopUpClass">Our first trip</h1>
-      <div class="imageHolder">
-        <img class="slika" />
-      </div>
-      <div class="btnHolder">
-        <div id="divOfTitle" >
-          <h1 id="titleOfPopUp2" class="titleOfPopUpClass hiddenTextOfTitle">Our first trip</h1>
+      <div id="popUpWindow">
+        <h1 id="titleOfPopUp" class="titleOfPopUpClass">Our first trip</h1>
+        <div class="imageHolder">
+          <img class="slika" />
         </div>
-        <div id="divOfText">
-          <p>
-            <b class="boldText">City: </b
-            ><span id="popupCity" class="memoryText"></span>
-          </p>
-          <p>
-            <b class="boldText">Country: </b
-              ><span id="popupCountry" class="memoryText"></span>
+        <div class="btnHolder">
+          <div id="divOfTitle">
+            <h1 id="titleOfPopUp2" class="titleOfPopUpClass hiddenTextOfTitle">Our first trip</h1>
+          </div>
+          <div id="divOfText">
+            <p>
+              <b class="boldText">City: </b><span id="popupCity" class="memoryText"></span>
             </p>
             <p>
-              <b class="boldText">Place: </b
-              ><span id="popupPlace" class="memoryText"></span>
+              <b class="boldText">Country: </b><span id="popupCountry" class="memoryText"></span>
             </p>
-          <p>
-            <b class="boldText">Date: </b
-            ><span id="popupDate" class="memoryText"></span>
-          </p>
+            <p>
+              <b class="boldText">Place: </b><span id="popupPlace" class="memoryText"></span>
+            </p>
+            <p>
+              <b class="boldText">Date: </b><span id="popupDate" class="memoryText"></span>
+            </p>
+            <p>
               <b class="boldText">Description: </b>
-              <span
-                class="memoryText descriptionTextMemory"
-                id="popupDescription">
-               
-            </span>
-          </p>
-        </div>
-        <div id="divOfBtn">
-          <h3 class="editBtn btnOfPop" id="editBnt">Edit</h3>
-          <h3 class="backBtn btnOfPop" id="backBnt">Done</h3>
+              <span class="memoryText descriptionTextMemory" id="popupDescription"></span>
+            </p>
+          </div>
+          <div id="divOfBtn">
+            <h3 class="editBtn btnOfPop" id="editBnt">Edit</h3>
+            <h3 class="backBtn btnOfPop" id="backBnt">Done</h3>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div id="shadow"></div>
-    <div id="loader">
-      <div class="back"></div>
-      <div class="heart"></div>
-    </div>
-    <div id="boja"></div>
+      <div id="shadow"></div>
+      <div id="loader">
+        <div class="back"></div>
+        <div class="heart"></div>
+      </div>
+      <div id="boja"></div>
 
-    <button id="memoryAdd"><span id="btnDisapearingText">
-      Add a New memory 
-    </span>
-        <span class="material-symbols-outlined" id="additionSign">
-          add_2
-        </span>
-    </button>
+      <button id="memoryAdd">
+        <span id="btnDisapearingText">Add a New memory</span>
+        <span class="material-symbols-outlined" id="additionSign">add_2</span>
+      </button>
+    </div>
 
     <script>
       function setVh() {
         let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`)  
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
       }
       setVh();
       window.addEventListener('resize', setVh);
 
-      // Check authentication
       checkAuthentication();
 
       function optimizeImage(url) {
         if (!url) return "";
-
-  // Only optimize Cloudinary images
         if (url.includes("res.cloudinary.com")) {
           return url.replace("/upload/", "/upload/f_auto,q_auto,w_800/");
         }
-
         return url;
       }
 
       // ============ DATABASE FUNCTIONS ============
+
       function formatDate(dateStr) {
         if (!dateStr || dateStr === "N/A") return "N/A";
         const d = new Date(dateStr);
@@ -211,7 +189,6 @@
       let backbtnInpWindow = document.querySelectorAll(".backGo");
       let hideHeaderNow = document.getElementById("hideHeader");
 
-      // Function to add memory to DOM
       function addMemoryToDOM(memory) {
         const wrapper = document.getElementById("timelineWrapper");
         const newSection = document.createElement("div");
@@ -221,13 +198,14 @@
         newSection.innerHTML = `
           <div class="leftDiv">
             <figure class="floatMemory">
-            <img 
-              class="imageTimeline" 
-              src="${optimizeImage(memory.imageUrl)}" 
-              alt="${memory.title}" 
-              loading="lazy" 
-              decoding="async"
-            />              <figcaption class="imageTitle">${memory.title}</figcaption>
+              <img 
+                class="imageTimeline" 
+                src="${optimizeImage(memory.imageUrl)}" 
+                alt="${memory.title}" 
+                loading="lazy" 
+                decoding="async"
+              />
+              <figcaption class="imageTitle">${memory.title}</figcaption>
             </figure>
           </div>
           <div class="rightDiv"></div>
@@ -236,242 +214,222 @@
         wrapper.appendChild(newSection);
       }
 
-      // Load memories from database on page load
-     async function loadMemoriesFromDatabase() {
-      try {
-        const memories = await getAllMemories();
-        memories.sort((a, b) => {
-          const dateA = a.date ? new Date(a.date) : new Date(0);
-          const dateB = b.date ? new Date(b.date) : new Date(0);
-          return dateA - dateB;
-        });
-        memories.forEach((memory) => {
-          addMemoryToDOM(memory);
-        });
-        setTimeout(drawLines, 100);
-      } catch (error) {
-        console.error("Error loading memories:", error);
+      async function loadMemoriesFromDatabase() {
+        try {
+          const memories = await getAllMemories();
+          memories.sort((a, b) => {
+            const dateA = a.date ? new Date(a.date) : new Date(0);
+            const dateB = b.date ? new Date(b.date) : new Date(0);
+            return dateA - dateB;
+          });
+          memories.forEach((memory) => {
+            addMemoryToDOM(memory);
+          });
+          setTimeout(drawLines, 100);
+        } catch (error) {
+          console.error("Error loading memories:", error);
+        }
       }
-    }
 
       // Handle file selection
-  document.addEventListener("DOMContentLoaded", function () {
-  document.querySelectorAll(".imageInputFile").forEach(inp => {
-    inp.addEventListener("change", function (e) {
-      selectedFile = e.target.files[0];
-      if (selectedFile) {
-        console.log("Image selected:", selectedFile.name);
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-          document.getElementById("imagePreview").src = ev.target.result;
-          document.getElementById("imagePreviewHolder").style.display = "flex";
-          document.getElementById("uploadLabelLeft").style.display = "none";
-        };
-        reader.readAsDataURL(selectedFile);
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".imageInputFile").forEach(inp => {
+          inp.addEventListener("change", function (e) {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+              const reader = new FileReader();
+              reader.onload = function (ev) {
+                document.getElementById("imagePreview").src = ev.target.result;
+                document.getElementById("imagePreviewHolder").style.display = "flex";
+                document.getElementById("uploadLabelLeft").style.display = "none";
+              };
+              reader.readAsDataURL(selectedFile);
+            }
+          });
+        });
+
+        document.getElementById("removeImageBtn").addEventListener("click", function () {
+          selectedFile = null;
+          document.getElementById("imagePreview").src = "";
+          document.getElementById("imagePreviewHolder").style.display = "none";
+          document.getElementById("uploadLabelLeft").style.display = "flex";
+          document.querySelectorAll(".imageInputFile").forEach(inp => inp.value = "");
+        });
+      });
+
+      // Handle submit memory button
+      document.getElementById("submitMemoryBtn").addEventListener("click", async function () {
+        const title = document.getElementById("titleInput").value;
+        const city = document.getElementById("cityInput").value;
+        const place = document.getElementById("placeInput").value;
+        const country = document.getElementById("countryInput").value;
+        const date = document.getElementById("dateInput").value;
+        const description = document.getElementById("textOfDescription").value;
+
+        if (!title || !date) {
+          alert("Please fill in at least the title and date!");
+          return;
+        }
+
+        try {
+          this.textContent = "Uploading...";
+          this.disabled = true;
+
+          const memoryData = {
+            title: title,
+            city: city,
+            place: place,
+            country: country,
+            description: description,
+            date: date,
+            image: selectedFile
+          };
+
+          const memoryId = await addMemory(memoryData);
+          console.log("✅ Memory saved with ID:", memoryId);
+
+          const allSections = document.querySelectorAll(".sectionOfMemory");
+          allSections.forEach(s => s.remove());
+
+          const memories = await getAllMemories();
+          memories.sort((a, b) => {
+            const dateA = a.date ? new Date(a.date) : new Date(0);
+            const dateB = b.date ? new Date(b.date) : new Date(0);
+            return dateA - dateB;
+          });
+          memories.forEach((memory) => addMemoryToDOM(memory));
+
+          document.getElementById("titleInput").value = "";
+          document.getElementById("cityInput").value = "";
+          document.getElementById("placeInput").value = "";
+          document.getElementById("countryInput").value = "";
+          document.getElementById("dateInput").value = "";
+          document.getElementById("textOfDescription").value = "";
+          selectedFile = null;
+
+          document.querySelectorAll(".imageInputFile").forEach(inp => {
+            inp.value = "";
+          });
+          document.getElementById("imagePreview").src = "";
+          document.getElementById("imagePreviewHolder").style.display = "none";
+          document.getElementById("uploadLabelLeft").style.display = "flex";
+
+          popupOfInp.style.display = "none";
+          shadow.style.display = "none";
+          document.body.style.overflow = "";
+          hideHeaderNow.classList.remove("hideHeader");
+
+          setTimeout(drawLines, 50);
+          this.textContent = "ADD OUR MEMORY";
+          this.disabled = false;
+          alert("Memory added! 🎉");
+        } catch (error) {
+          console.error("❌ Error:", error);
+          alert("Error: " + error.message);
+          this.textContent = "ADD OUR MEMORY";
+          this.disabled = false;
+        }
+      });
+
+      // ============ DRAW LINES ============
+
+      function drawLines() {
+        const svg = document.getElementById("connectionSVG");
+        const memories = document.querySelectorAll(".floatMemory");
+        const wrapper = document.getElementById("timelineWrapper");
+        const isNarrow = window.innerWidth <= 1100;
+
+        svg.innerHTML = "";
+        svg.setAttribute("height", wrapper.scrollHeight);
+        svg.setAttribute("width", wrapper.scrollWidth);
+
+        const wrapperRect = wrapper.getBoundingClientRect();
+
+        const position = Array.from(memories).map((memory) => {
+          const rect = memory.getBoundingClientRect();
+          const wrapperTop = wrapperRect.top + window.scrollY;
+          const wrapperLeft = wrapperRect.left + window.scrollX;
+          return {
+            top:     rect.top    + window.scrollY - wrapperTop,
+            bottom:  rect.bottom + window.scrollY - wrapperTop,
+            centerX: rect.left   + rect.width / 2 + window.scrollX - wrapperLeft,
+            centerY: rect.top    + rect.height / 2 + window.scrollY - wrapperTop,
+            leftX:   rect.left   + window.scrollX - wrapperLeft,
+            rightX:  rect.right  + window.scrollX - wrapperLeft,
+          };
+        });
+
+        function makeLine(x1, y1, x2, y2) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", "white");
+          line.setAttribute("stroke-width", "3");
+          line.setAttribute("stroke-linecap", "round");
+          svg.appendChild(line);
+        }
+
+        if (position.length > 0) {
+          const first = position[0];
+          makeLine(first.centerX, -wrapper.offsetTop, first.centerX, first.centerY);
+        }
+
+        for (let i = 0; i < position.length - 1; i++) {
+          const curr = position[i];
+          const next = position[i + 1];
+
+          if (isNarrow) {
+            makeLine(curr.centerX, curr.centerY, next.centerX, next.centerY);
+          } else {
+            const exitRight = i % 2 === 0;
+            const exitX = exitRight ? curr.rightX : curr.leftX;
+
+            makeLine(curr.centerX, curr.centerY, exitX, curr.centerY);
+            makeLine(exitX, curr.centerY, next.centerX, curr.centerY);
+            makeLine(next.centerX, curr.centerY, next.centerX, next.centerY);
+          }
+        }
+
+        if (position.length > 0) {
+          const last = position[position.length - 1];
+          const bottomY = wrapper.scrollHeight;
+
+          if (isNarrow) {
+            makeLine(last.centerX, last.centerY, last.centerX, bottomY);
+          } else {
+            const exitRight = (position.length - 1) % 2 === 0;
+            const exitX = exitRight ? last.rightX : last.leftX;
+            const alignX = position.length >= 2
+              ? position[position.length - 2].centerX
+              : last.centerX;
+
+            makeLine(last.centerX, last.centerY, exitX, last.centerY);
+            makeLine(exitX, last.centerY, alignX, last.centerY);
+            makeLine(alignX, last.centerY, alignX, bottomY);
+          }
+        }
       }
-    });
-  });
 
-  document.getElementById("removeImageBtn").addEventListener("click", function () {
-    selectedFile = null;
-    document.getElementById("imagePreview").src = "";
-    document.getElementById("imagePreviewHolder").style.display = "none";
-    document.getElementById("uploadLabelLeft").style.display = "flex";
-    document.querySelectorAll(".imageInputFile").forEach(inp => inp.value = "");
-  });
-});
+      // ============ EVENT LISTENERS ============
 
-// Handle submit memory button
-document
-  .getElementById("submitMemoryBtn")
-  .addEventListener("click", async function () {
-    const title = document.getElementById("titleInput").value;
-    const city = document.getElementById("cityInput").value;
-    const place = document.getElementById("placeInput").value;
-    const country = document.getElementById("countryInput").value;
-    const date = document.getElementById("dateInput").value;
-    const description = document.getElementById("textOfDescription").value;
-
-    if (!title || !date) {
-      alert("Please fill in at least the title and date!");
-      return;
-    }
-
-    try {
-      this.textContent = "Uploading...";
-      this.disabled = true;
-
-      // Create memory data with image file
-      const memoryData = {
-        title: title,
-        city: city,
-        place: place,
-        country: country,
-        description: description,
-        date: date,
-        image: selectedFile // Pass the file directly
-      };
-
-      // addMemory handles both Cloudinary upload and Firebase save
-      const memoryId = await addMemory(memoryData);
-      
-      console.log("✅ Memory saved with ID:", memoryId);
-
-    // Re-render all memories in sorted order
-      const allSections = document.querySelectorAll(".sectionOfMemory");
-      allSections.forEach(s => s.remove());
-
-      const memories = await getAllMemories();
-      memories.sort((a, b) => {
-        const dateA = a.date ? new Date(a.date) : new Date(0);
-        const dateB = b.date ? new Date(b.date) : new Date(0);
-        return dateA - dateB;
-      });
-      memories.forEach((memory) => addMemoryToDOM(memory));
-
-
-      // Reset form
-      document.getElementById("titleInput").value = "";
-      document.getElementById("cityInput").value = "";
-      document.getElementById("placeInput").value = "";
-      document.getElementById("countryInput").value = "";
-      document.getElementById("dateInput").value = "";
-      document.getElementById("textOfDescription").value = "";
-      selectedFile = null;
-
-      // Reset file input
-      document.querySelectorAll(".imageInputFile").forEach(inp => {
-        inp.value = "";
-      });
-      document.getElementById("imagePreview").src = "";
-      document.getElementById("imagePreviewHolder").style.display = "none";
-      document.getElementById("uploadLabelLeft").style.display = "flex";
-
-
-      // Close popup
-      popupOfInp.style.display = "none";
-      shadow.style.display = "none";
-      document.body.style.overflow = "";
-      hideHeaderNow.classList.remove("hideHeader");
-
-      setTimeout(drawLines, 50);
-      this.textContent = "ADD OUR MEMORY";
-      this.disabled = false;
-      alert("Memory added! 🎉");
-    } catch (error) {
-      console.error("❌ Error:", error);
-      alert("Error: " + error.message);
-      this.textContent = "ADD OUR MEMORY";
-      this.disabled = false;
-    }
-  });      // ============ EXISTING FUNCTIONS ============
-
-function drawLines() {
-  const svg = document.getElementById("connectionSVG");
-  const memories = document.querySelectorAll(".floatMemory");
-  const wrapper = document.getElementById("timelineWrapper");
-  const isNarrow = window.innerWidth <= 1100;
-
-  svg.innerHTML = "";
-  svg.setAttribute("height", wrapper.scrollHeight);
-  svg.setAttribute("width", wrapper.scrollWidth);
-
-  const wrapperRect = wrapper.getBoundingClientRect();
-
-  const position = Array.from(memories).map((memory) => {
-    const rect = memory.getBoundingClientRect();
-    const wrapperTop = wrapperRect.top + window.scrollY;
-    const wrapperLeft = wrapperRect.left + window.scrollX;
-    return {
-      top:     rect.top    + window.scrollY - wrapperTop,
-      bottom:  rect.bottom + window.scrollY - wrapperTop,
-      centerX: rect.left   + rect.width / 2 + window.scrollX - wrapperLeft,
-      centerY: rect.top    + rect.height / 2 + window.scrollY - wrapperTop,
-      leftX:   rect.left   + window.scrollX - wrapperLeft,
-      rightX:  rect.right  + window.scrollX - wrapperLeft,
-    };
-  });
-
-  function makeLine(x1, y1, x2, y2) {
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
-    line.setAttribute("stroke", "white");
-    line.setAttribute("stroke-width", "3");
-    line.setAttribute("stroke-linecap", "round");
-    svg.appendChild(line);
-  }
-
-  // ── Line from top of screen down to first memory center ──
-  if (position.length > 0) {
-    const first = position[0];
-    makeLine(first.centerX, -wrapper.offsetTop, first.centerX, first.centerY);
-  }
-
-  // ── Connections between memories ──
-  for (let i = 0; i < position.length - 1; i++) {
-    const curr = position[i];
-    const next = position[i + 1];
-
-    if (isNarrow) {
-      makeLine(curr.centerX, curr.centerY, next.centerX, next.centerY);
-    } else {
-      const exitRight = i % 2 === 0;
-      const exitX = exitRight ? curr.rightX : curr.leftX;
-
-      makeLine(curr.centerX, curr.centerY, exitX, curr.centerY);
-      makeLine(exitX, curr.centerY, next.centerX, curr.centerY);
-      makeLine(next.centerX, curr.centerY, next.centerX, next.centerY);
-    }
-  }
-
-  // ── Line from last memory center down to bottom ──
-  if (position.length > 0) {
-    const last = position[position.length - 1];
-    const bottomY = wrapper.scrollHeight;
-
-    if (isNarrow) {
-      makeLine(last.centerX, last.centerY, last.centerX, bottomY);
-    } else {
-      const exitRight = (position.length - 1) % 2 === 0;
-      const exitX = exitRight ? last.rightX : last.leftX;
-      const alignX = position.length >= 2
-        ? position[position.length - 2].centerX
-        : last.centerX;
-
-      makeLine(last.centerX, last.centerY, exitX, last.centerY);
-      makeLine(exitX, last.centerY, alignX, last.centerY);
-      makeLine(alignX, last.centerY, alignX, bottomY);
-    }
-  }
-}      // ============ EVENT LISTENERS ============
-
-      // Add memory button click
       addMemoryBtn.addEventListener("click", function () {
         popupOfInp.style.display = "block";
         shadow.style.display = "block";
         document.body.style.overflow = "hidden";
-          // hideHeaderNow.style.display = "none";
-          hideHeaderNow.classList.add("hideHeader");
-
+        hideHeaderNow.classList.add("hideHeader");
       });
 
-      // Back button on add memory popup
       backbtnInpWindow.forEach(backClick => {
         backClick.addEventListener("click", function () {
           popupOfInp.style.display = "none";
           shadow.style.display = "none";
           document.body.style.overflow = "visible";
-          // hideHeaderNow.style.display = "";
           hideHeaderNow.classList.remove("hideHeader");
+        });
+      });
 
-        })
-      })
-
-
-    // Back button on view memory popup
       document.getElementById("backBnt").addEventListener("click", function () {
         if (isEditing) {
           saveEdits().then(() => {
@@ -490,140 +448,111 @@ function drawLines() {
         hideHeaderNow.classList.remove("hideHeader");
       });
 
-      // Click on memory to view details
-      document
-        .getElementById("timelineWrapper")
-        .addEventListener("click", async function (e) {
-          const memory = e.target.closest(".floatMemory");
+      document.getElementById("timelineWrapper").addEventListener("click", async function (e) {
+        const memory = e.target.closest(".floatMemory");
 
-          if (memory && !btnClicked) {
-            const section = memory.closest(".sectionOfMemory");
-            const memoryId = section
-              ? section.getAttribute("data-memory-id")
-              : null;
+        if (memory && !btnClicked) {
+          const section = memory.closest(".sectionOfMemory");
+          const memoryId = section ? section.getAttribute("data-memory-id") : null;
 
-            if (memoryId) {
-              // Load from database
-              try {
-                const doc = await db.collection("memories").doc(memoryId).get();
-                if (doc.exists) {
-                  const data = doc.data();
-                  currentMemoryId = memoryId;
+          if (memoryId) {
+            try {
+              const doc = await db.collection("memories").doc(memoryId).get();
+              if (doc.exists) {
+                const data = doc.data();
+                currentMemoryId = memoryId;
 
-                  document.querySelectorAll(".titleOfPopUpClass").forEach(pop => {
-                    pop.textContent = data.title;
-                  })
-                  document.getElementById("popupCity").textContent =
-                    data.city || "N/A";
-                  document.getElementById("popupPlace").textContent =
-                    data.place || "N/A";
-                  document.getElementById("popupCountry").textContent = data.country || "N/A";
-                  document.getElementById("popupDate").textContent =
-                    formatDate(data.date);
-                  document.getElementById("popupDescription").textContent =
-                    data.description || "No description";
-                  document.querySelector(".slika").src =
-                    optimizeImage(data.imageUrl);
+                document.querySelectorAll(".titleOfPopUpClass").forEach(pop => {
+                  pop.textContent = data.title;
+                });
+                document.getElementById("popupCity").textContent = data.city || "N/A";
+                document.getElementById("popupPlace").textContent = data.place || "N/A";
+                document.getElementById("popupCountry").textContent = data.country || "N/A";
+                document.getElementById("popupDate").textContent = formatDate(data.date);
+                document.getElementById("popupDescription").textContent = data.description || "No description";
+                document.querySelector(".slika").src = optimizeImage(data.imageUrl);
 
-                  document.body.style.overflow = "hidden";
-                  shadow.style.display = "block";
-                  popUpWindow.style.display = "flex";
-                  // hideHeaderNow.style.display = "none";
-                  hideHeaderNow.classList.add("hideHeader");
-                  btnClicked = true;
-                }
-              } catch (error) {
-                console.error("Error loading memory:", error);
+                document.body.style.overflow = "hidden";
+                shadow.style.display = "block";
+                popUpWindow.style.display = "flex";
+                hideHeaderNow.classList.add("hideHeader");
+                btnClicked = true;
               }
-            } else {
-              // For memories without database ID (existing static ones)
-              let imageTimeline = memory
-                .querySelector(".imageTimeline")
-                .getAttribute("src");
-              document
-                .querySelector(".slika")
-                .setAttribute("src", imageTimeline);
-              document.body.style.overflow = "hidden";
-              shadow.style.display = "block";
-              popUpWindow.style.display = "flex";
-              btnClicked = true;
+            } catch (error) {
+              console.error("Error loading memory:", error);
             }
+          } else {
+            let imageTimeline = memory.querySelector(".imageTimeline").getAttribute("src");
+            document.querySelector(".slika").setAttribute("src", imageTimeline);
+            document.body.style.overflow = "hidden";
+            shadow.style.display = "block";
+            popUpWindow.style.display = "flex";
+            btnClicked = true;
           }
-        });
+        }
+      });
 
-      // Date picker
-      document
-        .getElementById("dateInput")
-        .addEventListener("click", function () {
-          this.showPicker();
-        });
+      document.getElementById("dateInput").addEventListener("click", function () {
+        this.showPicker();
+      });
 
       // ============ PAGE LOAD ============
 
+      let loader = document.getElementById("loader");
+      if (document.readyState === "loading") {
+        document.body.style.overflow = "hidden";
+      }
+      window.addEventListener("load", async () => {
+        await loadMemoriesFromDatabase();
+        drawLines();
+        loader.style.display = "none";
+        document.body.style.overflow = "";
+      });
 
-    let loader = document.getElementById("loader");
-    if (document.readyState === "loading") {
-      document.body.style.overflow = "hidden";
-      console.log("still loading");
-    }
-    window.addEventListener("load", async () => {
-      await loadMemoriesFromDatabase();
-      drawLines();
-
-      loader.style.display = "none";
-      document.body.style.overflow = "";
-      console.log("page loaded");
-    });
-    
-      // Window resize and scroll
       let resizeTimeout;
       window.addEventListener("resize", () => {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(drawLines, 30); // down from 100ms
+        resizeTimeout = setTimeout(drawLines, 30);
       });
 
       window.addEventListener("scroll", () => {
-        drawLines(); // no rAF wrapper, call directly
+        drawLines();
       });
 
-      
-    let toggelMenu = document.getElementById("colectionOfDrop");
-    let header = document.querySelector(".navbar");
-    let menuChange = document.getElementById("menuChange");
-    let shadow2 = document.getElementById("shadow2");
+      let toggelMenu = document.getElementById("colectionOfDrop");
+      let header = document.querySelector(".navbar");
+      let menuChange = document.getElementById("menuChange");
+      let shadow2 = document.getElementById("shadow2");
 
-    document.getElementById("menu").addEventListener("click", function () {
-      // header.style.height = header.style.height === "400px" ? "90px" : "400px";
-      const isOpen = header.classList.toggle("menu-open");
+      document.getElementById("menu").addEventListener("click", function () {
+        const isOpen = header.classList.toggle("menu-open");
 
-      if (isOpen) {
-        menuChange.setAttribute("src", "sliki/icons/close.png");
-        setTimeout(() => {
-          toggelMenu.style.display = "block";
-        }, 150);
-        openShadow();
-      } else {
-        menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
-        toggelMenu.style.display = "none";
-        closeShadow();
+        if (isOpen) {
+          menuChange.setAttribute("src", "sliki/icons/close.png");
+          setTimeout(() => {
+            toggelMenu.style.display = "block";
+          }, 150);
+          openShadow();
+        } else {
+          menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
+          toggelMenu.style.display = "none";
+          closeShadow();
+        }
+
+        menuChange.classList.add("rotateMenuNow");
+        menuChange.addEventListener("animationend", () => {
+          menuChange.classList.remove("rotateMenuNow");
+        });
+      });
+
+      function openShadow() {
+        shadow2.style.display = "block";
+        document.body.style.overflow = "hidden";
       }
-
-      menuChange.classList.add("rotateMenuNow");
-
-      menuChange.addEventListener("animationend", () => {
-        menuChange.classList.remove("rotateMenuNow");
-      });
-    });
-
-    function openShadow() {
-      shadow2.style.display = "block";
-      document.body.style.overflow = "hidden";
-    }
-    function closeShadow() {
-      shadow2.style.display = "none";
-      document.body.style.overflow = "";
-    }
-
+      function closeShadow() {
+        shadow2.style.display = "none";
+        document.body.style.overflow = "";
+      }
 
       document.addEventListener("load", function (e) {
         if (e.target.classList.contains("imageTimeline")) {
@@ -632,235 +561,234 @@ function drawLines() {
       }, true);
 
       document.querySelectorAll(".logOut").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        let loggedIn = sessionStorage.getItem("loggedIn");
-        sessionStorage.removeItem("loggedIn");
-        window.location.replace("/index.html");
+        btn.addEventListener("click", () => {
+          sessionStorage.removeItem("loggedIn");
+          window.location.replace("/index.html");
+        });
       });
-    });
 
+      // ============ EDIT BUTTON FUNCTIONALITY ============
 
+      let isEditing = false;
+      let editedFields = {};
+      let originalMemoryData = {};
 
+      document.getElementById("editBnt").addEventListener("click", async function () {
+        if (!isEditing) {
+          await enterEditMode();
+        } else {
+          await saveEdits();
+        }
+      });
 
+      async function enterEditMode() {
+        if (!currentMemoryId) return;
 
-    // ============ EDIT BUTTON FUNCTIONALITY ============
+        try {
+          const doc = await db.collection("memories").doc(currentMemoryId).get();
+          if (!doc.exists) return;
+          originalMemoryData = doc.data();
+        } catch (err) {
+          console.error("Could not load memory for editing:", err);
+          return;
+        }
 
-let isEditing = false;
-let editedFields = {};
-let originalMemoryData = {};
+        isEditing = true;
+        editedFields = {};
 
-document.getElementById("editBnt").addEventListener("click", async function () {
-  if (!isEditing) {
-    await enterEditMode();
-  } else {
-    await saveEdits();
-  }
-});
+        document.getElementById("editBnt").textContent = "Save";
+        document.getElementById("editBnt").style.backgroundColor = "#28a745";
 
-async function enterEditMode() {
-  if (!currentMemoryId) return;
+        makeFieldEditable("popupCity",        "text");
+        makeFieldEditable("popupCountry",     "text");
+        makeFieldEditable("popupPlace",       "text");
+        makeFieldEditable("popupDate",        "date");
+        makeFieldEditable("popupDescription", "textarea");
 
-  // Load the full current memory from Firestore first
-  try {
-    const doc = await db.collection("memories").doc(currentMemoryId).get();
-    if (!doc.exists) return;
-    originalMemoryData = doc.data(); // store full snapshot
-  } catch (err) {
-    console.error("Could not load memory for editing:", err);
-    return;
-  }
-
-  isEditing = true;
-  editedFields = {};
-
-  document.getElementById("editBnt").textContent = "Save";
-  document.getElementById("editBnt").style.backgroundColor = "#28a745";
-
-  // Make each field individually clickable to edit
-  makeFieldEditable("popupCity",        "text");
-  makeFieldEditable("popupCountry",     "text");
-  makeFieldEditable("popupPlace",       "text");
-  makeFieldEditable("popupDate",        "date");
-  makeFieldEditable("popupDescription", "textarea");
-
-  // Only the currently visible title element
-  document.querySelectorAll(".titleOfPopUpClass").forEach(el => {
-    if (el.offsetParent === null) return;
-    el.classList.add("editableField");
-    el.addEventListener("click", onTitleClick);
-  });
-}
-
-function makeFieldEditable(id, type) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add("editableField");
-
-  function onFieldClick(e) {
-    e.stopPropagation();
-    const current = document.getElementById(id);
-    if (!current || current.dataset.editing === "true") return;
-    current.dataset.editing = "true";
-    convertToInput(current, id, type);
-  }
-
-  el.addEventListener("click", onFieldClick);
-}
-
-function onTitleClick(e) {
-  const el = e.currentTarget;
-  if (el.dataset.editing === "true") return;
-  convertTitleToInput(el);
-  el.removeEventListener("click", onTitleClick);
-}
-
-function convertToInput(el, id, type) {
-  const currentValue = el.textContent;
-  el.dataset.editing = "true";
-
-  let input;
-  if (type === "textarea") {
-    input = document.createElement("textarea");
-    input.className = "editInlineInput editInlineTextarea";
-    input.value = currentValue === "No description" ? "" : currentValue;
-  } else {
-    input = document.createElement("input");
-    input.type = type;
-    input.className = "editInlineInput";
-    if (type === "date" && currentValue && currentValue !== "N/A") {
-      const parts = currentValue.trim().split(".");
-      if (parts.length === 3) {
-        input.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
-      } else {
-        const d = new Date(currentValue);
-        input.value = !isNaN(d) ? d.toISOString().split("T")[0] : "";
+        document.querySelectorAll(".titleOfPopUpClass").forEach(el => {
+          if (el.offsetParent === null) return;
+          el.classList.add("editableField");
+          el.addEventListener("click", onTitleClick, { once: true });
+        });
       }
-    } else {
-      input.value = currentValue === "N/A" ? "" : currentValue;
-    }
-  }
 
-  input.id = id;
-  input.dataset.fieldId = id;
-  input.dataset.fieldType = type;
+      // ── FIX: delegate to attachFieldListener so { once: true } is always used ──
+      function makeFieldEditable(id, type) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add("editableField");
+        attachFieldListener(el, id, type);
+      }
 
-  input.addEventListener("blur", function () {
-    editedFields[id] = input.value.trim();
-    restoreDisplaySingle(input, id, type);
-  });
+      // ── FIX: single, reusable function that always attaches with { once: true } ──
+      function attachFieldListener(el, id, type) {
+        el.addEventListener("click", function onFieldClick(e) {
+          e.stopPropagation();
+          const current = document.getElementById(id);
+          if (!current || current.dataset.editing === "true") return;
+          current.dataset.editing = "true";
+          convertToInput(current, id, type);
+        }, { once: true });
+      }
 
-  el.replaceWith(input);
-  input.focus();
-}
+      function onTitleClick(e) {
+        const el = e.currentTarget;
+        if (el.dataset.editing === "true") return;
+        convertTitleToInput(el);
+      }
 
-function convertTitleToInput(el) {
-  const currentValue = el.textContent;
-  el.dataset.editing = "true";
+      function convertToInput(el, id, type) {
+        const currentValue = el.textContent;
+        el.dataset.editing = "true";
 
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = currentValue;
-  input.className = "editInlineInput titleEditInput";
-  input.dataset.originalId    = el.id || "";
-  input.dataset.originalClass = el.className;
+        let input;
+        if (type === "textarea") {
+          input = document.createElement("textarea");
+          input.className = "editInlineInput editInlineTextarea";
+          input.value = currentValue === "No description" ? "" : currentValue;
+        } else {
+          input = document.createElement("input");
+          input.type = type;
+          input.className = "editInlineInput";
+          if (type === "date" && currentValue && currentValue !== "N/A") {
+            const parts = currentValue.trim().split(".");
+            if (parts.length === 3) {
+              input.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            } else {
+              const d = new Date(currentValue);
+              input.value = !isNaN(d) ? d.toISOString().split("T")[0] : "";
+            }
+          } else {
+            input.value = currentValue === "N/A" ? "" : currentValue;
+          }
+        }
 
-  input.addEventListener("blur", function () {
-    editedFields["title"] = input.value.trim();
+        input.id = id;
+        input.dataset.fieldId = id;
+        input.dataset.fieldType = type;
 
-    const h1 = document.createElement("h1");
-    h1.className = input.dataset.originalClass;
-    if (input.dataset.originalId) h1.id = input.dataset.originalId;
-    h1.textContent = input.value.trim() || currentValue;
-    h1.classList.add("editableField");
-    h1.addEventListener("click", onTitleClick);
-    input.replaceWith(h1);
-  });
+        input.addEventListener("blur", function () {
+          editedFields[id] = input.value.trim();
+          restoreDisplaySingle(input, id, type);
+        });
 
-  el.replaceWith(input);
-  input.focus();
-}
+        el.replaceWith(input);
+        input.focus();
+      }
 
-function restoreDisplaySingle(input, id, type) {
-  const isDescription = id === "popupDescription";
-  const isDate = id === "popupDate";
-  const value = isDate
-    ? (formatDate(input.value.trim()) || "N/A")
-    : (input.value.trim() || (isDescription ? "No description" : "N/A"));
+      function convertTitleToInput(el) {
+        const currentValue = el.textContent;
+        el.dataset.editing = "true";
 
-  const span = document.createElement("span");
-  span.id = id;
-  span.className = "memoryText" + (isDescription ? " descriptionTextMemory" : "");
-  span.textContent = value;
-  span.classList.add("editableField");
-  span.dataset.editing = "false";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentValue;
+        input.className = "editInlineInput titleEditInput";
+        input.dataset.originalId    = el.id || "";
+        input.dataset.originalClass = el.className;
 
-  function onSpanClick() {
-    if (span.dataset.editing === "true") return;
-    convertToInput(span, id, type);
-    span.removeEventListener("click", onSpanClick);
-  }
+        input.addEventListener("blur", function () {
+          editedFields["title"] = input.value.trim();
 
-  span.addEventListener("click", onSpanClick);
-  input.replaceWith(span);
-}
+          const h1 = document.createElement("h1");
+          h1.className = input.dataset.originalClass;
+          if (input.dataset.originalId) h1.id = input.dataset.originalId;
+          h1.textContent = input.value.trim() || currentValue;
+          h1.classList.add("editableField");
+          h1.addEventListener("click", onTitleClick, { once: true });
+          input.replaceWith(h1);
+        });
 
-async function saveEdits() {
-  if (!currentMemoryId) return;
+        el.replaceWith(input);
+        input.focus();
+      }
 
-  // If a field is still focused/being typed, blur it first to capture the value
-  const activeEl = document.activeElement;
-  if (activeEl && activeEl.classList.contains("editInlineInput")) {
-    activeEl.blur();
-    await new Promise(r => setTimeout(r, 50));
-  }
+      // ── FIX: use attachFieldListener instead of manually re-adding a listener ──
+      function restoreDisplaySingle(input, id, type) {
+        const isDescription = id === "popupDescription";
+        const isDate = id === "popupDate";
+        const value = isDate
+          ? (formatDate(input.value.trim()) || "N/A")
+          : (input.value.trim() || (isDescription ? "No description" : "N/A"));
 
-  try {
-    document.getElementById("editBnt").textContent = "Saving…";
-    document.getElementById("editBnt").disabled = true;
+        const span = document.createElement("span");
+        span.id = id;
+        span.className = "memoryText" + (isDescription ? " descriptionTextMemory" : "");
+        span.textContent = value;
+        span.classList.add("editableField");
+        span.dataset.editing = "false";
 
-    // Merge edited fields into the full original snapshot
-    // This guarantees we never wipe fields we didn't touch
-    // and we only ever write to THIS memory's document ID
-    const updatedData = {
-      ...originalMemoryData,  // all original fields preserved
-      ...editedFields,        // only overwrite what the user actually changed
-    };
+        input.replaceWith(span);
+        // Re-attach with { once: true } — exactly one listener, no stacking
+        attachFieldListener(span, id, type);
+      }
 
-    // Save the merged object to ONLY this memory's document
-    await db.collection("memories").doc(currentMemoryId).set(updatedData);
+      // ── FIX: map element IDs → Firestore field names before saving ──
+      async function saveEdits() {
+        if (!currentMemoryId) return;
 
-    // Update the timeline card title if it changed
-    if (editedFields.title) {
-      const card = document.querySelector(`[data-memory-id="${currentMemoryId}"] .imageTitle`);
-      if (card) card.textContent = editedFields.title;
-    }
+        const activeEl = document.activeElement;
+        if (activeEl && activeEl.classList.contains("editInlineInput")) {
+          activeEl.blur();
+          await new Promise(r => setTimeout(r, 50));
+        }
 
-    exitEditMode();
-    console.log("✅ Memory updated for ID:", currentMemoryId, updatedData);
+        try {
+          document.getElementById("editBnt").textContent = "Saving…";
+          document.getElementById("editBnt").disabled = true;
 
-  } catch (err) {
-    console.error("❌ Error updating memory:", err);
-    alert("Could not save changes: " + err.message);
-    document.getElementById("editBnt").textContent = "Save";
-    document.getElementById("editBnt").disabled = false;
-  }
-}
+          // Map popup element IDs → actual Firestore field names
+          const fieldMap = {
+            popupCity:        "city",
+            popupCountry:     "country",
+            popupPlace:       "place",
+            popupDate:        "date",
+            popupDescription: "description",
+            title:            "title"
+          };
 
-function exitEditMode() {
-  isEditing = false;
-  editedFields = {};
-  originalMemoryData = {};
+          const mappedEdits = {};
+          for (const [key, val] of Object.entries(editedFields)) {
+            const firestoreKey = fieldMap[key] || key;
+            mappedEdits[firestoreKey] = val;
+          }
 
-  document.querySelectorAll(".editableField").forEach(el => {
-    el.classList.remove("editableField");
-  });
+          const updatedData = {
+            ...originalMemoryData,
+            ...mappedEdits,
+          };
 
-  document.getElementById("editBnt").textContent = "Edit";
-  document.getElementById("editBnt").style.backgroundColor = "";
-  document.getElementById("editBnt").disabled = false;
-}
+          await db.collection("memories").doc(currentMemoryId).set(updatedData);
 
+          if (mappedEdits.title) {
+            const card = document.querySelector(`[data-memory-id="${currentMemoryId}"] .imageTitle`);
+            if (card) card.textContent = mappedEdits.title;
+          }
 
+          exitEditMode();
+          console.log("✅ Memory updated for ID:", currentMemoryId, updatedData);
+
+        } catch (err) {
+          console.error("❌ Error updating memory:", err);
+          alert("Could not save changes: " + err.message);
+          document.getElementById("editBnt").textContent = "Save";
+          document.getElementById("editBnt").disabled = false;
+        }
+      }
+
+      function exitEditMode() {
+        isEditing = false;
+        editedFields = {};
+        originalMemoryData = {};
+
+        document.querySelectorAll(".editableField").forEach(el => {
+          el.classList.remove("editableField");
+        });
+
+        document.getElementById("editBnt").textContent = "Edit";
+        document.getElementById("editBnt").style.backgroundColor = "";
+        document.getElementById("editBnt").disabled = false;
+      }
     </script>
   </body>
 </html>
