@@ -77,9 +77,13 @@
         <div id="wholeDiv">
           <div id="leftSideOfPopUp">
             <input type="file" class="imageInputFile" name="fileInp" id="fileInput" hidden accept="image/*"/>
-            <label for="fileInput" class="custom-file-btn"
-              >Upload an Image</label>
+            <div id="imagePreviewHolder">
+              <img id="imagePreview" src="" alt="preview" />
+              <button id="removeImageBtn">✕</button>
+            </div>
+            <label for="fileInput" class="custom-file-btn" id="uploadLabelLeft">Upload an Image</label>
           </div>
+
           <div id="rightSideOfPopUp">
             <div id="divOfTextInp">
               <div id="bothInps">
@@ -186,6 +190,15 @@
       }
 
       // ============ DATABASE FUNCTIONS ============
+      function formatDate(dateStr) {
+        if (!dateStr || dateStr === "N/A") return "N/A";
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        const dd   = String(d.getUTCDate()).padStart(2, "0");
+        const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const yyyy = d.getUTCFullYear();
+        return `${dd}.${mm}.${yyyy}`;
+      }
 
       // Global variables
       let selectedFile = null;
@@ -224,29 +237,49 @@
       }
 
       // Load memories from database on page load
-      async function loadMemoriesFromDatabase() {
-        try {
-          const memories = await getAllMemories();
-          memories.forEach((memory) => {
-            addMemoryToDOM(memory);
-          });
-          setTimeout(drawLines, 100);
-        } catch (error) {
-          console.error("Error loading memories:", error);
-        }
+     async function loadMemoriesFromDatabase() {
+      try {
+        const memories = await getAllMemories();
+        memories.sort((a, b) => {
+          const dateA = a.date ? new Date(a.date) : new Date(0);
+          const dateB = b.date ? new Date(b.date) : new Date(0);
+          return dateA - dateB;
+        });
+        memories.forEach((memory) => {
+          addMemoryToDOM(memory);
+        });
+        setTimeout(drawLines, 100);
+      } catch (error) {
+        console.error("Error loading memories:", error);
       }
+    }
 
       // Handle file selection
-      document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".imageInputFile").forEach(inp => {
-            inp.addEventListener("change", function (e) {
-              selectedFile = e.target.files[0];
-              if (selectedFile) {
-                console.log("Image selected:", selectedFile.name);
-              }
-            });
-        });
-      });
+  document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".imageInputFile").forEach(inp => {
+    inp.addEventListener("change", function (e) {
+      selectedFile = e.target.files[0];
+      if (selectedFile) {
+        console.log("Image selected:", selectedFile.name);
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          document.getElementById("imagePreview").src = ev.target.result;
+          document.getElementById("imagePreviewHolder").style.display = "flex";
+          document.getElementById("uploadLabelLeft").style.display = "none";
+        };
+        reader.readAsDataURL(selectedFile);
+      }
+    });
+  });
+
+  document.getElementById("removeImageBtn").addEventListener("click", function () {
+    selectedFile = null;
+    document.getElementById("imagePreview").src = "";
+    document.getElementById("imagePreviewHolder").style.display = "none";
+    document.getElementById("uploadLabelLeft").style.display = "flex";
+    document.querySelectorAll(".imageInputFile").forEach(inp => inp.value = "");
+  });
+});
 
 // Handle submit memory button
 document
@@ -284,13 +317,18 @@ document
       
       console.log("✅ Memory saved with ID:", memoryId);
 
-      // Get the memory to display it with the Cloudinary URL
+    // Re-render all memories in sorted order
+      const allSections = document.querySelectorAll(".sectionOfMemory");
+      allSections.forEach(s => s.remove());
+
       const memories = await getAllMemories();
-      const newMemory = memories.find(m => m.id === memoryId);
-      
-      if (newMemory) {
-        addMemoryToDOM(newMemory);
-      }
+      memories.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date(0);
+        const dateB = b.date ? new Date(b.date) : new Date(0);
+        return dateA - dateB;
+      });
+      memories.forEach((memory) => addMemoryToDOM(memory));
+
 
       // Reset form
       document.getElementById("titleInput").value = "";
@@ -304,12 +342,17 @@ document
       // Reset file input
       document.querySelectorAll(".imageInputFile").forEach(inp => {
         inp.value = "";
-      })
+      });
+      document.getElementById("imagePreview").src = "";
+      document.getElementById("imagePreviewHolder").style.display = "none";
+      document.getElementById("uploadLabelLeft").style.display = "flex";
+
 
       // Close popup
       popupOfInp.style.display = "none";
       shadow.style.display = "none";
       document.body.style.overflow = "";
+      hideHeaderNow.classList.remove("hideHeader");
 
       setTimeout(drawLines, 50);
       this.textContent = "ADD OUR MEMORY";
@@ -427,15 +470,24 @@ function drawLines() {
         })
       })
 
-      // Back button on view memory popup
+
+    // Back button on view memory popup
       document.getElementById("backBnt").addEventListener("click", function () {
+        if (isEditing) {
+          saveEdits().then(() => {
+            shadow.style.display = "none";
+            popUpWindow.style.display = "none";
+            document.body.style.overflow = "visible";
+            btnClicked = false;
+            hideHeaderNow.classList.remove("hideHeader");
+          });
+          return;
+        }
         shadow.style.display = "none";
         popUpWindow.style.display = "none";
         document.body.style.overflow = "visible";
         btnClicked = false;
-        // hideHeaderNow.style.display = "";
         hideHeaderNow.classList.remove("hideHeader");
-
       });
 
       // Click on memory to view details
@@ -467,7 +519,7 @@ function drawLines() {
                     data.place || "N/A";
                   document.getElementById("popupCountry").textContent = data.country || "N/A";
                   document.getElementById("popupDate").textContent =
-                    data.date || "N/A";
+                    formatDate(data.date);
                   document.getElementById("popupDescription").textContent =
                     data.description || "No description";
                   document.querySelector(".slika").src =
@@ -586,6 +638,228 @@ function drawLines() {
         window.location.replace("/index.html");
       });
     });
+
+
+
+
+
+    // ============ EDIT BUTTON FUNCTIONALITY ============
+
+let isEditing = false;
+let editedFields = {};
+let originalMemoryData = {};
+
+document.getElementById("editBnt").addEventListener("click", async function () {
+  if (!isEditing) {
+    await enterEditMode();
+  } else {
+    await saveEdits();
+  }
+});
+
+async function enterEditMode() {
+  if (!currentMemoryId) return;
+
+  // Load the full current memory from Firestore first
+  try {
+    const doc = await db.collection("memories").doc(currentMemoryId).get();
+    if (!doc.exists) return;
+    originalMemoryData = doc.data(); // store full snapshot
+  } catch (err) {
+    console.error("Could not load memory for editing:", err);
+    return;
+  }
+
+  isEditing = true;
+  editedFields = {};
+
+  document.getElementById("editBnt").textContent = "Save";
+  document.getElementById("editBnt").style.backgroundColor = "#28a745";
+
+  // Make each field individually clickable to edit
+  makeFieldEditable("popupCity",        "text");
+  makeFieldEditable("popupCountry",     "text");
+  makeFieldEditable("popupPlace",       "text");
+  makeFieldEditable("popupDate",        "date");
+  makeFieldEditable("popupDescription", "textarea");
+
+  // Only the currently visible title element
+  document.querySelectorAll(".titleOfPopUpClass").forEach(el => {
+    if (el.offsetParent === null) return;
+    el.classList.add("editableField");
+    el.addEventListener("click", onTitleClick);
+  });
+}
+
+function makeFieldEditable(id, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add("editableField");
+
+  function onFieldClick(e) {
+    e.stopPropagation();
+    const current = document.getElementById(id);
+    if (!current || current.dataset.editing === "true") return;
+    current.dataset.editing = "true";
+    convertToInput(current, id, type);
+  }
+
+  el.addEventListener("click", onFieldClick);
+}
+
+function onTitleClick(e) {
+  const el = e.currentTarget;
+  if (el.dataset.editing === "true") return;
+  convertTitleToInput(el);
+  el.removeEventListener("click", onTitleClick);
+}
+
+function convertToInput(el, id, type) {
+  const currentValue = el.textContent;
+  el.dataset.editing = "true";
+
+  let input;
+  if (type === "textarea") {
+    input = document.createElement("textarea");
+    input.className = "editInlineInput editInlineTextarea";
+    input.value = currentValue === "No description" ? "" : currentValue;
+  } else {
+    input = document.createElement("input");
+    input.type = type;
+    input.className = "editInlineInput";
+    if (type === "date" && currentValue && currentValue !== "N/A") {
+      const parts = currentValue.trim().split(".");
+      if (parts.length === 3) {
+        input.value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      } else {
+        const d = new Date(currentValue);
+        input.value = !isNaN(d) ? d.toISOString().split("T")[0] : "";
+      }
+    } else {
+      input.value = currentValue === "N/A" ? "" : currentValue;
+    }
+  }
+
+  input.id = id;
+  input.dataset.fieldId = id;
+  input.dataset.fieldType = type;
+
+  input.addEventListener("blur", function () {
+    editedFields[id] = input.value.trim();
+    restoreDisplaySingle(input, id, type);
+  });
+
+  el.replaceWith(input);
+  input.focus();
+}
+
+function convertTitleToInput(el) {
+  const currentValue = el.textContent;
+  el.dataset.editing = "true";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = currentValue;
+  input.className = "editInlineInput titleEditInput";
+  input.dataset.originalId    = el.id || "";
+  input.dataset.originalClass = el.className;
+
+  input.addEventListener("blur", function () {
+    editedFields["title"] = input.value.trim();
+
+    const h1 = document.createElement("h1");
+    h1.className = input.dataset.originalClass;
+    if (input.dataset.originalId) h1.id = input.dataset.originalId;
+    h1.textContent = input.value.trim() || currentValue;
+    h1.classList.add("editableField");
+    h1.addEventListener("click", onTitleClick);
+    input.replaceWith(h1);
+  });
+
+  el.replaceWith(input);
+  input.focus();
+}
+
+function restoreDisplaySingle(input, id, type) {
+  const isDescription = id === "popupDescription";
+  const isDate = id === "popupDate";
+  const value = isDate
+    ? (formatDate(input.value.trim()) || "N/A")
+    : (input.value.trim() || (isDescription ? "No description" : "N/A"));
+
+  const span = document.createElement("span");
+  span.id = id;
+  span.className = "memoryText" + (isDescription ? " descriptionTextMemory" : "");
+  span.textContent = value;
+  span.classList.add("editableField");
+  span.dataset.editing = "false";
+
+  function onSpanClick() {
+    if (span.dataset.editing === "true") return;
+    convertToInput(span, id, type);
+    span.removeEventListener("click", onSpanClick);
+  }
+
+  span.addEventListener("click", onSpanClick);
+  input.replaceWith(span);
+}
+
+async function saveEdits() {
+  if (!currentMemoryId) return;
+
+  // If a field is still focused/being typed, blur it first to capture the value
+  const activeEl = document.activeElement;
+  if (activeEl && activeEl.classList.contains("editInlineInput")) {
+    activeEl.blur();
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  try {
+    document.getElementById("editBnt").textContent = "Saving…";
+    document.getElementById("editBnt").disabled = true;
+
+    // Merge edited fields into the full original snapshot
+    // This guarantees we never wipe fields we didn't touch
+    // and we only ever write to THIS memory's document ID
+    const updatedData = {
+      ...originalMemoryData,  // all original fields preserved
+      ...editedFields,        // only overwrite what the user actually changed
+    };
+
+    // Save the merged object to ONLY this memory's document
+    await db.collection("memories").doc(currentMemoryId).set(updatedData);
+
+    // Update the timeline card title if it changed
+    if (editedFields.title) {
+      const card = document.querySelector(`[data-memory-id="${currentMemoryId}"] .imageTitle`);
+      if (card) card.textContent = editedFields.title;
+    }
+
+    exitEditMode();
+    console.log("✅ Memory updated for ID:", currentMemoryId, updatedData);
+
+  } catch (err) {
+    console.error("❌ Error updating memory:", err);
+    alert("Could not save changes: " + err.message);
+    document.getElementById("editBnt").textContent = "Save";
+    document.getElementById("editBnt").disabled = false;
+  }
+}
+
+function exitEditMode() {
+  isEditing = false;
+  editedFields = {};
+  originalMemoryData = {};
+
+  document.querySelectorAll(".editableField").forEach(el => {
+    el.classList.remove("editableField");
+  });
+
+  document.getElementById("editBnt").textContent = "Edit";
+  document.getElementById("editBnt").style.backgroundColor = "";
+  document.getElementById("editBnt").disabled = false;
+}
+
 
     </script>
   </body>

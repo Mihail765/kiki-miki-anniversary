@@ -550,6 +550,7 @@ header {
   background-color: black;
   border-radius: 2%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .slika {
@@ -643,7 +644,6 @@ header {
     flex: 1;
     width: 100%;
     height: 50%;
-
   }
   .btnHolder {
     /* border: 2px solid mediumblue; */
@@ -681,14 +681,29 @@ header {
     /* flex: 8; */
     /* flex: 1; */
     /* height: 50%; */
-  width: 100%;
+    width: 100%;
     /* border: 2px solid rgb(255, 0, 0); */
-        height: 200px;
+    height: 200px;
     /* display: none; */
     /* padding-top: 10px; */
     margin: 0;
     padding: 0;
     overflow-y: scroll;
+    border: 5px inset rgb(252, 252, 252);
+    padding-left: 10px;
+
+    margin-top: 10px;
+  }
+  .editInlineTextarea {
+    min-height: 120px;
+    height: 120px;
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .editInlineInput {
+    font-size: 16px; /* prevents iOS auto-zoom on all inputs */
   }
 
 }
@@ -1169,10 +1184,9 @@ input[type="date"] {
 
     /* border: 2px solid black; */
   }
-  #divOfText{
-    border: 5px inset rgb(252, 252, 252);
+  #divOfText {
     padding-left: 10px;
-    
+
     margin-top: 10px;
     height: 150px;
     overflow-y: scroll;
@@ -1262,4 +1276,103 @@ input[type="date"] {
   #popUpWindow {
     height: calc(var(--vh) * 85);
   }
+}
+
+
+
+
+
+.editableField {
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, pointer !important;
+  border-bottom: 2px dashed #cc3366;
+  border-radius: 2px;
+  display: inline-block;
+  width: 100%;
+  min-height: 1em;
+  padding-bottom: 2px;
+  transition: background 0.2s ease, border-bottom 0.2s ease;
+}
+
+.editableField:hover {
+  border-bottom: 2px dashed #ff758f;
+  background: rgba(255, 118, 143, 0.08);
+}
+
+
+#imagePreviewHolder {
+  display: none;
+  position: relative;
+  width: 50%;
+  height: 50%;
+  border-radius: 5%;
+  overflow: hidden;
+}
+
+#imagePreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5%;
+}
+
+#removeImageBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, pointer;
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+
+#removeImageBtn:hover {
+  background: rgba(200, 0, 0, 0.8);
+}
+
+.editInlineInput {
+  border: none;
+  border-bottom: 2px solid #cc3366;
+  background: transparent;
+  color: #cc3366;
+  font-size: clamp(1em, 2.5vw, 1.25em);
+  font-family: inherit;
+  width: 100%;
+  padding: 4px 6px;
+  outline: none;
+  box-sizing: border-box;
+  border-radius: 0;
+  min-height: 2em;
+}
+
+.editInlineInput:focus {
+  border-bottom-color: #ff758f;
+  background: rgba(255, 118, 143, 0.08);
+}
+
+.editInlineTextarea {
+  resize: vertical;
+  min-height: 100px;
+  height: 100px;
+  border: 2px solid #cc3366;
+  border-radius: 4px;
+  padding: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.titleEditInput {
+  font-size: inherit;
+  font-weight: bold;
+  text-align: center;
+  border-bottom: 2px solid #cc3366;
+  min-height: 1.5em;
 }
