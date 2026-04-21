@@ -59,7 +59,7 @@
           </div>
           <div class="mini-controls">
             <!-- skip previous -->
-            <button id="secondary01" class="mini-btn secondary">
+            <button id="secondary01" class="mini-btn hvrBtn secondary">
               <img
                 src="sliki/icons/skipPrevious.png"
                 alt="prev"
@@ -67,7 +67,7 @@
               />
             </button>
             <!-- play / pause — image swaps on click -->
-            <button class="mini-btn" id="miniPlayBtn">
+            <button class="mini-btn hvrBtn" id="miniPlayBtn">
               <img
                 src="sliki/icons/playBtn.png"
                 alt="play"
@@ -76,7 +76,7 @@
               />
             </button>
             <!-- skip next -->
-            <button id="secondary02" class="mini-btn secondary">
+            <button id="secondary02" class="mini-btn hvrBtn secondary">
               <img
                 src="sliki/icons/skipNext.png"
                 alt="next"
@@ -213,7 +213,7 @@
 
           // Play button with image
           const playBtn = document.createElement("button");
-          playBtn.className = "result-play-btn";
+          playBtn.className = "result-play-btn hvrBtn";
           playBtn.title = "Preview";
           const playImg = document.createElement("img");
           playImg.src = IMG_PLAY;
@@ -237,7 +237,7 @@
           } else {
             const img = document.createElement("img");
             img.src = "sliki/icons/plus.png"; // <-- your image path
-            img.className = "plus-icon-now";
+            img.className = "plus-icon-now hvrBtn";
             img.alt = "add";
             centerIconOFAdd.appendChild(img);
           }
