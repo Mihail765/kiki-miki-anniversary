@@ -21,6 +21,9 @@ async function addFavouriteSong(songData) {
       name: songData.name,
       artist: songData.artist || "",
       spotifyUrl: songData.spotifyUrl || "",
+      artwork: songData.artwork || "",
+      previewUrl: songData.previewUrl || "",
+      trackId: songData.trackId || "",
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -46,6 +49,9 @@ async function getAllSongs() {
         name: doc.data().name,
         artist: doc.data().artist,
         spotifyUrl: doc.data().spotifyUrl,
+        artwork: doc.data().artwork || "",
+        previewUrl: doc.data().previewUrl || "",
+        trackId: doc.data().trackId || "",
         type: "song",
       });
     });

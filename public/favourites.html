@@ -1,229 +1,615 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="favourites.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_box"
+    />
+    <title>Our Songs 🎵</title>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="favourites.css">
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_box" />
-    <title>Document</title>
-
-<!-- Firebase SDK (for text data) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+
     <!-- Configurations -->
-    <script src="firebase-config.js"></script>
-    <script src="cloudinary-config.js"></script>
-    
-    <!-- Database Helpers -->
-    <script src="database-helpers.js"></script>
-</head>
+    <script src="js/safetyCode.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/database-helpers.js"></script>
+  </head>
 
-<body>
+  <body>
     <nav>
-        <h1>Kiki + Miki</h1>
-    </nav> 
+      <h1>Kiki + Miki</h1>
+    </nav>
+
     <div id="popUpWindow">
-        <div class="btnHolder">
-            <h3 class="backBtn" id="backBnt">Back</h3>
+      <div class="popup-header">
+        <button class="backBtn" id="backBnt">Back</button>
+        <div class="popup-search-row">
+          <input
+            type="text"
+            id="searchFld"
+            placeholder="Search for a song…"
+            autocomplete="off"
+          />
+          <button id="searchBtn">Search</button>
         </div>
-        <div class="searchHolder">
-            <input class="searchFld" type="search" placeholder="Type the song name">
-            <button class="searchBtn">Search</button>
+      </div>
+
+      <div class="results-list" id="resultsList">
+        <div class="state-msg">Search for a song to add it 🎵</div>
+      </div>
+
+      <div class="mini-player" id="miniPlayer">
+        <div class="mini-top">
+          <img
+            src=""
+            alt=""
+            id="miniArt"
+            class="mini-art"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+          />
+          <div class="mini-meta">
+            <div class="mini-title" id="miniTitle">-</div>
+            <div class="mini-artist" id="miniArtist">-</div>
+          </div>
+          <div class="mini-controls">
+            <!-- skip previous -->
+            <button id="secondary01" class="mini-btn secondary">
+              <img
+                src="sliki/icons/skipPrevious.png"
+                alt="prev"
+                class="btn-icon skipBFr"
+              />
+            </button>
+            <!-- play / pause — image swaps on click -->
+            <button class="mini-btn" id="miniPlayBtn">
+              <img
+                src="sliki/icons/playBtn.png"
+                alt="play"
+                class="btn-icon"
+                id="miniPlayImg"
+              />
+            </button>
+            <!-- skip next -->
+            <button id="secondary02" class="mini-btn secondary">
+              <img
+                src="sliki/icons/skipNext.png"
+                alt="next"
+                class="btn-icon skipBFr"
+              />
+            </button>
+          </div>
         </div>
+        <div class="mini-proggress-wrap">
+          <span class="mini-time" id="miniCurrent">0:00</span>
+          <div class="mini-track" id="miniTrack">
+            <div class="mini-fill" id="miniFill"></div>
+          </div>
+          <span class="mini-time" id="miniDuration">0:30</span>
+        </div>
+      </div>
     </div>
+
     <div id="shadow"></div>
+
     <div class="wrapper">
-        <section class="sectionFav">
-            <div class="texts">
-                <h2 class="title">Our songs</h2>
-                <h3 class="addBtn" id="addBtn">Add
-                    <span class="material-symbols-outlined">
-                        add_box
-                    </span>
-                </h3>
-            </div>
-            <div class="gridItems">
-                <div class="exampleDiv">
-                    <div class="titleOfSong">
-                        <h2 class="songName">Song example</h2>
-                    </div>
-                    <div class="imageOfSongArtist">
-                        <img src="sliki/Kikicaaa.jpg" alt="" height="150px">
-                    </div>
-                    <div class="playBtnAndStop">
-                        <div class="colectionOfControls">
-                            <img src="sliki/icons/skipPrevious.png" alt="playBtn" height="40px">
-                            <img src="sliki/icons/playBtn.png" alt="playBtn" height="50px">
-                            <img src="sliki/icons/skipNext.png" alt="playBtn" height="40px">
-                            
-                        </div>
-                    </div>
-                </div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-            </div>
-        </section>
+      <section class="sectionFav">
+        <div class="texts">
+          <h2 class="title">Our songs</h2>
+          <h3 class="addBtn" id="addBtn">
+            Add
+            <span class="material-symbols-outlined">add_box</span>
+          </h3>
+        </div>
+        <div class="gridItems" id="songsGrid"></div>
+      </section>
 
-        <section class="sectionFav">
-            <div class="texts">
-                <h2 class="title">Our songs</h2>
-                <h3>Add
-                    <span class="material-symbols-outlined">
-                        add_box
-                    </span>
-                </h3>
-            </div>
-            <div class="gridItems">
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-                <div class="exampleDiv"></div>
-            </div>
-        </section>
+      <section class="sectionFav">
+        <div class="texts">
+          <h2 class="title">Our Places</h2>
+          <h3>
+            Add
+            <span class="material-symbols-outlined">add_box</span>
+          </h3>
+        </div>
+        <div class="gridItems">
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+        </div>
+      </section>
     </div>
+
+    <audio id="globalAudio"></audio>
+
     <script>
-        checkAuthentication();
+      // ── IMAGE PATHS ──────────────────────────────────────────────
+      const IMG_PLAY = "sliki/icons/playBtn.png";
+      const IMG_PAUSE = "sliki/icons/stopBtn.png";
+      const IMG_PREV = "sliki/icons/skipPrevious.png";
+      const IMG_NEXT = "sliki/icons/skipNext.png";
 
-        // Load favourites from database when page loads
-        window.addEventListener('load', async function() {
-            await loadFavourites();
+      // ── GLOBAL STATE ─────────────────────────────────────────────
+      const audio = document.getElementById("globalAudio");
+      let searchResults = [];
+      let currentIdx = -1;
+      let ticker;
+      let savedIds = new Set();
+      let cardCurrentId = null;
+
+      // ── AUTH ──────────────────────────────────────────────────────
+      if (typeof checkAuthentication === "function") checkAuthentication();
+
+      // ── ARTWORK HELPER ────────────────────────────────────────────
+      function getArtwork(url) {
+        if (!url) return "";
+        return url
+          .replace("100x100bb", "600x600bb")
+          .replace("60x60bb", "600x600bb")
+          .replace("100x100", "600x600")
+          .replace("60x60", "600x600")
+          .replace("http://", "https://");
+      }
+
+      // ── SEARCH ────────────────────────────────────────────────────
+      document.getElementById("searchBtn").addEventListener("click", doSearch);
+      document.getElementById("searchFld").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doSearch();
+      });
+
+      async function doSearch() {
+        const q = document.getElementById("searchFld").value.trim();
+        if (!q) return;
+        setResultsHTML(
+          '<div class="spinner"></div><div class="state-msg" style="padding:8px;">Searching…</div>',
+        );
+        try {
+          const res = await fetch(
+            `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=15`,
+          );
+          const data = await res.json();
+          searchResults = data.results.filter((s) => s.previewUrl);
+          if (!searchResults.length) {
+            setResultsHTML('<div class="state-msg">No results found.</div>');
+            return;
+          }
+          renderResults();
+        } catch (e) {
+          setResultsHTML(
+            '<div class="state-msg" style="color:#f87171;">Search failed — check your connection.</div>',
+          );
+        }
+      }
+
+      function renderResults() {
+        const list = document.getElementById("resultsList");
+        list.innerHTML = "";
+        searchResults.forEach((song, i) => {
+          const row = document.createElement("div");
+          row.className = "result-row" + (i === currentIdx ? " playing" : "");
+          row.id = "rrow-" + i;
+
+          const isSaved = savedIds.has(song.trackId);
+
+          // Artwork
+          const art = document.createElement("img");
+          art.src = getArtwork(song.artworkUrl100 || song.artworkUrl60);
+          art.crossOrigin = "anonymous";
+          art.referrerPolicy = "no-referrer";
+
+          // Info
+          const info = document.createElement("div");
+          info.className = "result-info";
+          info.innerHTML = `<div class="result-name">${esc(song.trackName)}</div>
+                              <div class="result-artist">${esc(song.artistName)}</div>`;
+
+          // Play button with image
+          const playBtn = document.createElement("button");
+          playBtn.className = "result-play-btn";
+          playBtn.title = "Preview";
+          const playImg = document.createElement("img");
+          playImg.src = IMG_PLAY;
+          playImg.alt = "play";
+          playImg.className = "btn-icon";
+          playImg.id = "rpi-" + i;
+          playBtn.appendChild(playImg);
+          playBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            playSong(i);
+          });
+
+          // Add button
+          const addBtn = document.createElement("button");
+          const centerIconOFAdd = document.createElement("span");
+          centerIconOFAdd.className = "centerIconOFAdd";
+          addBtn.className = "add-to-fav-btn" + (isSaved ? " saved" : "");
+          addBtn.id = "addbtn-" + i;
+          if (isSaved) {
+            centerIconOFAdd.textContent = "✓";
+          } else {
+            const img = document.createElement("img");
+            img.src = "sliki/icons/plus.png"; // <-- your image path
+            img.className = "plus-icon-now";
+            img.alt = "add";
+            centerIconOFAdd.appendChild(img);
+          }
+          addBtn.appendChild(centerIconOFAdd);
+          addBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            saveSong(i, addBtn);
+          });
+
+          row.append(art, info, playBtn, addBtn);
+          row.addEventListener("click", () => playSong(i));
+          list.appendChild(row);
         });
+      }
 
-        // Function to load all favourites
-        async function loadFavourites() {
-            try {
-                const favourites = await getAllFavourites();
-                const songsGrid = document.getElementById('songsGrid');
+      // ── PLAY FROM SEARCH RESULTS ──────────────────────────────────
+      function playSong(i) {
+        const song = searchResults[i];
+        if (!song?.previewUrl) return;
 
-                // Clear existing items if you want
-                // Or keep them and just add new ones
+        const wasPlaying = currentIdx === i && !audio.paused;
 
-                // Add each favourite
-                favourites.forEach(fav => {
-                    if (fav.type === 'song') {
-                        addSongToGrid(fav);
-                    } else if (fav.type === 'movie') {
-                        addMovieToGrid(fav);
-                    }
-                });
-            } catch (error) {
-                console.error("Error loading favourites:", error);
-            }
+        // Reset all result-row play images back to play icon
+        document
+          .querySelectorAll("[id^='rpi-']")
+          .forEach((img) => (img.src = IMG_PLAY));
+        document
+          .querySelectorAll(".result-row")
+          .forEach((r) => r.classList.remove("playing"));
+
+        if (wasPlaying) {
+          audio.pause();
+          setMiniPlayImg(IMG_PLAY);
+          return;
         }
 
+        // Stop any card that was playing
+        if (cardCurrentId) {
+          const cf = document.getElementById("cpf-" + cardCurrentId);
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          if (cf) cf.style.width = "0%";
+          if (cb) cb.src = IMG_PLAY;
+          cardCurrentId = null;
+        }
 
+        currentIdx = i;
+        audio.src = song.previewUrl;
+        audio.play();
 
-        
+        // Mark this row as playing
+        const row = document.getElementById("rrow-" + i);
+        if (row) row.classList.add("playing");
+        const rpi = document.getElementById("rpi-" + i);
+        if (rpi) rpi.src = IMG_PAUSE;
 
+        // Update mini player
+        document.getElementById("miniArt").src = getArtwork(
+          song.artworkUrl100 || song.artworkUrl60,
+        );
+        document.getElementById("miniTitle").textContent = song.trackName;
+        document.getElementById("miniArtist").textContent = song.artistName;
+        document.getElementById("miniPlayer").classList.add("visible");
+        setMiniPlayImg(IMG_PAUSE);
 
-// When user clicks to add a song
-document.querySelector('.searchBtn').addEventListener('click', async function() {
-    const songName = document.querySelector('.searchFld').value.trim();
-    
-    if (!songName) {
-        alert("Please enter a song name!");
-        return;
-    }
+        startTicker();
+      }
 
-    // You can prompt for more details or use a form
-    const artistName = prompt("Artist name (optional):");
-    const spotifyUrl = prompt("Spotify URL (optional):");
+      // ── MINI PLAYER CONTROLS ──────────────────────────────────────
+      function toggleMini() {
+        if (audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      }
 
-    try {
-        this.textContent = "Adding...";
-        this.disabled = true;
+      function cardSkip(dir) {
+        const next = currentIdx + dir;
+        if (next >= 0 && next < searchResults.length) playSong(next);
+      }
 
-        const songData = {
-            name: songName,
-            artist: artistName || "",
-            spotifyUrl: spotifyUrl || ""
-        };
+      function miniSeek(e) {
+        if (!audio.duration) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const pct = Math.max(
+          0,
+          Math.min(1, (e.clientX - rect.left) / rect.width),
+        );
+        audio.currentTime = pct * audio.duration;
+      }
 
-        const songId = await addFavouriteSong(songData);
-        songData.id = songId;
-        songData.type = 'song';
+      function setMiniPlayImg(src) {
+        document.getElementById("miniPlayImg").src = src;
+      }
 
-        // Add to grid
-        addSongToGrid(songData);
+      function startTicker() {
+        clearInterval(ticker);
+        ticker = setInterval(() => {
+          if (!audio.duration) return;
+          const pct = (audio.currentTime / audio.duration) * 100;
+          document.getElementById("miniFill").style.width =
+            pct.toFixed(1) + "%";
+          document.getElementById("miniCurrent").textContent = fmt(
+            audio.currentTime,
+          );
+          document.getElementById("miniDuration").textContent = fmt(
+            audio.duration,
+          );
 
-        // Reset and close
-        document.querySelector('.searchFld').value = "";
-        document.getElementById('popUpWindow').style.display = "none";
-        document.getElementById('shadow').style.display = "none";
-        document.body.style.overflow = "visible";
+          if (cardCurrentId) {
+            const fill = document.getElementById("cpf-" + cardCurrentId);
+            if (fill) fill.style.width = pct.toFixed(1) + "%";
+          }
+        }, 300);
+      }
 
-        this.textContent = "Search";
-        this.disabled = false;
+      // ── AUDIO EVENTS ──────────────────────────────────────────────
+      audio.addEventListener("ended", () => {
+        setMiniPlayImg(IMG_PLAY);
+        // Reset result row icon
+        if (currentIdx >= 0) {
+          const rpi = document.getElementById("rpi-" + currentIdx);
+          if (rpi) rpi.src = IMG_PLAY;
+          document
+            .querySelectorAll(".result-row")
+            .forEach((r) => r.classList.remove("playing"));
+        }
+        // Reset card
+        if (cardCurrentId) {
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          const cf = document.getElementById("cpf-" + cardCurrentId);
+          if (cb) cb.src = IMG_PLAY;
+          if (cf) cf.style.width = "0%";
+          cardCurrentId = null;
+        }
+        clearInterval(ticker);
+      });
 
-        alert("Song added! 🎵");
+      audio.addEventListener("pause", () => {
+        setMiniPlayImg(IMG_PLAY);
+        if (cardCurrentId) {
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          if (cb) cb.src = IMG_PLAY;
+        }
+        if (currentIdx >= 0) {
+          const rpi = document.getElementById("rpi-" + currentIdx);
+          if (rpi) rpi.src = IMG_PLAY;
+        }
+      });
 
-    } catch (error) {
-        console.error("Error adding song:", error);
-        alert("Error adding song. Please try again.");
-        this.textContent = "Search";
-        this.disabled = false;
-    }
-});
+      audio.addEventListener("play", () => {
+        setMiniPlayImg(IMG_PAUSE);
+        if (cardCurrentId) {
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          if (cb) cb.src = IMG_PAUSE;
+        }
+        if (currentIdx >= 0) {
+          const rpi = document.getElementById("rpi-" + currentIdx);
+          if (rpi) rpi.src = IMG_PAUSE;
+        }
+      });
 
+      document
+        .getElementById("secondary01")
+        .addEventListener("click", () => cardSkip(-1));
+      document
+        .getElementById("miniPlayBtn")
+        .addEventListener("click", toggleMini);
+      document
+        .getElementById("secondary02")
+        .addEventListener("click", () => cardSkip(1));
+      document.getElementById("miniTrack").addEventListener("click", miniSeek);
 
+      // ── SAVE SONG ─────────────────────────────────────────────────
+      async function saveSong(i, btn) {
+        const song = searchResults[i];
+        if (savedIds.has(song.trackId)) return;
 
+        btn.textContent = "…";
+        btn.disabled = true;
 
+        try {
+          const songData = {
+            name: song.trackName,
+            artist: song.artistName,
+            artwork: getArtwork(song.artworkUrl100 || song.artworkUrl60),
+            previewUrl: song.previewUrl,
+            trackId: song.trackId,
+          };
 
+          if (typeof addFavouriteSong === "function") {
+            const id = await addFavouriteSong(songData);
+            songData.id = id;
+          }
 
+          savedIds.add(song.trackId);
+          btn.textContent = "✓";
+          btn.classList.add("saved");
+          btn.disabled = false;
 
+          addSongCard(songData);
+        } catch (err) {
+          console.error(err);
+          btn.textContent = "+";
+          btn.disabled = false;
+        }
+      }
 
+      // ── RENDER SONG CARD ──────────────────────────────────────────
+      function addSongCard(song) {
+        const grid = document.getElementById("songsGrid");
+        const div = document.createElement("div");
+        div.className = "exampleDiv";
+        div.setAttribute("data-track-id", song.trackId || "");
 
+        const artwork = getArtwork(song.artwork || "");
+        const tid = song.trackId || song.id || Date.now();
+        const preview = song.previewUrl;
 
+        const inner = document.createElement("div");
+        inner.className = "song-card-inner";
 
+        // Art
+        const artImg = document.createElement("img");
+        artImg.className = "song-card-art";
+        artImg.src = artwork;
+        artImg.crossOrigin = "anonymous";
+        artImg.referrerPolicy = "no-referrer";
+        artImg.alt = "";
 
+        // Name & artist
+        const nameEl = document.createElement("div");
+        nameEl.className = "song-card-name";
+        nameEl.textContent = song.name;
 
+        const artistEl = document.createElement("div");
+        artistEl.className = "song-card-artist";
+        artistEl.textContent = song.artist;
 
+        // Progress bar
+        const progress = document.createElement("div");
+        progress.className = "card-progress";
+        const fill = document.createElement("div");
+        fill.className = "card-progress-fill";
+        fill.id = "cpf-" + tid;
+        progress.appendChild(fill);
 
-// Function to add song to grid
-function addSongToGrid(song) {
-    const songsGrid = document.querySelector('.gridItems'); // Adjust selector if needed
-    const songDiv = document.createElement('div');
-    songDiv.className = 'exampleDiv';
-    songDiv.setAttribute('data-song-id', song.id);
-    songDiv.innerHTML = `
-        <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;">
-            <h3 style="margin-bottom: 10px;">${song.name}</h3>
-            <p style="color: gray; font-size: 14px;">${song.artist || 'Unknown Artist'}</p>
-            ${song.spotifyUrl ? `<a href="${song.spotifyUrl}" target="_blank" style="margin-top: 10px; color: #ff758f; text-decoration: none;">🎵 Listen</a>` : ''}
-        </div>
-    `;
-    songsGrid.appendChild(songDiv);
-}
+        // Play button with image (toggles play/pause)
+        const controls = document.createElement("div");
+        controls.className = "song-card-controls";
 
+        const cardBtn = document.createElement("button");
+        cardBtn.className = "card-btn";
+        cardBtn.id = "cbtn-" + tid;
 
-        let btnClicked = false;
-        let shadow = document.getElementById("shadow");
-        let backBnt = document.getElementById("backBnt").addEventListener("click", function () {
-            shadow.style.display = "none";
-            popUpWindow.style.display = "none";
-            document.getElementsByTagName("body")[0].style.overflow = "visible";
+        const cardImg = document.createElement("img");
+        cardImg.src = IMG_PLAY;
+        cardImg.alt = "play";
+        cardImg.className = "btn-icon";
+        cardImg.id = "cimg-" + tid;
 
-            btnClicked = false;
-        })
-        let popUpWindow = document.getElementById("popUpWindow");
-        let addBtn = document.getElementById("addBtn").addEventListener("click", function () {
-            if (btnClicked === false) {
-                shadow.style.display = "block";
-                popUpWindow.style.display = "flex";
-                document.getElementsByTagName("body")[0].style.overflow = "hidden";
-                console.log("clicked");
-                btnClicked = true;
+        cardBtn.appendChild(cardImg);
+        cardBtn.addEventListener("click", () =>
+          toggleCard(tid, preview, song.name, song.artist, artwork),
+        );
+        controls.appendChild(cardBtn);
+
+        // Badge
+        const badge = document.createElement("div");
+        badge.className = "preview-badge";
+        badge.textContent = "30s preview";
+
+        inner.append(artImg, nameEl, artistEl, progress, controls, badge);
+        div.appendChild(inner);
+        grid.appendChild(div);
+      }
+
+      // ── CARD PLAYER TOGGLE ────────────────────────────────────────
+      function toggleCard(trackId, previewUrl, name, artist, artwork) {
+        // Same card — toggle play/pause
+        if (cardCurrentId === trackId) {
+          if (audio.paused) audio.play();
+          else audio.pause();
+          return;
+        }
+
+        // Stop old card
+        if (cardCurrentId) {
+          const oldImg = document.getElementById("cimg-" + cardCurrentId);
+          const oldFill = document.getElementById("cpf-" + cardCurrentId);
+          if (oldImg) oldImg.src = IMG_PLAY;
+          if (oldFill) oldFill.style.width = "0%";
+        }
+
+        // Clear any search-result playing state
+        currentIdx = -1;
+        document
+          .querySelectorAll(".result-row")
+          .forEach((r) => r.classList.remove("playing"));
+        document
+          .querySelectorAll("[id^='rpi-']")
+          .forEach((img) => (img.src = IMG_PLAY));
+
+        cardCurrentId = trackId;
+        audio.src = previewUrl;
+        audio.play();
+
+        // Update mini player
+        document.getElementById("miniArt").src = getArtwork(artwork);
+        document.getElementById("miniTitle").textContent = name;
+        document.getElementById("miniArtist").textContent = artist;
+        document.getElementById("miniPlayer").classList.add("visible");
+
+        startTicker();
+      }
+
+      // ── LOAD FROM FIREBASE ────────────────────────────────────────
+      window.addEventListener("load", async () => {
+        if (typeof getAllFavourites !== "function") return;
+        try {
+          const favs = await getAllFavourites();
+          favs.forEach((f) => {
+            if (f.previewUrl) {
+              savedIds.add(f.trackId);
+              addSongCard(f);
             }
-        });
-    </script>
-</body>
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      });
 
+      // ── POPUP ─────────────────────────────────────────────────────
+      const shadow = document.getElementById("shadow");
+      const popUpWindow = document.getElementById("popUpWindow");
+
+      document.getElementById("addBtn").addEventListener("click", () => {
+        shadow.style.display = "block";
+        popUpWindow.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        document.getElementById("searchFld").focus();
+      });
+
+      document.getElementById("backBnt").addEventListener("click", closePopup);
+      shadow.addEventListener("click", closePopup);
+
+      function closePopup() {
+        shadow.style.display = "none";
+        popUpWindow.style.display = "none";
+        document.body.style.overflow = "";
+      }
+
+      // ── UTILS ─────────────────────────────────────────────────────
+      function fmt(s) {
+        s = Math.floor(s || 0);
+        const m = Math.floor(s / 60),
+          sec = s % 60;
+        return m + ":" + (sec < 10 ? "0" : "") + sec;
+      }
+
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function setResultsHTML(html) {
+        document.getElementById("resultsList").innerHTML = html;
+      }
+    </script>
+  </body>
 </html>
