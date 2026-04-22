@@ -999,9 +999,22 @@ header {
 
 /* image slider */
 
-#FirstImageSlider {
+#firstImageSlider {
   width: 100%;
   height: 100%;
+
+background: linear-gradient(
+    to bottom,
+    #ffe4e1 0%,   
+    #f3cfd8 15%,
+    #d8cce6 30%,
+    #a9b3d9 45%,
+    #6b7bbd 60%,
+    #2f3e7a 75%,
+    #020617 90%,
+    #010207 100%   
+  );
+
 }
 #slider {
   width: 100%;
@@ -1046,9 +1059,34 @@ header {
 
 #wrapperOfHearts {
   /* border: 3px solid rgb(0, 255, 0); */
+position: relative;
+z-index: 1;
+
   padding-bottom: clamp(10px, 6vw, 85px);
   height: auto;
   overflow: hidden;
+}
+#wrapperOfHearts::before{
+  /* border: 2px solid red; */
+  content: "";
+  inset: 0;
+  position: absolute;
+
+  background-image: url(https://cdn.pixabay.com/photo/2023/02/01/21/40/pink-7761356_1280.png);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+
+  filter: blur(5px);
+  z-index: -1;
+}
+
+#firstImageSlider{
+    /* background-image: url(https://cdn.pixabay.com/photo/2021/01/13/03/27/heart-5913128_1280.png); */
+  background-size: contain;
+  background-position: center;
+  /* background-attachment: fixed; */
+height: 500px;
 }
 
 /* @media (max-width: 1200px) {
@@ -1226,7 +1264,7 @@ header {
   padding-bottom: 20px;
   background: linear-gradient(to bottom, #ffa3a3, #ffe4e1);
   border-top: 1px solid #cc3366;
-  border-bottom: 1px solid #cc3366;
+  /* border-bottom: 1px solid #cc3366; */
 }
 .forWhy {
   color: rgb(0, 0, 0);
@@ -1298,7 +1336,7 @@ header {
 /* moon section */
 
 #moonTime {
-  /* border: 2px solid red; */
+  /* border: 1px solid rgb(0, 0, 0); */
   /* background: linear-gradient(to bottom,#000000,#020617,#020617,#000000); */
   /* background: linear-gradient(to bottom,#000000 0%,#050816 40%,#0a0f2c 70%,#000000 100%); */
   /* background: radial-gradient(circle at center,#0a0f2c 0%,#020617 40%,#000000 100%); */
@@ -1309,12 +1347,13 @@ header {
     #0a0f2c 60%,
     #000000 100%
   );
-  box-shadow: 0 0 20px black;
+  /* box-shadow: 0 0 20px black; */
 
   width: 100%;
+  border-top: 1px solid rgb(0, 0, 0);
 }
+
 #moonHolderDiv {
-  /* border: 2px solid blue; */
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;

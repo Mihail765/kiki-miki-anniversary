@@ -33,22 +33,226 @@ body {
   -webkit-user-select: none;
 }
 
-nav {
-  background: linear-gradient(to right, #ffe4e1 100%, #ffc6cc 70%, #ff9aa2 0%);
-  text-align: center;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 997;
-}
-
 nav h1 {
   font-family: "loveLight";
   font-size: 64px;
   color: rgb(0, 0, 0);
   font-weight: 400;
 }
+
+header#hideHeader {
+  position: sticky;
+  top: 0;
+  z-index: 997;
+  width: 100%;
+  transition: transform ease 0.3s;
+}
+
+.hideHeader {
+  transform: translateY(-100%);
+  transition: all ease 0.3s;
+}
+
+.navbar {
+  background: linear-gradient(to right, #ffe4e1 100%, #ffc6cc 70%, #ff9aa2 0%);
+  text-align: center;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.favouriteH1 {
+  order: 2;
+  font-family: "loveLight";
+  color: #333;
+  font-size: clamp(32px, 4.5vw, 64px);
+  white-space: nowrap;
+  text-align: center;
+  width: fit-content;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.navUl {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+  align-content: center;
+  flex: 1;
+  list-style: none;
+}
+
+.ul1 { order: 1; }
+.ul2 { order: 3; }
+
+.navUl li {
+  list-style-type: none;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+}
+
+.navUl li a {
+  font-family: "addBtn";
+  font-size: clamp(12px, 1.5vw, 16px);
+  font-weight: 500;
+  text-decoration: none;
+  color: #a05070;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+  transition: color 0.2s ease;
+}
+
+.navUl li a:hover {
+  color: #ff758f;
+}
+
+#menu {
+  position: absolute;
+  top: 25px;
+  right: 10px;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  height: 40px;
+  width: 40px;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+
+  filter: brightness(0) invert(1) drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.295));
+}
+
+#menu img {
+  height: 100%;
+  width: 100%;
+  /* tint the burger icon to match the pink theme */
+  filter: hue-rotate(300deg) saturate(0.5) brightness(0.8);
+}
+
+#colectionOfDrop {
+  display: none;
+  z-index: 999;
+}
+
+/* ── MOBILE ── */
+@media (max-width: 900px) {
+  .favouriteH1 {
+    font-size: 60px;
+    order: 0;
+    margin: 0;
+    padding: 0;
+    margin-top: 15px;
+  }
+
+  .ul1,
+  .ul2 {
+    display: none;
+  }
+
+  #menu {
+    display: flex;
+  }
+
+  .navbar {
+    flex-direction: column;
+    border-bottom: 1px solid rgba(255, 182, 193, 0.6);
+    box-shadow: 0 0 15px rgba(255, 182, 193, 0.5);
+    transition: all 0.3s ease;
+  }
+
+  #colectionOfDrop {
+    width: 100%;
+    display: flex;
+    flex: 8;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    display: none;
+    transition: all 0.3s ease;
+  }
+
+  #navlistDrop {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    list-style-type: none;
+    padding: 20px 0 0;
+    margin: 0;
+  }
+
+  #navlistDrop li {
+    padding: 7px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  #navlistDrop a {
+    /* box-shadow: inset 0 0 5px #ff758f; */
+    border: 5px inset #ffffff;
+    background-color: #ffe1e4;
+    border-radius: 5px;
+    width: 90%;
+    color: #a05070;
+    font-family: "addBtn";
+    font-size: 16px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+  }
+  
+  #navlistDrop a:hover {
+    color: #ff758f;
+    border: 1px solid rgba(255, 182, 193, 0.6);
+    cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+    box-shadow: 0 0 5px rgb(255, 255, 255);
+        border: 5px outset #ff758f;
+
+  }
+
+  #logOutDrop {
+    width: 90%;
+    padding: 10px;
+    text-align: center;
+    font-size: 16px;
+    font-family: "addBtn";
+    background: none;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    color: white;
+    transition: all 0.3s ease;
+    background: #ff758f;
+    cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+    margin-bottom: 10px;
+  }
+
+  #logOutDrop:hover {
+    color: white;
+    box-shadow: 0 0 10px #ffc6cc;
+  }
+
+  #logOutDrop span {
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 450px) {
+  #menu {
+    top: 27px;
+    height: 36px;
+    width: 36px;
+  }
+}
+
+
+
+
+
+
+
+
 
 .wrapper {
   height: auto;
@@ -162,7 +366,7 @@ nav h1 {
   position: fixed;
   inset: 0;
   background: radial-gradient(rgba(39, 39, 39, 0.7));
-  z-index: 998;
+  z-index: 996;
   display: none;
 }
 
@@ -644,3 +848,7 @@ nav h1 {
 .hvrBtn{
     cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
 }
+
+
+
+

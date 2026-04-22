@@ -21,9 +21,41 @@
   </head>
 
   <body>
-    <nav>
-      <h1>Kiki + Miki</h1>
-    </nav>
+    <header id="hideHeader">
+      <nav class="navbar">
+        <h1 class="favouriteH1">Kiki + Miki</h1>
+        <ul class="navUl ul1">
+          <li><a href="landingPage.html">HOME</a></li>
+          <li><a href="timeline.html">Timeline</a></li>
+        </ul>
+        <ul class="navUl ul2">
+          <li><a href="chat.html">Message me</a></li>
+          <li><a href="favourites.html">Quiz of Us</a></li>
+        </ul>
+        <div id="menu">
+          <img
+            id="menuChange"
+            class="rotateMenu"
+            src="sliki/icons/burgerBig.png"
+            alt="menu"
+          />
+        </div>
+        <div id="colectionOfDrop" class="colectionOfDrop">
+          <ul id="navlistDrop">
+            <a class="listItemLinkDrop" href="landingPage.html"
+              ><li>Home</li></a
+            >
+            <a class="listItemLinkDrop" href="timeline.html"
+              ><li>Timeline</li></a
+            >
+            <a class="listItemLinkDrop" href="chat.html"><li>Message me</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Letters</li></a>
+            <a class="listItemLinkDrop" href="#"><li>Quiz of Us</li></a>
+            <button id="logOutDrop" class="logOut"><span>Log out</span></button>
+          </ul>
+        </div>
+      </nav>
+    </header>
 
     <div id="popUpWindow">
       <div class="popup-header">
@@ -610,6 +642,17 @@
       function setResultsHTML(html) {
         document.getElementById("resultsList").innerHTML = html;
       }
+
+      document.getElementById("menu").addEventListener("click", () => {
+        const drop = document.getElementById("colectionOfDrop");
+        const navbar = document.querySelector(".navbar");
+        const isOpen = drop.style.display === "flex";
+        isOpen
+          ? (shadow.style.display = "none")
+          : (shadow.style.display = "block");
+        drop.style.display = isOpen ? "none" : "flex";
+        navbar.style.height = isOpen ? "90px" : "auto";
+      });
     </script>
   </body>
 </html>
