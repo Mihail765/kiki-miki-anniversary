@@ -1,12 +1,12 @@
-// v5 - custom token auth - secret date never touches the client
+// v5 — verifySecretDate issues a real custom token with { verified, who } claims
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
 const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 
-// ===== VERIFY SECRET DATE → returns a Firebase custom token =====
+// ===== VERIFY SECRET DATE + ISSUE CUSTOM TOKEN =====
 exports.verifySecretDate = onCall(
   { region: "europe-west1" },
   async (request) => {
@@ -16,35 +16,36 @@ exports.verifySecretDate = onCall(
     const correctMonth = 4;
     const correctYear = 2024;
     const correctTimes = ["21:50", "21:51"];
-    const validWho = ["mikica", "kikica"];
 
-    const dateValid =
+    const valid =
       parseInt(day) === correctDay &&
       parseInt(month) === correctMonth &&
       parseInt(year) === correctYear &&
       correctTimes.includes(time);
 
-    if (!dateValid) {
-      throw new HttpsError("permission-denied", "Wrong date.");
+    // Step 1 — just checking the date (no who sent yet)
+    if (!who) {
+      return { valid };
     }
 
-    // who is optional at date-check stage — only required at token stage
-    if (who !== undefined && !validWho.includes(who)) {
-      throw new HttpsError("invalid-argument", "Invalid identity.");
+    // Step 2 — date already confirmed, now issue the real token
+    if (!valid) {
+      throw new Error("Invalid date");
     }
 
-    // If who is provided, mint the full auth token
-    if (who) {
-      const uid = `mk_${who}`;
-      const token = await admin.auth().createCustomToken(uid, {
-        verified: true,
-        who,
-      });
-      return { token };
+    if (who !== "mikica" && who !== "kikica") {
+      throw new Error("Invalid user");
     }
 
-    // Date-only check (step 1) — just confirm it's correct
-    return { valid: true };
+    // Stable UID per user so Firestore rules & FCM token docs are consistent
+    const uid = who === "mikica" ? "uid_mikica" : "uid_kikica";
+
+    const token = await admin.auth().createCustomToken(uid, {
+      verified: true,
+      who,
+    });
+
+    return { valid: true, token };
   },
 );
 
@@ -80,7 +81,10 @@ exports.sendChatNotification = onDocumentCreated(
     const sendPromises = tokens.map((token) => {
       const payload = {
         token,
-        notification: { title: `${senderName} 💌`, body },
+        notification: {
+          title: `${senderName} 💌`,
+          body,
+        },
         webpush: {
           notification: {
             icon: "/favicon.ico",
@@ -92,7 +96,10 @@ exports.sendChatNotification = onDocumentCreated(
         },
         android: {
           priority: "high",
-          notification: { sound: "default", channelId: "chat_messages" },
+          notification: {
+            sound: "default",
+            channelId: "chat_messages",
+          },
         },
         apns: {
           payload: {
@@ -102,7 +109,10 @@ exports.sendChatNotification = onDocumentCreated(
               badge: 1,
             },
           },
-          headers: { "apns-priority": "10", "apns-push-type": "alert" },
+          headers: {
+            "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
         },
       };
       return admin
@@ -129,15 +139,12 @@ exports.sendChatNotification = onDocumentCreated(
         tokens: updatedTokens,
         user: partner,
       });
-      console.log(
-        `Removed ${staleTokens.length} stale token(s) for ${partner}`,
-      );
+      console.log(`Removed ${staleTokens.length} stale token(s) for ${partner}`);
     }
 
     const successCount = results.filter((r) => r.success).length;
-    console.log(
-      `✅ Push sent to ${successCount}/${tokens.length} devices for ${partner}`,
-    );
+    console.log(`✅ Push sent to ${successCount}/${tokens.length} devices for ${partner}`);
+
     return null;
   },
 );

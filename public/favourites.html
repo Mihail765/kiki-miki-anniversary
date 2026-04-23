@@ -3,80 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <meta name="theme-color" content="#ff9aa2" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="favourites.css" />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=logout"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_box"
     />
-    <link rel="stylesheet" href="style.css" />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=menu"
-    />
-    <!-- Firebase SDK (for text data) -->
+    <title>OurFavourites</title>
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
-    <script src="js/firebase-config.js"></script>
-    <script src="js/safetyCode.js"></script>
-    <script src="js/cloudinary-config.js"></script>
 
-    <!-- Database Helpers -->
+    <!-- Configurations -->
+    <script src="js/safetyCode.js"></script>
+    <script src="js/firebase-config.js"></script>
     <script src="js/database-helpers.js"></script>
   </head>
 
   <body>
-    <header>
-      <nav class="navigation">
-        <div class="firstHalf">
-          <h1 class="pageTitle">The Bowling Date</h1>
-          <ul class="navlist">
-            <li><a class="listItemLink" href="timeline.html">Timeline</a></li>
-            <li>
-              <a class="listItemLink" href="favourites.html">Favourites</a>
-            </li>
-            <li><a class="listItemLink" href="chat.html">Message me</a></li>
-            <li><a class="listItemLink" href="#">Coming soon</a></li>
-            <li><a class="listItemLink" href="#">Coming soon</a></li>
-          </ul>
-          <div id="menu">
-            <img
-              id="menuChange"
-              class="rotateMenu"
-              src="sliki/icons/burgerBig.png"
-              alt="menu"
-            />
-          </div>
-          <button id="logOutSimple" class="logOut">Log out</button>
+    <header id="hideHeader">
+      <nav class="navbar">
+        <h1 class="favouriteH1">Kiki + Miki</h1>
+        <ul class="navUl ul1">
+          <li><a href="landingPage.html">HOME</a></li>
+          <li><a href="timeline.html">Timeline</a></li>
+        </ul>
+        <ul class="navUl ul2">
+          <li><a href="chat.html">Message me</a></li>
+          <li><a href="#">Coming soon</a></li>
+        </ul>
+        <div id="menu">
+          <img
+            id="menuChange"
+            class="rotateMenu"
+            src="sliki/icons/burgerBig.png"
+            alt="menu"
+          />
         </div>
-
         <div id="colectionOfDrop" class="colectionOfDrop">
           <ul id="navlistDrop">
+            <a class="listItemLinkDrop" href="landingPage.html"
+              ><li>Home</li></a
+            >
             <a class="listItemLinkDrop" href="timeline.html"
               ><li>Timeline</li></a
-            >
-            <a class="listItemLinkDrop" href="favourites.html"
-              ><li>Favourites</li></a
             >
             <a class="listItemLinkDrop" href="chat.html"><li>Message me</li></a>
             <a class="listItemLinkDrop" href="#"><li>Coming soon</li></a>
@@ -86,606 +56,637 @@
         </div>
       </nav>
     </header>
-    <div id="timeTogether">
-      <div id="kikimiki"></div>
-      <h1 class="heroImageTitle" id="timeline">
-        It's been <span id="spanYear"></span>, <span id="spanMonth"></span>,
-        <span id="spanDay"></span>, <span id="spanHour"></span>,
-        <span id="spanMinute"></span>,
-        <span id="spanSecond"></span>
-      </h1>
+
+    <div id="popUpWindow">
+      <div class="popup-header">
+        <button class="backBtn" id="backBnt">Back</button>
+        <div class="popup-search-row">
+          <input
+            type="text"
+            id="searchFld"
+            placeholder="Search for a song…"
+            autocomplete="off"
+          />
+          <button id="searchBtn">Search</button>
+        </div>
+      </div>
+
+      <div class="results-list" id="resultsList">
+        <div class="state-msg">Search for a song to add it 🎵</div>
+      </div>
+
+      <div class="mini-player" id="miniPlayer">
+        <div class="mini-top">
+          <img
+            src=""
+            alt=""
+            id="miniArt"
+            class="mini-art"
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+          />
+          <div class="mini-meta">
+            <div class="mini-title" id="miniTitle">-</div>
+            <div class="mini-artist" id="miniArtist">-</div>
+          </div>
+          <div class="mini-controls">
+            <!-- skip previous -->
+            <button id="secondary01" class="mini-btn hvrBtn secondary">
+              <img
+                src="sliki/icons/skipPrevious.png"
+                alt="prev"
+                class="btn-icon skipBFr"
+              />
+            </button>
+            <!-- play / pause — image swaps on click -->
+            <button class="mini-btn hvrBtn" id="miniPlayBtn">
+              <img
+                src="sliki/icons/playBtn.png"
+                alt="play"
+                class="btn-icon"
+                id="miniPlayImg"
+              />
+            </button>
+            <!-- skip next -->
+            <button id="secondary02" class="mini-btn hvrBtn secondary">
+              <img
+                src="sliki/icons/skipNext.png"
+                alt="next"
+                class="btn-icon skipBFr"
+              />
+            </button>
+          </div>
+        </div>
+        <div class="mini-proggress-wrap">
+          <span class="mini-time" id="miniCurrent">0:00</span>
+          <div class="mini-track" id="miniTrack">
+            <div class="mini-fill" id="miniFill"></div>
+          </div>
+          <span class="mini-time" id="miniDuration">0:30</span>
+        </div>
+      </div>
     </div>
+
     <div id="shadow"></div>
+    <div id="shadow2"></div>
 
-    <section id="spinTheWheel">
-      <div id="spinText">
-        <div id="textBox">
-          <div id="envelopeOutline" class="closed-envelope">
-            <div id="openEnvelopeTransition"></div>
-            <div id="upTriangle">
-              <div id="backgroundOfEnvelope" class="backgroundOfEnvelope"></div>
-              <div id="messageOfTheSpin">
-                <div id="message">
-                  <p id="forKikica">❤️ За Кикица ❤️</p>
-                  <h2 id="mainReason">
-                    koga dojde vo mojot zivot znaev deka ti si taa
-                  </h2>
-                  <p id="fromMikica">Од Микица</p>
-                </div>
-              </div>
-              <div id="restOfEnvelope">
-                <div id="downTriangle"></div>
-              </div>
-            </div>
-          </div>
-          <!-- <h1 class="pracine">rdytsd</h1> -->
+    <div class="wrapper">
+      <section class="sectionFav">
+        <div class="texts">
+          <h2 class="title">Our songs</h2>
+          <h3 class="addBtn" id="addBtn">
+            Add
+            <span class="material-symbols-outlined">add_box</span>
+          </h3>
         </div>
-      </div>
-      <div id="spinCollection">
-        <p id="textOfSpin"></p>
-        <div class="spinAndArrow">
-          <div class="arrowDiv">
-            <div id="arrow"></div>
-            <div id="circleInArrow"></div>
-            <div id="outlineArrow"></div>
-          </div>
-          <div id="centarSpin">
-            <button id="spin">Spin</button>
-          </div>
-          <div id="bigCircle">
-            <div class="part part1">❤️</div>
-            <div class="part part2">❤️</div>
-            <div class="part part3">❤️</div>
-            <div class="part part4">❤️</div>
-            <div class="part part5">❤️</div>
-            <div class="part part6">❤️</div>
-            <div class="part part7">❤️</div>
-            <div class="part part8">❤️</div>
-            <div class="part part9">❤️</div>
-            <div class="part part10">❤️</div>
-            <div class="part part11">❤️</div>
-            <div class="part part12">❤️</div>
-            <div class="part part13">❤️</div>
-            <div class="part part14">❤️</div>
-            <div class="part part15">❤️</div>
-            <div class="part part16">❤️</div>
-            <div class="part part17">❤️</div>
-            <div class="part part18">❤️</div>
-            <div class="part part19">❤️</div>
-            <div class="part part20">❤️</div>
-            <div class="part part21">❤️</div>
-            <div class="part part22">❤️</div>
-            <div class="part part23">❤️</div>
-            <div class="part part24">❤️</div>
-          </div>
-        </div>
-      </div>
-    </section>
+        <div class="gridItems" id="songsGrid"></div>
+      </section>
 
-    <section id="wrapperOfHearts">
-      <div class="heartHang">
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/pinkHeat.webp" />
-            </a>
-          </div>
+      <section class="sectionFav">
+        <div class="texts">
+          <h2 class="title">Our Places</h2>
+          <h3>
+            Add
+            <span class="material-symbols-outlined">add_box</span>
+          </h3>
         </div>
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/pinkHeat.webp" />
-            </a>
-          </div>
+        <div class="gridItems">
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
+          <div class="exampleDiv"></div>
         </div>
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/BrainHeart.webp" />
-              <!-- <img src="sliki/heartPink.png"> -->
-            </a>
-          </div>
-        </div>
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/pinkHeat.webp" />
-            </a>
-          </div>
-        </div>
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/RedColoredInHeart.webp" />
-              <!-- <img src="sliki/heartPink.png"> -->
-            </a>
-          </div>
-        </div>
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/smileHeartRed.webp" />
-              <!-- <img src="sliki/heartPink.png"> -->
-            </a>
-          </div>
-        </div>
-        <div class="divOfHearts">
-          <div class="hanger">
-            <a class="heartOfSec">
-              <!-- <span class="string"></span> -->
-              <img src="sliki/CompresedImages/pinkHeat.webp" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="something">
-      <div class="gornenTekst">
-        <h2 class="forWhy">Зошто те одбрав ТЕБЕ</h2>
-      </div>
-      <div class="points">
-        <div id="pointFirst" class="pointShow"></div>
-        <div id="pointSecond" class="pointShow"></div>
-        <div id="pointThird" class="pointShow"></div>
-        <div id="pointForth" class="pointShow"></div>
-      </div>
-    </section>
-
-    <div id="loader">
-      <div class="back"></div>
-      <div class="heart"></div>
+      </section>
     </div>
-    <!-- <div id="boja"></div> -->
 
-    <section id="firstImageSlider">
-      <!-- <p>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam
-        provident velit nisi. Inventore, vero blanditiis suscipit saepe aut
-        nihil expedita sequi quo? Maiores possimus, vero in modi dicta nobis
-        neque.
-      </p> -->
-    </section>
+    <audio id="globalAudio"></audio>
 
-    <section id="moonTime">
-      <div id="moonHolderDiv">
-        <div id="moon1" class="moonImgHolder">
-          <div class="imageDiv">
-            <img
-              class="moonImg"
-              src="sliki/moon-03-10-2023.jpg"
-              alt="Slika od mesecinata na denot koga se zaposnavme"
-            />
-          </div>
-          <div class="captionText">
-            <h2 class="moonTextUnderImage">03.10.2023 / 20:00</h2>
-          </div>
-        </div>
-        <div id="moon2" class="moonImgHolder">
-          <div class="imageDiv">
-            <img
-              class="moonImg"
-              src="sliki/moon-26-04-2024.jpg"
-              alt="Slika od mesecinata na denot koga se fativme"
-            />
-          </div>
-          <div class="captionText">
-            <h2 class="moonTextUnderImage">26.04.2024 / 21:51</h2>
-          </div>
-        </div>
-      </div>
-    </section>
-    <section>
-      <p>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident
-        excepturi ducimus delectus sint quasi magnam cupiditate vitae neque,
-        repellat, harum, laudantium corporis! Illum incidunt tenetur asperiores
-        obcaecati enim. Officiis, in? Ducimus beatae aliquid consectetur
-        accusamus tempore ex, in quae pariatur reprehenderit esse cum fuga quod
-        tenetur cumque, dolorum aut! Possimus deleniti tempora officiis, vitae
-        natus iste quisquam impedit deserunt tempore! Suscipit ipsum quisquam
-        officia ducimus nisi vel commodi qui alias. Tenetur repellat, error est
-        aperiam iste voluptatibus! Cum earum architecto magnam minima dolores
-        explicabo, ipsam odio. Odit dolores quo nesciunt! Aperiam atque,
-        recusandae eius cupiditate repellat, excepturi commodi totam eum non
-        nemo aliquam. Vitae tempore sit praesentium iste iure eum repellat
-        dolorem maxime ut, qui magnam facere, voluptatum unde expedita. Aliquid
-        aliquam, consequuntur corrupti expedita beatae, nam laborum, perferendis
-        tenetur quia quae quo? Alias at, eum quo aspernatur, magnam accusamus
-        doloribus eos nemo dolorum sequi quibusdam consectetur doloremque rerum
-        esse! Cum necessitatibus iste dolores possimus corporis voluptatem
-        molestiae a? Atque, numquam ab asperiores voluptatibus nam corporis
-        distinctio aliquam soluta enim hic temporibus minus neque perferendis
-        autem dolorum! Sunt, hic officiis! Nihil dolorum cumque voluptate
-        quisquam vel sequi eum corrupti quis nobis asperiores. Sed, repellat
-        voluptatum ea natus tenetur ipsam hic neque repudiandae enim animi nemo
-        aperiam? Veritatis adipisci necessitatibus odit. Aperiam, asperiores
-        maxime voluptatem possimus dignissimos ipsum! Ipsam laboriosam
-        necessitatibus impedit magni possimus delectus fuga voluptate quibusdam!
-        Temporibus, perferendis repudiandae. Minima, numquam dicta nemo nobis
-        molestiae eveniet doloribus exercitationem rem! Minus quasi maiores in.
-        Perspiciatis repellat eveniet esse facilis nisi magni recusandae iusto
-        placeat ullam minus ex corrupti voluptatem, ratione illum distinctio,
-        odit dignissimos modi delectus natus sunt optio similique? Doloribus sit
-        perferendis reprehenderit magnam quia hic fugit praesentium perspiciatis
-        placeat quis consequuntur corporis, laboriosam error obcaecati nostrum
-        facilis dignissimos itaque ea numquam culpa eius! Iste quia ipsam eum
-        corrupti.
-      </p>
-    </section>
-  </body>
-  <script>
-    let divTime = document.getElementById("timeTogether");
-    let spanYear = document.getElementById("spanYear");
-    let spanMonth = document.getElementById("spanMonth");
-    let spanDay = document.getElementById("spanDay");
-    let spanHour = document.getElementById("spanHour");
-    let spanMinute = document.getElementById("spanMinute");
-    let spanSecond = document.getElementById("spanSecond");
-    const TimeTogether = {
-      year: 2024,
-      month: 4,
-      day: 26,
-      hour: 21,
-      minute: 50,
-      second: 30,
-    };
-    function countTime() {
-      let time = {
-        year: new Date().getFullYear() - TimeTogether.year,
-        month: new Date().getMonth() + 1 - TimeTogether.month,
-        day: new Date().getDate() - TimeTogether.day,
-        hour: new Date().getHours() - TimeTogether.hour,
-        minute: new Date().getMinutes() - TimeTogether.minute,
-        second: new Date().getSeconds() - TimeTogether.second,
-      };
-      if (time.second < 0) {
-        time.minute--;
-        time.second += 60;
-      }
-      if (time.minute < 0) {
-        time.hour--;
-        time.minute += 60;
-      }
-      if (time.hour < 0) {
-        time.day--;
-        time.hour += 24;
-      }
-      if (time.day < 0) {
-        time.month--;
-        let borrowedMonth = time.month;
-        if (borrowedMonth < 0) {
-          borrowedMonth += 12;
-        }
-        borrowedMonth += 1;
+    <script>
+      // ── IMAGE PATHS ──────────────────────────────────────────────
+      const IMG_PLAY = "sliki/icons/playBtn.png";
+      const IMG_PAUSE = "sliki/icons/stopBtn.png";
+      const IMG_PREV = "sliki/icons/skipPrevious.png";
+      const IMG_NEXT = "sliki/icons/skipNext.png";
 
-        switch (borrowedMonth) {
-          case 1:
-          case 3:
-          case 5:
-          case 7:
-          case 8:
-          case 10:
-          case 12:
-            time.day += 31;
-            break;
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            time.day += 30;
-            break;
-          case 2:
-            if (
-              (time.year % 4 === 0 && time.year % 100 !== 0) ||
-              time.year % 400 === 0
-            ) {
-              time.day += 29;
-            } else {
-              time.day += 28;
-            }
-            break;
+      // ── GLOBAL STATE ─────────────────────────────────────────────
+      const audio = document.getElementById("globalAudio");
+      let searchResults = [];
+      let currentIdx = -1;
+      let ticker;
+      let savedIds = new Set();
+      let cardCurrentId = null;
+
+      // ── AUTH ──────────────────────────────────────────────────────
+      if (typeof checkAuthentication === "function") checkAuthentication();
+
+      // ── ARTWORK HELPER ────────────────────────────────────────────
+      function getArtwork(url) {
+        if (!url) return "";
+        return url
+          .replace("100x100bb", "600x600bb")
+          .replace("60x60bb", "600x600bb")
+          .replace("100x100", "600x600")
+          .replace("60x60", "600x600")
+          .replace("http://", "https://");
+      }
+
+      // ── SEARCH ────────────────────────────────────────────────────
+      document.getElementById("searchBtn").addEventListener("click", doSearch);
+      document.getElementById("searchFld").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doSearch();
+      });
+
+      async function doSearch() {
+        const q = document.getElementById("searchFld").value.trim();
+        if (!q) return;
+        setResultsHTML(
+          '<div class="spinner"></div><div class="state-msg" style="padding:8px;">Searching…</div>',
+        );
+        try {
+          const res = await fetch(
+            `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=15`,
+          );
+          const data = await res.json();
+          searchResults = data.results.filter((s) => s.previewUrl);
+          if (!searchResults.length) {
+            setResultsHTML('<div class="state-msg">No results found.</div>');
+            return;
+          }
+          renderResults();
+        } catch (e) {
+          setResultsHTML(
+            '<div class="state-msg" style="color:#f87171;">Search failed — check your connection.</div>',
+          );
         }
       }
-      if (time.month < 0) {
-        time.year--;
-        time.month += 12;
+
+      function renderResults() {
+        const list = document.getElementById("resultsList");
+        list.innerHTML = "";
+        searchResults.forEach((song, i) => {
+          const row = document.createElement("div");
+          row.className = "result-row" + (i === currentIdx ? " playing" : "");
+          row.id = "rrow-" + i;
+
+          const isSaved = savedIds.has(song.trackId);
+
+          // Artwork
+          const art = document.createElement("img");
+          art.src = getArtwork(song.artworkUrl100 || song.artworkUrl60);
+          art.crossOrigin = "anonymous";
+          art.referrerPolicy = "no-referrer";
+
+          // Info
+          const info = document.createElement("div");
+          info.className = "result-info";
+          info.innerHTML = `<div class="result-name">${esc(song.trackName)}</div>
+                              <div class="result-artist">${esc(song.artistName)}</div>`;
+
+          // Play button with image
+          const playBtn = document.createElement("button");
+          playBtn.className = "result-play-btn hvrBtn";
+          playBtn.title = "Preview";
+          const playImg = document.createElement("img");
+          playImg.src = IMG_PLAY;
+          playImg.alt = "play";
+          playImg.className = "btn-icon";
+          playImg.id = "rpi-" + i;
+          playBtn.appendChild(playImg);
+          playBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            playSong(i);
+          });
+
+          // Add button
+          const addBtn = document.createElement("button");
+          const centerIconOFAdd = document.createElement("span");
+          centerIconOFAdd.className = "centerIconOFAdd";
+          addBtn.className = "add-to-fav-btn" + (isSaved ? " saved" : "");
+          addBtn.id = "addbtn-" + i;
+          if (isSaved) {
+            centerIconOFAdd.textContent = "✓";
+          } else {
+            const img = document.createElement("img");
+            img.src = "sliki/icons/plus.png"; // <-- your image path
+            img.className = "plus-icon-now hvrBtn";
+            img.alt = "add";
+            centerIconOFAdd.appendChild(img);
+          }
+          addBtn.appendChild(centerIconOFAdd);
+          addBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            saveSong(i, addBtn);
+          });
+
+          row.append(art, info, playBtn, addBtn);
+          row.addEventListener("click", () => playSong(i));
+          list.appendChild(row);
+        });
       }
-      calculatingTime(time);
-    }
 
-    function calculatingTime(time) {
-      // Year calculation
+      // ── PLAY FROM SEARCH RESULTS ──────────────────────────────────
+      function playSong(i) {
+        const song = searchResults[i];
+        if (!song?.previewUrl) return;
 
-      time.year === 1
-        ? (spanYear.textContent = time.year + " year")
-        : (spanYear.textContent = time.year + " years");
+        const wasPlaying = currentIdx === i && !audio.paused;
 
-      // Month calculation
+        // Reset all result-row play images back to play icon
+        document
+          .querySelectorAll("[id^='rpi-']")
+          .forEach((img) => (img.src = IMG_PLAY));
+        document
+          .querySelectorAll(".result-row")
+          .forEach((r) => r.classList.remove("playing"));
 
-      time.month === 1
-        ? (spanMonth.textContent = time.month + " month")
-        : (spanMonth.textContent = time.month + " months");
+        if (wasPlaying) {
+          audio.pause();
+          setMiniPlayImg(IMG_PLAY);
+          return;
+        }
 
-      // Day calculation
+        // Stop any card that was playing
+        if (cardCurrentId) {
+          const cf = document.getElementById("cpf-" + cardCurrentId);
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          if (cf) cf.style.width = "0%";
+          if (cb) cb.src = IMG_PLAY;
+          cardCurrentId = null;
+        }
 
-      time.day === 1
-        ? (spanDay.textContent = time.day + " day")
-        : (spanDay.textContent = time.day + " days");
+        currentIdx = i;
+        audio.src = song.previewUrl;
+        audio.play();
 
-      // Hour calculation
+        // Mark this row as playing
+        const row = document.getElementById("rrow-" + i);
+        if (row) row.classList.add("playing");
+        const rpi = document.getElementById("rpi-" + i);
+        if (rpi) rpi.src = IMG_PAUSE;
 
-      time.hour === 1
-        ? (spanHour.textContent = time.hour + " hour")
-        : (spanHour.textContent = time.hour + " hours");
+        // Update mini player
+        document.getElementById("miniArt").src = getArtwork(
+          song.artworkUrl100 || song.artworkUrl60,
+        );
+        document.getElementById("miniTitle").textContent = song.trackName;
+        document.getElementById("miniArtist").textContent = song.artistName;
+        document.getElementById("miniPlayer").classList.add("visible");
+        setMiniPlayImg(IMG_PAUSE);
 
-      // Minute calculation
-
-      time.minute === 1
-        ? (spanMinute.textContent = time.minute + " minute")
-        : (spanMinute.textContent = time.minute + " minutes");
-
-      // Second calculation
-
-      time.second === 1
-        ? (spanSecond.textContent = time.second + " second")
-        : (spanSecond.textContent = time.second + " seconds");
-    }
-
-    countTime();
-
-    setInterval(countTime, 1000);
-
-    // spin the wheel
-
-    let spinTheWheel = document
-      .getElementById("spin")
-      .addEventListener("click", spining);
-    let openEnvelopeTransition = document.getElementById(
-      "openEnvelopeTransition",
-    );
-    let messageOfTheSpin = document.getElementById("messageOfTheSpin");
-    let backgroundOfEnvelope = document.getElementById("backgroundOfEnvelope");
-    let message = document.getElementById("message");
-    let upTriangle = document.getElementById("upTriangle");
-    let bigCircle = document.getElementById("bigCircle");
-    let mainReason = document.getElementById("mainReason");
-    const result = [
-      "1. Кога прв пат те видов знаев дека си ти таа ",
-      "24",
-      "23",
-      "22",
-      "21",
-      "20",
-      "19",
-      "18",
-      "17",
-      "16",
-      "15",
-      "14",
-      "13",
-      "12",
-      "11",
-      "10",
-      "9",
-      "8",
-      "7",
-      "6",
-      "5",
-      "4",
-      "3",
-      "2",
-    ];
-    let clicked = false;
-    let totalRotation = 0;
-
-    function spining() {
-      if (!clicked) {
-        clicked = true;
-        let number = Math.ceil(Math.random() * 1000);
-        let rotation = 1140 + number;
-        totalRotation += rotation;
-
-        bigCircle.style.transform = `rotate(${totalRotation}deg)`;
-        bigCircle.style.transition = "all 2s ease-in-out";
+        startTicker();
       }
-    }
-    let header = document.querySelector("header");
 
-    bigCircle.addEventListener("transitionend", function () {
-      setTimeout(() => {
-        let finalAngle = totalRotation % 360;
-        let normalizedAngle = (360 - finalAngle) % 360;
-        let adjustedAngle = (finalAngle + 7.5) % 360;
-        let segmantIndex = Math.floor(adjustedAngle / 15);
+      // ── MINI PLAYER CONTROLS ──────────────────────────────────────
+      function toggleMini() {
+        if (audio.paused) {
+          audio.play();
+        } else {
+          audio.pause();
+        }
+      }
 
-        const startEnvelopeAnimation = () => {
-          if (window.innerWidth <= 1056) {
-            document.body.style.overflow = "hidden";
-            document.getElementById("spinText").style.display = "flex";
-            header.classList.add("hideHeader");
+      function cardSkip(dir) {
+        const next = currentIdx + dir;
+        if (next >= 0 && next < searchResults.length) playSong(next);
+      }
+
+      function miniSeek(e) {
+        if (!audio.duration) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const pct = Math.max(
+          0,
+          Math.min(1, (e.clientX - rect.left) / rect.width),
+        );
+        audio.currentTime = pct * audio.duration;
+      }
+
+      function setMiniPlayImg(src) {
+        document.getElementById("miniPlayImg").src = src;
+      }
+
+      function startTicker() {
+        clearInterval(ticker);
+        ticker = setInterval(() => {
+          if (!audio.duration) return;
+          const pct = (audio.currentTime / audio.duration) * 100;
+          document.getElementById("miniFill").style.width =
+            pct.toFixed(1) + "%";
+          document.getElementById("miniCurrent").textContent = fmt(
+            audio.currentTime,
+          );
+          document.getElementById("miniDuration").textContent = fmt(
+            audio.duration,
+          );
+
+          if (cardCurrentId) {
+            const fill = document.getElementById("cpf-" + cardCurrentId);
+            if (fill) fill.style.width = pct.toFixed(1) + "%";
+          }
+        }, 300);
+      }
+
+      // ── AUDIO EVENTS ──────────────────────────────────────────────
+      audio.addEventListener("ended", () => {
+        setMiniPlayImg(IMG_PLAY);
+        // Reset result row icon
+        if (currentIdx >= 0) {
+          const rpi = document.getElementById("rpi-" + currentIdx);
+          if (rpi) rpi.src = IMG_PLAY;
+          document
+            .querySelectorAll(".result-row")
+            .forEach((r) => r.classList.remove("playing"));
+        }
+        // Reset card
+        if (cardCurrentId) {
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          const cf = document.getElementById("cpf-" + cardCurrentId);
+          if (cb) cb.src = IMG_PLAY;
+          if (cf) cf.style.width = "0%";
+          cardCurrentId = null;
+        }
+        clearInterval(ticker);
+      });
+
+      audio.addEventListener("pause", () => {
+        setMiniPlayImg(IMG_PLAY);
+        if (cardCurrentId) {
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          if (cb) cb.src = IMG_PLAY;
+        }
+        if (currentIdx >= 0) {
+          const rpi = document.getElementById("rpi-" + currentIdx);
+          if (rpi) rpi.src = IMG_PLAY;
+        }
+      });
+
+      audio.addEventListener("play", () => {
+        setMiniPlayImg(IMG_PAUSE);
+        if (cardCurrentId) {
+          const cb = document.getElementById("cimg-" + cardCurrentId);
+          if (cb) cb.src = IMG_PAUSE;
+        }
+        if (currentIdx >= 0) {
+          const rpi = document.getElementById("rpi-" + currentIdx);
+          if (rpi) rpi.src = IMG_PAUSE;
+        }
+      });
+
+      document
+        .getElementById("secondary01")
+        .addEventListener("click", () => cardSkip(-1));
+      document
+        .getElementById("miniPlayBtn")
+        .addEventListener("click", toggleMini);
+      document
+        .getElementById("secondary02")
+        .addEventListener("click", () => cardSkip(1));
+      document.getElementById("miniTrack").addEventListener("click", miniSeek);
+
+      // ── SAVE SONG ─────────────────────────────────────────────────
+      async function saveSong(i, btn) {
+        const song = searchResults[i];
+        if (savedIds.has(song.trackId)) return;
+
+        btn.textContent = "…";
+        btn.disabled = true;
+
+        try {
+          const songData = {
+            name: song.trackName,
+            artist: song.artistName,
+            artwork: getArtwork(song.artworkUrl100 || song.artworkUrl60),
+            previewUrl: song.previewUrl,
+            trackId: song.trackId,
+          };
+
+          if (typeof addFavouriteSong === "function") {
+            const id = await addFavouriteSong(songData);
+            songData.id = id;
           }
 
-          openEnvelopeTransition.classList.remove("rotateCloseAnimation");
-          openEnvelopeTransition.classList.add("rotateOpenAnimation");
-          backgroundOfEnvelope.classList.add("backgroundEnvelopeUpAnimation");
-          message.classList.add("fadeInAnimation");
-          setTimeout(() => {
-            messageOfTheSpin.classList.add("paperUpAnimation");
-            setTimeout(() => {
-              messageOfTheSpin.classList.remove("paperUpAnimation");
-              messageOfTheSpin.classList.add("paperDownAnimation");
-              setTimeout(() => {
-                backgroundOfEnvelope.classList.remove(
-                  "backgroundEnvelopeUpAnimation",
-                );
-                backgroundOfEnvelope.classList.add(
-                  "backgroundEnvelopeDownAnimation",
-                );
-                backgroundOfEnvelope.classList.remove(
-                  "backgroundEnvelopeDownAnimation",
-                );
-                openEnvelopeTransition.classList.remove("rotateOpenAnimation");
-                messageOfTheSpin.classList.remove("paperDownAnimation");
-                openEnvelopeTransition.classList.add("rotateCloseAnimation");
-                message.classList.remove("fadeInAnimation");
+          savedIds.add(song.trackId);
+          btn.textContent = "✓";
+          btn.classList.add("saved");
+          btn.disabled = false;
 
-                setTimeout(() => {
-                  if (window.innerWidth <= 1056) {
-                    document.getElementById("spinText").style.display = "none";
-                    header.classList.remove("hideHeader");
-                  }
-                  document.body.style.overflow = "";
-                }, 2000);
-
-                clicked = false;
-              }, 2000);
-            }, 4000);
-          }, 2000);
-
-          mainReason.textContent = result[segmantIndex];
-          console.log(
-            "Final:",
-            finalAngle,
-            "Adjusted:",
-            adjustedAngle,
-            "Index:",
-            segmantIndex,
-          );
-        };
-
-        startEnvelopeAnimation();
-        // upTriangle.style.backgroundColor = "blue";
-      }, 500);
-    });
-
-    window.addEventListener("resize", () => {
-      const spinText = document.getElementById("spinText");
-      if (window.innerWidth > 1056) {
-        spinText.style.display = "flex"; // always visible
-        spinText.style.background = "none";
-      } else {
-        spinText.style.display = "none"; // always visible
-        spinText.style.background = "radial-gradient(rgba(39, 39, 39, 0.7))";
-      }
-    });
-
-    // loader
-
-    let loader = document.getElementById("loader");
-    if (document.readyState === "loading") {
-      document.body.style.overflow = "hidden";
-      console.log("still loading");
-    }
-    window.addEventListener("load", () => {
-      loader.style.display = "none";
-      document.body.style.overflow = "";
-      console.log("page loaded");
-    });
-
-    // heart animation
-    // Add floating hearts animation
-    function createFloatingHeart() {
-      const heart = document.createElement("div");
-      heart.innerHTML = "💖";
-      heart.style.position = "fixed";
-      heart.style.left = Math.random() * 100 + "vw";
-      heart.style.top = "100vh";
-      heart.style.fontSize = Math.random() * 20 + 15 + "px";
-      heart.style.zIndex = "1";
-      heart.style.pointerEvents = "none";
-      heart.style.opacity = "0.7";
-      heart.style.animation = "floatUp 6s linear forwards";
-
-      document.body.appendChild(heart);
-
-      setTimeout(() => {
-        heart.remove();
-      }, 6000);
-    }
-
-    // Add CSS for floating hearts
-    const style = document.createElement("style");
-    style.textContent = `
-        @keyframes floatUp {
-            0% {
-                transform: translateY(0) translateX(0) rotate(0deg);
-                opacity: 0.7;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-100vh) translateX(${Math.random() * 200 - 100}px) rotate(360deg);
-                opacity: 0;
-            }
+          addSongCard(songData);
+        } catch (err) {
+          console.error(err);
+          btn.textContent = "+";
+          btn.disabled = false;
         }
-    `;
-    document.head.appendChild(style);
-
-    // Create floating hearts periodically
-    setInterval(createFloatingHeart, 2000);
-
-    let toggelMenu = document.getElementById("colectionOfDrop");
-    let menuChange = document.getElementById("menuChange");
-    let shadow = document.getElementById("shadow");
-
-    document.getElementById("menu").addEventListener("click", function () {
-      // header.style.height = header.style.height === "400px" ? "90px" : "400px";
-      const isOpen = header.classList.toggle("menu-open");
-
-      if (isOpen) {
-        menuChange.setAttribute("src", "sliki/icons/close.png");
-        setTimeout(() => {
-          toggelMenu.style.display = "block";
-        }, 150);
-        openShadow();
-      } else {
-        menuChange.setAttribute("src", "sliki/icons/burgerBig.png");
-        toggelMenu.style.display = "none";
-        closeShadow();
       }
 
-      menuChange.classList.add("rotateMenuNow");
+      // ── RENDER SONG CARD ──────────────────────────────────────────
+      function addSongCard(song) {
+        const grid = document.getElementById("songsGrid");
+        const div = document.createElement("div");
+        div.className = "exampleDiv";
+        div.setAttribute("data-track-id", song.trackId || "");
 
-      menuChange.addEventListener("animationend", () => {
-        menuChange.classList.remove("rotateMenuNow");
-      });
-    });
+        const artwork = getArtwork(song.artwork || "");
+        const tid = song.trackId || song.id || Date.now();
+        const preview = song.previewUrl;
 
-    function openShadow() {
-      shadow.style.display = "block";
-      document.body.style.overflow = "hidden";
-    }
-    function closeShadow() {
-      shadow.style.display = "none";
-      document.body.style.overflow = "";
-    }
+        const inner = document.createElement("div");
+        inner.className = "song-card-inner";
 
-    let cards = document.querySelectorAll(".pointShow").forEach((card) => {
-      card.addEventListener("mouseover", function () {
-        card.classList.add("animatedCards");
-      });
-      card.addEventListener("mouseleave", function () {
-        setTimeout(() => {
-          card.classList.remove("animatedCards");
-        }, 1000);
-        card.classList.add("mouseleaveClass");
-      });
-    });
+        // Art
+        const artImg = document.createElement("img");
+        artImg.className = "song-card-art";
+        artImg.src = artwork;
+        artImg.crossOrigin = "anonymous";
+        artImg.referrerPolicy = "no-referrer";
+        artImg.alt = "";
 
-    // logout
-    document.querySelectorAll(".logOut").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        let loggedIn = sessionStorage.getItem("loggedIn");
-        auth.signOut().then(() => window.location.replace("index.html"));
+        // Name & artist
+        const nameEl = document.createElement("div");
+        nameEl.className = "song-card-name";
+        nameEl.textContent = song.name;
+
+        const artistEl = document.createElement("div");
+        artistEl.className = "song-card-artist";
+        artistEl.textContent = song.artist;
+
+        // Progress bar
+        const progress = document.createElement("div");
+        progress.className = "card-progress";
+        const fill = document.createElement("div");
+        fill.className = "card-progress-fill";
+        fill.id = "cpf-" + tid;
+        progress.appendChild(fill);
+
+        // Play button with image (toggles play/pause)
+        const controls = document.createElement("div");
+        controls.className = "song-card-controls";
+
+        const cardBtn = document.createElement("button");
+        cardBtn.className = "card-btn";
+        cardBtn.id = "cbtn-" + tid;
+
+        const cardImg = document.createElement("img");
+        cardImg.src = IMG_PLAY;
+        cardImg.alt = "play";
+        cardImg.className = "btn-icon";
+        cardImg.id = "cimg-" + tid;
+
+        cardBtn.appendChild(cardImg);
+        cardBtn.addEventListener("click", () =>
+          toggleCard(tid, preview, song.name, song.artist, artwork),
+        );
+        controls.appendChild(cardBtn);
+
+        // Badge
+        const badge = document.createElement("div");
+        badge.className = "preview-badge";
+        badge.textContent = "30s preview";
+
+        inner.append(artImg, nameEl, artistEl, progress, controls, badge);
+        div.appendChild(inner);
+        grid.appendChild(div);
+      }
+
+      // ── CARD PLAYER TOGGLE ────────────────────────────────────────
+      function toggleCard(trackId, previewUrl, name, artist, artwork) {
+        // Same card — toggle play/pause
+        if (cardCurrentId === trackId) {
+          if (audio.paused) audio.play();
+          else audio.pause();
+          return;
+        }
+
+        // Stop old card
+        if (cardCurrentId) {
+          const oldImg = document.getElementById("cimg-" + cardCurrentId);
+          const oldFill = document.getElementById("cpf-" + cardCurrentId);
+          if (oldImg) oldImg.src = IMG_PLAY;
+          if (oldFill) oldFill.style.width = "0%";
+        }
+
+        // Clear any search-result playing state
+        currentIdx = -1;
+        document
+          .querySelectorAll(".result-row")
+          .forEach((r) => r.classList.remove("playing"));
+        document
+          .querySelectorAll("[id^='rpi-']")
+          .forEach((img) => (img.src = IMG_PLAY));
+
+        cardCurrentId = trackId;
+        audio.src = previewUrl;
+        audio.play();
+
+        // Update mini player
+        document.getElementById("miniArt").src = getArtwork(artwork);
+        document.getElementById("miniTitle").textContent = name;
+        document.getElementById("miniArtist").textContent = artist;
+        document.getElementById("miniPlayer").classList.add("visible");
+
+        startTicker();
+      }
+
+      // ── LOAD FROM FIREBASE ────────────────────────────────────────
+      window.addEventListener("load", async () => {
+        if (typeof getAllFavourites !== "function") return;
+        try {
+          const favs = await getAllFavourites();
+          favs.forEach((f) => {
+            if (f.previewUrl) {
+              savedIds.add(f.trackId);
+              addSongCard(f);
+            }
+          });
+        } catch (e) {
+          console.error(e);
+        }
       });
-    });
-  </script>
+
+      // ── POPUP ─────────────────────────────────────────────────────
+      const shadow = document.getElementById("shadow");
+      const shadow2 = document.getElementById("shadow2");
+      const popUpWindow = document.getElementById("popUpWindow");
+
+      document.getElementById("addBtn").addEventListener("click", () => {
+        shadow.style.display = "block";
+        popUpWindow.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        document.getElementById("searchFld").focus();
+      });
+
+      document.getElementById("backBnt").addEventListener("click", closePopup);
+      shadow.addEventListener("click", closePopup);
+
+      function closePopup() {
+        shadow.style.display = "none";
+        popUpWindow.style.display = "none";
+        document.body.style.overflow = "";
+      }
+
+      // ── UTILS ─────────────────────────────────────────────────────
+      function fmt(s) {
+        s = Math.floor(s || 0);
+        const m = Math.floor(s / 60),
+          sec = s % 60;
+        return m + ":" + (sec < 10 ? "0" : "") + sec;
+      }
+
+      function esc(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function setResultsHTML(html) {
+        document.getElementById("resultsList").innerHTML = html;
+      }
+
+      let nav = document.querySelector(".navbar");
+      let menuChange = document.getElementById("menuChange");
+
+      document.getElementById("menu").addEventListener("click", function () {
+        const isOpen = nav.classList.toggle("menu-open");
+
+        if (isOpen) {
+          menuChange.src = "sliki/icons/close.png";
+          openShadow();
+        } else {
+          menuChange.src = "sliki/icons/burgerBig.png";
+          closeShadow();
+        }
+
+        menuChange.classList.add("rotateMenuNow");
+        menuChange.addEventListener(
+          "animationend",
+          () => {
+            menuChange.classList.remove("rotateMenuNow");
+          },
+          { once: true },
+        );
+      });
+
+      function openShadow() {
+        shadow2.style.display = "block";
+        document.body.style.overflow = "hidden";
+      }
+      function closeShadow() {
+        shadow2.style.display = "none";
+        document.body.style.overflow = "";
+      }
+
+      // log out
+
+      document.querySelectorAll(".logOut").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          let loggedIn = sessionStorage.getItem("loggedIn");
+          sessionStorage.removeItem("loggedIn");
+          window.location.replace("/index.html");
+        });
+      });
+    </script>
+  </body>
 </html>
