@@ -1,10 +1,33 @@
-// v3 - multi-device token support - 28032026
+// v4 - added verifySecretDate - keeps secret off frontend
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
 const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 
+// ===== VERIFY SECRET DATE =====
+exports.verifySecretDate = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    const { day, month, year, time } = request.data;
+
+    const correctDay = 26;
+    const correctMonth = 4;
+    const correctYear = 2024;
+    const correctTimes = ["21:50", "21:51"];
+
+    const valid =
+      parseInt(day) === correctDay &&
+      parseInt(month) === correctMonth &&
+      parseInt(year) === correctYear &&
+      correctTimes.includes(time);
+
+    return { valid };
+  },
+);
+
+// ===== CHAT PUSH NOTIFICATIONS =====
 exports.sendChatNotification = onDocumentCreated(
   {
     document: "chats/mikica_kikica_chat/messages/{msgId}",
@@ -79,7 +102,7 @@ exports.sendChatNotification = onDocumentCreated(
 
     const results = await Promise.all(sendPromises);
 
-    // Remove any stale/invalid tokens
+    // Remove stale/invalid tokens
     const staleTokens = results
       .filter(
         (r) =>

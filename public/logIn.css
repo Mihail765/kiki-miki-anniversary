@@ -175,3 +175,89 @@ body {
   max-width: 110px;
   /* min-width: 70px; */
 }
+
+#logInWIndow.step2 {
+        height: auto;
+        padding-bottom: 20px;
+        gap: 10px;
+      }
+
+      #step-who {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 14px;
+        animation: fadeSlideIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+          both;
+      }
+      #step-who.visible {
+        display: flex;
+      } 
+      @keyframes fadeSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .who-label {
+        font-family: "Rokkitt", serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: black;
+        letter-spacing: 0.5px;
+        text-align: center;
+        margin: 0;
+      }
+
+      #who-grid {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        justify-content: center;
+        width: 100%;
+        padding: 0 min(25px, 10px);
+        box-sizing: border-box;
+      }
+
+      .whoBtn {
+        flex: 1;
+        max-width: 180px;
+        height: 60px;
+        background: linear-gradient(to right, #ffb6c1 0%, #f78da7 100%);
+        border: none;
+        border-radius: 5px;
+        cursor:
+          url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png") 0 0,
+          auto;
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+      .whoBtn:hover {
+        box-shadow: 0 0 15px white;
+      }
+      .whoBtn:active {
+        background: linear-gradient(to left, #ffb6c1 0%, #f78da7 100%);
+        scale: 0.98;
+      }
+
+      .whoBtn .btn-emoji {
+        font-size: 22px;
+        line-height: 1;
+      }
+      .whoBtn .btn-name {
+        font-family: "Rochester", cursive;
+        font-size: 20px;
+        -webkit-text-stroke: 1px #cc3366;
+        color: white;
+        line-height: 1;
+      }

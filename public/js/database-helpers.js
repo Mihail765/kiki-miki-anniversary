@@ -1,16 +1,24 @@
-// Database Helper Functions - Flexible Version
-// Works with any Firebase structure
+// public/js/database-helpers.js
 // Firebase: Text data (songs, movies, memories metadata)
 // Cloudinary: Images
+// Auth guard now uses Firebase Auth state (not sessionStorage alone)
 
 console.log("🔧 Loading database-helpers.js...");
 
 // ===== AUTHENTICATION CHECK =====
+// Call this at the top of any page script that reads/writes data.
+// Returns a Promise that resolves with the current Firebase user,
+// or redirects to login if unauthenticated.
 function checkAuthentication() {
-  const loggedIn = sessionStorage.getItem("loggedIn");
-  if (loggedIn !== "true") {
-    window.location.replace("/index.html");
-  }
+  return new Promise((resolve) => {
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        window.location.replace("/index.html");
+      } else {
+        resolve(user);
+      }
+    });
+  });
 }
 
 // ===== FAVOURITE SONGS =====
@@ -83,7 +91,7 @@ async function addFavouriteMovie(movieData) {
       console.log("📤 Uploading movie poster to Cloudinary...");
       posterUrl = await uploadImageToCloudinary(
         movieData.posterFile,
-        "movie-posters",
+        "movie-posters"
       );
     }
 
@@ -136,14 +144,12 @@ async function addMemory(memoryData) {
   try {
     let imageUrl = "";
 
-    // Upload image to Cloudinary if provided
     if (memoryData.image) {
       console.log("📤 Uploading image to Cloudinary...");
       imageUrl = await uploadImageToCloudinary(memoryData.image, "memories");
       console.log("✅ Image uploaded:", imageUrl);
     }
 
-    // Build the memory object - ONLY include fields that have values
     const memoryDoc = {
       title: memoryData.title || "Untitled",
       date: memoryData.date || new Date().toISOString().split("T")[0],
@@ -151,27 +157,22 @@ async function addMemory(memoryData) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
 
-    // Add optional fields only if they have values
-    if (memoryData.city) memoryDoc.city = memoryData.city;
-    if (memoryData.place) memoryDoc.place = memoryData.place;
-    if (memoryData.country) memoryDoc.country = memoryData.country;
+    if (memoryData.city)        memoryDoc.city        = memoryData.city;
+    if (memoryData.place)       memoryDoc.place       = memoryData.place;
+    if (memoryData.country)     memoryDoc.country     = memoryData.country;
     if (memoryData.description) memoryDoc.description = memoryData.description;
 
     console.log("💾 Saving to Firebase:", memoryDoc);
 
     const docRef = await db.collection("memories").add(memoryDoc);
-
     console.log("✅ Memory saved with ID:", docRef.id);
-
     return docRef.id;
   } catch (error) {
     console.error("❌ Error in addMemory:", error);
-    console.error("   Error message:", error.message);
     throw error;
   }
 }
 
-// Get memories sorted by creation time
 async function getAllMemoriesByCreated() {
   try {
     const snapshot = await db
@@ -182,8 +183,6 @@ async function getAllMemoriesByCreated() {
     const memories = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-
-      // Safely get all fields, use empty string if missing
       memories.push({
         id: doc.id,
         title: data.title || "Untitled",
@@ -204,7 +203,6 @@ async function getAllMemoriesByCreated() {
   }
 }
 
-// Get memories sorted by date
 async function getAllMemoriesByDate(ascending = true) {
   try {
     const snapshot = await db
@@ -215,7 +213,6 @@ async function getAllMemoriesByDate(ascending = true) {
     const memories = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-
       memories.push({
         id: doc.id,
         title: data.title || "Untitled",
@@ -236,7 +233,7 @@ async function getAllMemoriesByDate(ascending = true) {
   }
 }
 
-// Legacy function for backwards compatibility
+// Legacy alias
 async function getAllMemories() {
   return await getAllMemoriesByCreated();
 }
@@ -256,7 +253,6 @@ async function deleteMemory(memoryId) {
 async function getAllFavourites() {
   try {
     const [songs, movies] = await Promise.all([getAllSongs(), getAllMovies()]);
-
     return [...songs, ...movies];
   } catch (error) {
     console.error("❌ Error getting all favourites:", error);

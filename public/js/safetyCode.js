@@ -1,21 +1,31 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const loggedIn = sessionStorage.getItem("loggedIn");
-  const mkUser = localStorage.getItem("mk_user");
+// ─── public/js/safetyCode.js ─────────────────────────────────────────────────
 
-  if (loggedIn === "true") {
-    // Normal case — sessionStorage is intact
-    document.body.style.display = "block";
-    return;
+(function () {
+  // Wait for body to exist before touching it
+  function hideBody() {
+    if (document.body) {
+      document.body.style.display = "none";
+    } else {
+      document.addEventListener("DOMContentLoaded", function () {
+        document.body.style.display = "none";
+      });
+    }
   }
 
-  if (mkUser) {
-    // Mobile fallback — sessionStorage was wiped but localStorage survived
-    sessionStorage.setItem("loggedIn", "true");
-    sessionStorage.setItem("user", mkUser);
-    document.body.style.display = "block";
-    return;
-  }
+  hideBody();
 
-  // Not logged in at all
-  window.location.replace("index.html");
-});
+  auth.onAuthStateChanged(function (user) {
+    if (user) {
+      document.body.style.display = "block";
+
+      // Sync who to localStorage for UI use
+      user.getIdTokenResult().then(function (idTokenResult) {
+        if (idTokenResult.claims.who) {
+          localStorage.setItem("mk_user", idTokenResult.claims.who);
+        }
+      });
+    } else {
+      window.location.replace("index.html");
+    }
+  });
+})();

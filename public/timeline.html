@@ -5,15 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>❤️ Our Timeline ❤️</title>
     <link rel="stylesheet" href="timeline.css" />
-    <link rel="preload" href="corkboard/pozadinaKomGotovo.webp" as="image">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@40,400,0,0&icon_names=add_2" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_2" />
+    <link rel="preload" href="corkboard/pozadinaKomGotovo.webp" as="image" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@40,400,0,0&icon_names=add_2"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=add_2"
+    />
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
     <script src="js/firebase-config.js"></script>
+    <script src="js/safetyCode.js"></script>
     <script src="js/cloudinary-config.js"></script>
     <script src="js/database-helpers.js"></script>
-    <script src="js/safetyCode.js"></script>
   </head>
 
   <body>
@@ -38,8 +46,12 @@
         </div>
         <div id="colectionOfDrop" class="colectionOfDrop">
           <ul id="navlistDrop">
-            <a class="listItemLinkDrop" href="landingPage.html"><li>Home</li></a>
-            <a class="listItemLinkDrop" href="favourites.html"><li>Favourites</li></a>
+            <a class="listItemLinkDrop" href="landingPage.html"
+              ><li>Home</li></a
+            >
+            <a class="listItemLinkDrop" href="favourites.html"
+              ><li>Favourites</li></a
+            >
             <a class="listItemLinkDrop" href="chat.html"><li>Message me</li></a>
             <a class="listItemLinkDrop" href="#"><li>Coming soon</li></a>
             <a class="listItemLinkDrop" href="#"><li>Coming soon</li></a>
@@ -58,7 +70,12 @@
           <div id="titleAndBtn">
             <div class="empy">
               <button class="backGo" id="backBtnMemory">Back</button>
-              <img class="backGo" id="imageBackArrow" src="sliki/icons/close3.png" alt="backArrow">
+              <img
+                class="backGo"
+                id="imageBackArrow"
+                src="sliki/icons/close3.png"
+                alt="backArrow"
+              />
             </div>
             <h1 id="titleOfPopUpInpDesc">A NEW MEMORY OF US</h1>
             <div class="empy"></div>
@@ -66,27 +83,80 @@
 
           <div id="wholeDiv">
             <div id="leftSideOfPopUp">
-              <input type="file" class="imageInputFile" name="fileInp" id="fileInput" hidden accept="image/*"/>
+              <input
+                type="file"
+                class="imageInputFile"
+                name="fileInp"
+                id="fileInput"
+                hidden
+                accept="image/*"
+              />
               <div id="imagePreviewHolder">
                 <img id="imagePreview" src="" alt="preview" />
                 <button id="removeImageBtn">✕</button>
               </div>
-              <label for="fileInput" class="custom-file-btn" id="uploadLabelLeft">Upload an Image</label>
+              <label
+                for="fileInput"
+                class="custom-file-btn"
+                id="uploadLabelLeft"
+                >Upload an Image</label
+              >
             </div>
 
             <div id="rightSideOfPopUp">
               <div id="divOfTextInp">
                 <div id="bothInps">
-                  <input type="text" class="inps" name="city" id="cityInput" placeholder="City" />
-                  <input type="text" class="inps" name="place" id="placeInput" placeholder="Place"/>
+                  <input
+                    type="text"
+                    class="inps"
+                    name="city"
+                    id="cityInput"
+                    placeholder="City"
+                  />
+                  <input
+                    type="text"
+                    class="inps"
+                    name="place"
+                    id="placeInput"
+                    placeholder="Place"
+                  />
                 </div>
-                <input type="text" class="inps" name="title" id="titleInput" placeholder="Title"/>
-                <input type="text" class="inps" name="country" id="countryInput" placeholder="Country"/>
-                <input type="date" class="inps" name="date" id="dateInput" placeholder="Select date"/>
+                <input
+                  type="text"
+                  class="inps"
+                  name="title"
+                  id="titleInput"
+                  placeholder="Title"
+                />
+                <input
+                  type="text"
+                  class="inps"
+                  name="country"
+                  id="countryInput"
+                  placeholder="Country"
+                />
+                <input
+                  type="date"
+                  class="inps"
+                  name="date"
+                  id="dateInput"
+                  placeholder="Select date"
+                />
                 <div id="holderOfTextareaAndImg">
-                  <textarea class="inpDescription" id="textOfDescription" placeholder="Description"></textarea>
+                  <textarea
+                    class="inpDescription"
+                    id="textOfDescription"
+                    placeholder="Description"
+                  ></textarea>
                   <div id="rightImageHolder">
-                    <input type="file" class="imageInputFile" name="fileInp" id="fileInput2" hidden accept="image/*"/>
+                    <input
+                      type="file"
+                      class="imageInputFile"
+                      name="fileInp"
+                      id="fileInput2"
+                      hidden
+                      accept="image/*"
+                    />
                     <label for="fileInput2" class="custom-file-btn">
                       <span id="uploadImgDisap">Upload an Image</span>
                       <span class="material-symbols-outlined">add_2</span>
@@ -108,24 +178,33 @@
         </div>
         <div class="btnHolder">
           <div id="divOfTitle">
-            <h1 id="titleOfPopUp2" class="titleOfPopUpClass hiddenTextOfTitle">Our first trip</h1>
+            <h1 id="titleOfPopUp2" class="titleOfPopUpClass hiddenTextOfTitle">
+              Our first trip
+            </h1>
           </div>
           <div id="divOfText">
             <p>
-              <b class="boldText">City: </b><span id="popupCity" class="memoryText"></span>
+              <b class="boldText">City: </b
+              ><span id="popupCity" class="memoryText"></span>
             </p>
             <p>
-              <b class="boldText">Country: </b><span id="popupCountry" class="memoryText"></span>
+              <b class="boldText">Country: </b
+              ><span id="popupCountry" class="memoryText"></span>
             </p>
             <p>
-              <b class="boldText">Place: </b><span id="popupPlace" class="memoryText"></span>
+              <b class="boldText">Place: </b
+              ><span id="popupPlace" class="memoryText"></span>
             </p>
             <p>
-              <b class="boldText">Date: </b><span id="popupDate" class="memoryText"></span>
+              <b class="boldText">Date: </b
+              ><span id="popupDate" class="memoryText"></span>
             </p>
             <p>
               <b class="boldText">Description: </b>
-              <span class="memoryText descriptionTextMemory" id="popupDescription"></span>
+              <span
+                class="memoryText descriptionTextMemory"
+                id="popupDescription"
+              ></span>
             </p>
           </div>
           <div id="divOfBtn">
@@ -151,12 +230,10 @@
     <script>
       function setVh() {
         let vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
+        document.documentElement.style.setProperty("--vh", `${vh}px`);
       }
       setVh();
-      window.addEventListener('resize', setVh);
-
-      checkAuthentication();
+      window.addEventListener("resize", setVh);
 
       function optimizeImage(url) {
         if (!url) return "";
@@ -172,8 +249,8 @@
         if (!dateStr || dateStr === "N/A") return "N/A";
         const d = new Date(dateStr);
         if (isNaN(d)) return dateStr;
-        const dd   = String(d.getUTCDate()).padStart(2, "0");
-        const mm   = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const dd = String(d.getUTCDate()).padStart(2, "0");
+        const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
         const yyyy = d.getUTCFullYear();
         return `${dd}.${mm}.${yyyy}`;
       }
@@ -233,103 +310,114 @@
 
       // Handle file selection
       document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll(".imageInputFile").forEach(inp => {
+        document.querySelectorAll(".imageInputFile").forEach((inp) => {
           inp.addEventListener("change", function (e) {
             selectedFile = e.target.files[0];
             if (selectedFile) {
               const reader = new FileReader();
               reader.onload = function (ev) {
                 document.getElementById("imagePreview").src = ev.target.result;
-                document.getElementById("imagePreviewHolder").style.display = "flex";
-                document.getElementById("uploadLabelLeft").style.display = "none";
+                document.getElementById("imagePreviewHolder").style.display =
+                  "flex";
+                document.getElementById("uploadLabelLeft").style.display =
+                  "none";
               };
               reader.readAsDataURL(selectedFile);
             }
           });
         });
 
-        document.getElementById("removeImageBtn").addEventListener("click", function () {
-          selectedFile = null;
-          document.getElementById("imagePreview").src = "";
-          document.getElementById("imagePreviewHolder").style.display = "none";
-          document.getElementById("uploadLabelLeft").style.display = "flex";
-          document.querySelectorAll(".imageInputFile").forEach(inp => inp.value = "");
-        });
+        document
+          .getElementById("removeImageBtn")
+          .addEventListener("click", function () {
+            selectedFile = null;
+            document.getElementById("imagePreview").src = "";
+            document.getElementById("imagePreviewHolder").style.display =
+              "none";
+            document.getElementById("uploadLabelLeft").style.display = "flex";
+            document
+              .querySelectorAll(".imageInputFile")
+              .forEach((inp) => (inp.value = ""));
+          });
       });
 
       // Handle submit memory button
-      document.getElementById("submitMemoryBtn").addEventListener("click", async function () {
-        const title = document.getElementById("titleInput").value;
-        const city = document.getElementById("cityInput").value;
-        const place = document.getElementById("placeInput").value;
-        const country = document.getElementById("countryInput").value;
-        const date = document.getElementById("dateInput").value;
-        const description = document.getElementById("textOfDescription").value;
+      document
+        .getElementById("submitMemoryBtn")
+        .addEventListener("click", async function () {
+          const title = document.getElementById("titleInput").value;
+          const city = document.getElementById("cityInput").value;
+          const place = document.getElementById("placeInput").value;
+          const country = document.getElementById("countryInput").value;
+          const date = document.getElementById("dateInput").value;
+          const description =
+            document.getElementById("textOfDescription").value;
 
-        if (!title || !date) {
-          alert("Please fill in at least the title and date!");
-          return;
-        }
+          if (!title || !date) {
+            alert("Please fill in at least the title and date!");
+            return;
+          }
 
-        try {
-          this.textContent = "Uploading...";
-          this.disabled = true;
+          try {
+            this.textContent = "Uploading...";
+            this.disabled = true;
 
-          const memoryData = {
-            title: title,
-            city: city,
-            place: place,
-            country: country,
-            description: description,
-            date: date,
-            image: selectedFile
-          };
+            const memoryData = {
+              title: title,
+              city: city,
+              place: place,
+              country: country,
+              description: description,
+              date: date,
+              image: selectedFile,
+            };
 
-          const memoryId = await addMemory(memoryData);
-          console.log("✅ Memory saved with ID:", memoryId);
+            const memoryId = await addMemory(memoryData);
+            console.log("✅ Memory saved with ID:", memoryId);
 
-          const allSections = document.querySelectorAll(".sectionOfMemory");
-          allSections.forEach(s => s.remove());
+            const allSections = document.querySelectorAll(".sectionOfMemory");
+            allSections.forEach((s) => s.remove());
 
-          const memories = await getAllMemories();
-          memories.sort((a, b) => {
-            const dateA = a.date ? new Date(a.date) : new Date(0);
-            const dateB = b.date ? new Date(b.date) : new Date(0);
-            return dateA - dateB;
-          });
-          memories.forEach((memory) => addMemoryToDOM(memory));
+            const memories = await getAllMemories();
+            memories.sort((a, b) => {
+              const dateA = a.date ? new Date(a.date) : new Date(0);
+              const dateB = b.date ? new Date(b.date) : new Date(0);
+              return dateA - dateB;
+            });
+            memories.forEach((memory) => addMemoryToDOM(memory));
 
-          document.getElementById("titleInput").value = "";
-          document.getElementById("cityInput").value = "";
-          document.getElementById("placeInput").value = "";
-          document.getElementById("countryInput").value = "";
-          document.getElementById("dateInput").value = "";
-          document.getElementById("textOfDescription").value = "";
-          selectedFile = null;
+            document.getElementById("titleInput").value = "";
+            document.getElementById("cityInput").value = "";
+            document.getElementById("placeInput").value = "";
+            document.getElementById("countryInput").value = "";
+            document.getElementById("dateInput").value = "";
+            document.getElementById("textOfDescription").value = "";
+            selectedFile = null;
 
-          document.querySelectorAll(".imageInputFile").forEach(inp => {
-            inp.value = "";
-          });
-          document.getElementById("imagePreview").src = "";
-          document.getElementById("imagePreviewHolder").style.display = "none";
-          document.getElementById("uploadLabelLeft").style.display = "flex";
+            document.querySelectorAll(".imageInputFile").forEach((inp) => {
+              inp.value = "";
+            });
+            document.getElementById("imagePreview").src = "";
+            document.getElementById("imagePreviewHolder").style.display =
+              "none";
+            document.getElementById("uploadLabelLeft").style.display = "flex";
 
-          popupOfInp.style.display = "none";
-          shadow.style.display = "none";
-          document.body.style.overflow = "";
-          hideHeaderNow.classList.remove("hideHeader");
+            popupOfInp.style.display = "none";
+            shadow.style.display = "none";
+            document.body.style.overflow = "";
+            hideHeaderNow.classList.remove("hideHeader");
 
-          setTimeout(drawLines, 50);
-          this.textContent = "ADD OUR MEMORY";
-          this.disabled = false;
-          alert("Memory added! 🎉");
-        } catch (error) {
-          console.error("❌ Error:", error);
-          alert("Error: " + error.message);
-          this.textContent = "ADD OUR MEMORY";
-          this.disabled = false;
-        }
-      });
+            setTimeout(drawLines, 50);
+            this.textContent = "ADD OUR MEMORY";
+            this.disabled = false;
+            alert("Memory added! 🎉");
+          } catch (error) {
+            console.error("❌ Error:", error);
+            alert("Error: " + error.message);
+            this.textContent = "ADD OUR MEMORY";
+            this.disabled = false;
+          }
+        });
 
       // ============ DRAW LINES ============
 
@@ -350,17 +438,20 @@
           const wrapperTop = wrapperRect.top + window.scrollY;
           const wrapperLeft = wrapperRect.left + window.scrollX;
           return {
-            top:     rect.top    + window.scrollY - wrapperTop,
-            bottom:  rect.bottom + window.scrollY - wrapperTop,
-            centerX: rect.left   + rect.width / 2 + window.scrollX - wrapperLeft,
-            centerY: rect.top    + rect.height / 2 + window.scrollY - wrapperTop,
-            leftX:   rect.left   + window.scrollX - wrapperLeft,
-            rightX:  rect.right  + window.scrollX - wrapperLeft,
+            top: rect.top + window.scrollY - wrapperTop,
+            bottom: rect.bottom + window.scrollY - wrapperTop,
+            centerX: rect.left + rect.width / 2 + window.scrollX - wrapperLeft,
+            centerY: rect.top + rect.height / 2 + window.scrollY - wrapperTop,
+            leftX: rect.left + window.scrollX - wrapperLeft,
+            rightX: rect.right + window.scrollX - wrapperLeft,
           };
         });
 
         function makeLine(x1, y1, x2, y2) {
-          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          const line = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line",
+          );
           line.setAttribute("x1", x1);
           line.setAttribute("y1", y1);
           line.setAttribute("x2", x2);
@@ -373,7 +464,12 @@
 
         if (position.length > 0) {
           const first = position[0];
-          makeLine(first.centerX, -wrapper.offsetTop, first.centerX, first.centerY);
+          makeLine(
+            first.centerX,
+            -wrapper.offsetTop,
+            first.centerX,
+            first.centerY,
+          );
         }
 
         for (let i = 0; i < position.length - 1; i++) {
@@ -401,9 +497,10 @@
           } else {
             const exitRight = (position.length - 1) % 2 === 0;
             const exitX = exitRight ? last.rightX : last.leftX;
-            const alignX = position.length >= 2
-              ? position[position.length - 2].centerX
-              : last.centerX;
+            const alignX =
+              position.length >= 2
+                ? position[position.length - 2].centerX
+                : last.centerX;
 
             makeLine(last.centerX, last.centerY, exitX, last.centerY);
             makeLine(exitX, last.centerY, alignX, last.centerY);
@@ -421,7 +518,7 @@
         hideHeaderNow.classList.add("hideHeader");
       });
 
-      backbtnInpWindow.forEach(backClick => {
+      backbtnInpWindow.forEach((backClick) => {
         backClick.addEventListener("click", function () {
           popupOfInp.style.display = "none";
           shadow.style.display = "none";
@@ -448,53 +545,73 @@
         hideHeaderNow.classList.remove("hideHeader");
       });
 
-      document.getElementById("timelineWrapper").addEventListener("click", async function (e) {
-        const memory = e.target.closest(".floatMemory");
+      document
+        .getElementById("timelineWrapper")
+        .addEventListener("click", async function (e) {
+          const memory = e.target.closest(".floatMemory");
 
-        if (memory && !btnClicked) {
-          const section = memory.closest(".sectionOfMemory");
-          const memoryId = section ? section.getAttribute("data-memory-id") : null;
+          if (memory && !btnClicked) {
+            const section = memory.closest(".sectionOfMemory");
+            const memoryId = section
+              ? section.getAttribute("data-memory-id")
+              : null;
 
-          if (memoryId) {
-            try {
-              const doc = await db.collection("memories").doc(memoryId).get();
-              if (doc.exists) {
-                const data = doc.data();
-                currentMemoryId = memoryId;
+            if (memoryId) {
+              try {
+                const doc = await db.collection("memories").doc(memoryId).get();
+                if (doc.exists) {
+                  const data = doc.data();
+                  currentMemoryId = memoryId;
 
-                document.querySelectorAll(".titleOfPopUpClass").forEach(pop => {
-                  pop.textContent = data.title;
-                });
-                document.getElementById("popupCity").textContent = data.city || "N/A";
-                document.getElementById("popupPlace").textContent = data.place || "N/A";
-                document.getElementById("popupCountry").textContent = data.country || "N/A";
-                document.getElementById("popupDate").textContent = formatDate(data.date);
-                document.getElementById("popupDescription").textContent = data.description || "No description";
-                document.querySelector(".slika").src = optimizeImage(data.imageUrl);
+                  document
+                    .querySelectorAll(".titleOfPopUpClass")
+                    .forEach((pop) => {
+                      pop.textContent = data.title;
+                    });
+                  document.getElementById("popupCity").textContent =
+                    data.city || "N/A";
+                  document.getElementById("popupPlace").textContent =
+                    data.place || "N/A";
+                  document.getElementById("popupCountry").textContent =
+                    data.country || "N/A";
+                  document.getElementById("popupDate").textContent = formatDate(
+                    data.date,
+                  );
+                  document.getElementById("popupDescription").textContent =
+                    data.description || "No description";
+                  document.querySelector(".slika").src = optimizeImage(
+                    data.imageUrl,
+                  );
 
-                document.body.style.overflow = "hidden";
-                shadow.style.display = "block";
-                popUpWindow.style.display = "flex";
-                hideHeaderNow.classList.add("hideHeader");
-                btnClicked = true;
+                  document.body.style.overflow = "hidden";
+                  shadow.style.display = "block";
+                  popUpWindow.style.display = "flex";
+                  hideHeaderNow.classList.add("hideHeader");
+                  btnClicked = true;
+                }
+              } catch (error) {
+                console.error("Error loading memory:", error);
               }
-            } catch (error) {
-              console.error("Error loading memory:", error);
+            } else {
+              let imageTimeline = memory
+                .querySelector(".imageTimeline")
+                .getAttribute("src");
+              document
+                .querySelector(".slika")
+                .setAttribute("src", imageTimeline);
+              document.body.style.overflow = "hidden";
+              shadow.style.display = "block";
+              popUpWindow.style.display = "flex";
+              btnClicked = true;
             }
-          } else {
-            let imageTimeline = memory.querySelector(".imageTimeline").getAttribute("src");
-            document.querySelector(".slika").setAttribute("src", imageTimeline);
-            document.body.style.overflow = "hidden";
-            shadow.style.display = "block";
-            popUpWindow.style.display = "flex";
-            btnClicked = true;
           }
-        }
-      });
+        });
 
-      document.getElementById("dateInput").addEventListener("click", function () {
-        this.showPicker();
-      });
+      document
+        .getElementById("dateInput")
+        .addEventListener("click", function () {
+          this.showPicker();
+        });
 
       // ============ PAGE LOAD ============
 
@@ -554,16 +671,19 @@
         document.body.style.overflow = "";
       }
 
-      document.addEventListener("load", function (e) {
-        if (e.target.classList.contains("imageTimeline")) {
-          e.target.classList.add("loaded");
-        }
-      }, true);
+      document.addEventListener(
+        "load",
+        function (e) {
+          if (e.target.classList.contains("imageTimeline")) {
+            e.target.classList.add("loaded");
+          }
+        },
+        true,
+      );
 
       document.querySelectorAll(".logOut").forEach((btn) => {
         btn.addEventListener("click", () => {
-          sessionStorage.removeItem("loggedIn");
-          window.location.replace("/index.html");
+          auth.signOut().then(() => window.location.replace("index.html"));
         });
       });
 
@@ -573,19 +693,24 @@
       let editedFields = {};
       let originalMemoryData = {};
 
-      document.getElementById("editBnt").addEventListener("click", async function () {
-        if (!isEditing) {
-          await enterEditMode();
-        } else {
-          await saveEdits();
-        }
-      });
+      document
+        .getElementById("editBnt")
+        .addEventListener("click", async function () {
+          if (!isEditing) {
+            await enterEditMode();
+          } else {
+            await saveEdits();
+          }
+        });
 
       async function enterEditMode() {
         if (!currentMemoryId) return;
 
         try {
-          const doc = await db.collection("memories").doc(currentMemoryId).get();
+          const doc = await db
+            .collection("memories")
+            .doc(currentMemoryId)
+            .get();
           if (!doc.exists) return;
           originalMemoryData = doc.data();
         } catch (err) {
@@ -599,13 +724,13 @@
         document.getElementById("editBnt").textContent = "Save";
         document.getElementById("editBnt").style.backgroundColor = "#28a745";
 
-        makeFieldEditable("popupCity",        "text");
-        makeFieldEditable("popupCountry",     "text");
-        makeFieldEditable("popupPlace",       "text");
-        makeFieldEditable("popupDate",        "date");
+        makeFieldEditable("popupCity", "text");
+        makeFieldEditable("popupCountry", "text");
+        makeFieldEditable("popupPlace", "text");
+        makeFieldEditable("popupDate", "date");
         makeFieldEditable("popupDescription", "textarea");
 
-        document.querySelectorAll(".titleOfPopUpClass").forEach(el => {
+        document.querySelectorAll(".titleOfPopUpClass").forEach((el) => {
           if (el.offsetParent === null) return;
           el.classList.add("editableField");
           el.addEventListener("click", onTitleClick, { once: true });
@@ -622,13 +747,17 @@
 
       // ── FIX: single, reusable function that always attaches with { once: true } ──
       function attachFieldListener(el, id, type) {
-        el.addEventListener("click", function onFieldClick(e) {
-          e.stopPropagation();
-          const current = document.getElementById(id);
-          if (!current || current.dataset.editing === "true") return;
-          current.dataset.editing = "true";
-          convertToInput(current, id, type);
-        }, { once: true });
+        el.addEventListener(
+          "click",
+          function onFieldClick(e) {
+            e.stopPropagation();
+            const current = document.getElementById(id);
+            if (!current || current.dataset.editing === "true") return;
+            current.dataset.editing = "true";
+            convertToInput(current, id, type);
+          },
+          { once: true },
+        );
       }
 
       function onTitleClick(e) {
@@ -684,7 +813,7 @@
         input.type = "text";
         input.value = currentValue;
         input.className = "editInlineInput titleEditInput";
-        input.dataset.originalId    = el.id || "";
+        input.dataset.originalId = el.id || "";
         input.dataset.originalClass = el.className;
 
         input.addEventListener("blur", function () {
@@ -708,12 +837,13 @@
         const isDescription = id === "popupDescription";
         const isDate = id === "popupDate";
         const value = isDate
-          ? (formatDate(input.value.trim()) || "N/A")
-          : (input.value.trim() || (isDescription ? "No description" : "N/A"));
+          ? formatDate(input.value.trim()) || "N/A"
+          : input.value.trim() || (isDescription ? "No description" : "N/A");
 
         const span = document.createElement("span");
         span.id = id;
-        span.className = "memoryText" + (isDescription ? " descriptionTextMemory" : "");
+        span.className =
+          "memoryText" + (isDescription ? " descriptionTextMemory" : "");
         span.textContent = value;
         span.classList.add("editableField");
         span.dataset.editing = "false";
@@ -730,7 +860,7 @@
         const activeEl = document.activeElement;
         if (activeEl && activeEl.classList.contains("editInlineInput")) {
           activeEl.blur();
-          await new Promise(r => setTimeout(r, 50));
+          await new Promise((r) => setTimeout(r, 50));
         }
 
         try {
@@ -739,12 +869,12 @@
 
           // Map popup element IDs → actual Firestore field names
           const fieldMap = {
-            popupCity:        "city",
-            popupCountry:     "country",
-            popupPlace:       "place",
-            popupDate:        "date",
+            popupCity: "city",
+            popupCountry: "country",
+            popupPlace: "place",
+            popupDate: "date",
             popupDescription: "description",
-            title:            "title"
+            title: "title",
           };
 
           const mappedEdits = {};
@@ -761,13 +891,18 @@
           await db.collection("memories").doc(currentMemoryId).set(updatedData);
 
           if (mappedEdits.title) {
-            const card = document.querySelector(`[data-memory-id="${currentMemoryId}"] .imageTitle`);
+            const card = document.querySelector(
+              `[data-memory-id="${currentMemoryId}"] .imageTitle`,
+            );
             if (card) card.textContent = mappedEdits.title;
           }
 
           exitEditMode();
-          console.log("✅ Memory updated for ID:", currentMemoryId, updatedData);
-
+          console.log(
+            "✅ Memory updated for ID:",
+            currentMemoryId,
+            updatedData,
+          );
         } catch (err) {
           console.error("❌ Error updating memory:", err);
           alert("Could not save changes: " + err.message);
@@ -781,7 +916,7 @@
         editedFields = {};
         originalMemoryData = {};
 
-        document.querySelectorAll(".editableField").forEach(el => {
+        document.querySelectorAll(".editableField").forEach((el) => {
           el.classList.remove("editableField");
         });
 

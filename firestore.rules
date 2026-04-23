@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Only users who passed the secret date check can read/write anything
+    function isVerified() {
+      return request.auth != null && request.auth.token.verified == true;
+    }
+
+    match /{document=**} {
+      allow read, write: if isVerified();
+    }
+  }
+}

@@ -27,8 +27,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=logout"
     />
-    <script src="js/safetyCode.js"></script>
-    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=menu"
@@ -36,9 +35,10 @@
     <!-- Firebase SDK (for text data) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <!-- Configurations -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-functions-compat.js"></script>
     <script src="js/firebase-config.js"></script>
+    <script src="js/safetyCode.js"></script>
     <script src="js/cloudinary-config.js"></script>
 
     <!-- Database Helpers -->
@@ -253,13 +253,15 @@
       </p> -->
     </section>
 
-
-
     <section id="moonTime">
       <div id="moonHolderDiv">
         <div id="moon1" class="moonImgHolder">
           <div class="imageDiv">
-            <img class="moonImg" src="sliki/moon-03-10-2023.jpg" alt="Slika od mesecinata na denot koga se zaposnavme">
+            <img
+              class="moonImg"
+              src="sliki/moon-03-10-2023.jpg"
+              alt="Slika od mesecinata na denot koga se zaposnavme"
+            />
           </div>
           <div class="captionText">
             <h2 class="moonTextUnderImage">03.10.2023 / 20:00</h2>
@@ -267,7 +269,11 @@
         </div>
         <div id="moon2" class="moonImgHolder">
           <div class="imageDiv">
-            <img class="moonImg" src="sliki/moon-26-04-2024.jpg" alt="Slika od mesecinata na denot koga se fativme">
+            <img
+              class="moonImg"
+              src="sliki/moon-26-04-2024.jpg"
+              alt="Slika od mesecinata na denot koga se fativme"
+            />
           </div>
           <div class="captionText">
             <h2 class="moonTextUnderImage">26.04.2024 / 21:51</h2>
@@ -276,22 +282,45 @@
       </div>
     </section>
     <section>
-      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident excepturi ducimus delectus sint quasi magnam cupiditate vitae neque, repellat, harum, laudantium corporis! Illum incidunt tenetur asperiores obcaecati enim. Officiis, in?
-      Ducimus beatae aliquid consectetur accusamus tempore ex, in quae pariatur reprehenderit esse cum fuga quod tenetur cumque, dolorum aut! Possimus deleniti tempora officiis, vitae natus iste quisquam impedit deserunt tempore!
-      Suscipit ipsum quisquam officia ducimus nisi vel commodi qui alias. Tenetur repellat, error est aperiam iste voluptatibus! Cum earum architecto magnam minima dolores explicabo, ipsam odio. Odit dolores quo nesciunt!
-      Aperiam atque, recusandae eius cupiditate repellat, excepturi commodi totam eum non nemo aliquam. Vitae tempore sit praesentium iste iure eum repellat dolorem maxime ut, qui magnam facere, voluptatum unde expedita.
-      Aliquid aliquam, consequuntur corrupti expedita beatae, nam laborum, perferendis tenetur quia quae quo? Alias at, eum quo aspernatur, magnam accusamus doloribus eos nemo dolorum sequi quibusdam consectetur doloremque rerum esse!
-      Cum necessitatibus iste dolores possimus corporis voluptatem molestiae a? Atque, numquam ab asperiores voluptatibus nam corporis distinctio aliquam soluta enim hic temporibus minus neque perferendis autem dolorum! Sunt, hic officiis!
-      Nihil dolorum cumque voluptate quisquam vel sequi eum corrupti quis nobis asperiores. Sed, repellat voluptatum ea natus tenetur ipsam hic neque repudiandae enim animi nemo aperiam? Veritatis adipisci necessitatibus odit.
-      Aperiam, asperiores maxime voluptatem possimus dignissimos ipsum! Ipsam laboriosam necessitatibus impedit magni possimus delectus fuga voluptate quibusdam! Temporibus, perferendis repudiandae. Minima, numquam dicta nemo nobis molestiae eveniet doloribus exercitationem rem!
-      Minus quasi maiores in. Perspiciatis repellat eveniet esse facilis nisi magni recusandae iusto placeat ullam minus ex corrupti voluptatem, ratione illum distinctio, odit dignissimos modi delectus natus sunt optio similique?
-      Doloribus sit perferendis reprehenderit magnam quia hic fugit praesentium perspiciatis placeat quis consequuntur corporis, laboriosam error obcaecati nostrum facilis dignissimos itaque ea numquam culpa eius! Iste quia ipsam eum corrupti.</p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident
+        excepturi ducimus delectus sint quasi magnam cupiditate vitae neque,
+        repellat, harum, laudantium corporis! Illum incidunt tenetur asperiores
+        obcaecati enim. Officiis, in? Ducimus beatae aliquid consectetur
+        accusamus tempore ex, in quae pariatur reprehenderit esse cum fuga quod
+        tenetur cumque, dolorum aut! Possimus deleniti tempora officiis, vitae
+        natus iste quisquam impedit deserunt tempore! Suscipit ipsum quisquam
+        officia ducimus nisi vel commodi qui alias. Tenetur repellat, error est
+        aperiam iste voluptatibus! Cum earum architecto magnam minima dolores
+        explicabo, ipsam odio. Odit dolores quo nesciunt! Aperiam atque,
+        recusandae eius cupiditate repellat, excepturi commodi totam eum non
+        nemo aliquam. Vitae tempore sit praesentium iste iure eum repellat
+        dolorem maxime ut, qui magnam facere, voluptatum unde expedita. Aliquid
+        aliquam, consequuntur corrupti expedita beatae, nam laborum, perferendis
+        tenetur quia quae quo? Alias at, eum quo aspernatur, magnam accusamus
+        doloribus eos nemo dolorum sequi quibusdam consectetur doloremque rerum
+        esse! Cum necessitatibus iste dolores possimus corporis voluptatem
+        molestiae a? Atque, numquam ab asperiores voluptatibus nam corporis
+        distinctio aliquam soluta enim hic temporibus minus neque perferendis
+        autem dolorum! Sunt, hic officiis! Nihil dolorum cumque voluptate
+        quisquam vel sequi eum corrupti quis nobis asperiores. Sed, repellat
+        voluptatum ea natus tenetur ipsam hic neque repudiandae enim animi nemo
+        aperiam? Veritatis adipisci necessitatibus odit. Aperiam, asperiores
+        maxime voluptatem possimus dignissimos ipsum! Ipsam laboriosam
+        necessitatibus impedit magni possimus delectus fuga voluptate quibusdam!
+        Temporibus, perferendis repudiandae. Minima, numquam dicta nemo nobis
+        molestiae eveniet doloribus exercitationem rem! Minus quasi maiores in.
+        Perspiciatis repellat eveniet esse facilis nisi magni recusandae iusto
+        placeat ullam minus ex corrupti voluptatem, ratione illum distinctio,
+        odit dignissimos modi delectus natus sunt optio similique? Doloribus sit
+        perferendis reprehenderit magnam quia hic fugit praesentium perspiciatis
+        placeat quis consequuntur corporis, laboriosam error obcaecati nostrum
+        facilis dignissimos itaque ea numquam culpa eius! Iste quia ipsam eum
+        corrupti.
+      </p>
     </section>
-
   </body>
   <script>
-    checkAuthentication();
-
     let divTime = document.getElementById("timeTogether");
     let spanYear = document.getElementById("spanYear");
     let spanMonth = document.getElementById("spanMonth");
@@ -560,7 +589,6 @@
       console.log("page loaded");
     });
 
-
     // heart animation
     // Add floating hearts animation
     function createFloatingHeart() {
@@ -656,8 +684,7 @@
     document.querySelectorAll(".logOut").forEach((btn) => {
       btn.addEventListener("click", () => {
         let loggedIn = sessionStorage.getItem("loggedIn");
-        sessionStorage.removeItem("loggedIn");
-        window.location.replace("/index.html");
+        auth.signOut().then(() => window.location.replace("index.html"));
       });
     });
   </script>
