@@ -645,30 +645,29 @@
         document.getElementById("resultsList").innerHTML = html;
       }
 
+      let nav = document.querySelector(".navbar");
+      let menuChange = document.getElementById("menuChange");
 
-     let nav = document.querySelector(".navbar");
-let menuChange = document.getElementById("menuChange");
+      document.getElementById("menu").addEventListener("click", function () {
+        const isOpen = nav.classList.toggle("menu-open");
 
-document.getElementById("menu").addEventListener("click", function () {
-  const isOpen = nav.classList.toggle("menu-open");
+        if (isOpen) {
+          menuChange.src = "sliki/icons/close.png";
+          openShadow();
+        } else {
+          menuChange.src = "sliki/icons/burgerBig.png";
+          closeShadow();
+        }
 
-  if (isOpen) {
-    menuChange.src = "sliki/icons/close.png";
-    openShadow();
-  } else {
-    menuChange.src = "sliki/icons/burgerBig.png";
-    closeShadow();
-  }
-
-  menuChange.classList.add("rotateMenuNow");
-  menuChange.addEventListener(
-    "animationend",
-    () => {
-      menuChange.classList.remove("rotateMenuNow");
-    },
-    { once: true }
-  );
-});
+        menuChange.classList.add("rotateMenuNow");
+        menuChange.addEventListener(
+          "animationend",
+          () => {
+            menuChange.classList.remove("rotateMenuNow");
+          },
+          { once: true },
+        );
+      });
 
       function openShadow() {
         shadow2.style.display = "block";
@@ -678,7 +677,16 @@ document.getElementById("menu").addEventListener("click", function () {
         shadow2.style.display = "none";
         document.body.style.overflow = "";
       }
- 
+
+      // log out
+
+      document.querySelectorAll(".logOut").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          let loggedIn = sessionStorage.getItem("loggedIn");
+          sessionStorage.removeItem("loggedIn");
+          window.location.replace("/index.html");
+        });
+      });
     </script>
   </body>
 </html>
