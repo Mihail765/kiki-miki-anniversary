@@ -40,6 +40,10 @@ nav h1 {
   font-weight: 400;
 }
 
+header {
+  height: 100px;
+}
+
 header#hideHeader {
   position: sticky;
   top: 0;
@@ -85,12 +89,18 @@ header#hideHeader {
   list-style: none;
 }
 
-.ul1 { order: 1; }
-.ul2 { order: 3; }
+.ul1 {
+  order: 1;
+}
+.ul2 {
+  order: 3;
+}
 
 .navUl li {
   list-style-type: none;
-  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+  cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
 }
 
 .navUl li a {
@@ -99,7 +109,9 @@ header#hideHeader {
   font-weight: 500;
   text-decoration: none;
   color: #a05070;
-  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+  cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
   transition: color 0.2s ease;
 }
 
@@ -116,7 +128,9 @@ header#hideHeader {
   align-items: center;
   height: 40px;
   width: 40px;
-  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+  cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
 
   filter: brightness(0) invert(1) drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.295));
 }
@@ -126,6 +140,21 @@ header#hideHeader {
   width: 100%;
   /* tint the burger icon to match the pink theme */
   filter: hue-rotate(300deg) saturate(0.5) brightness(0.8);
+}
+
+.rotateMenuNow {
+  animation-name: rotateMenuNow;
+  animation-duration: 0.2s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: 1;
+}
+@keyframes rotateMenuNow {
+  0% {
+    transform: rotateZ(0deg);
+  }
+  100% {
+    transform: rotateZ(180deg);
+  }
 }
 
 #colectionOfDrop {
@@ -152,22 +181,75 @@ header#hideHeader {
     display: flex;
   }
 
-  .navbar {
-    flex-direction: column;
-    border-bottom: 1px solid rgba(255, 182, 193, 0.6);
-    box-shadow: 0 0 15px rgba(255, 182, 193, 0.5);
-    transition: all 0.3s ease;
-  }
+  @media (max-width: 900px) {
+    .navbar {
+      position: relative;
+      flex-direction: column;
+      background: linear-gradient(
+        to right,
+        #ffe4e1 100%,
+        #ffc6cc 70%,
+        #ff9aa2 0%
+      );
+      border-bottom: 1px solid rgba(255, 182, 193, 0.6);
+      box-shadow: 0 0 15px rgba(255, 182, 193, 0.5);
+      transition:
+        border-bottom 0.3s ease,
+        box-shadow 0.3s ease;
+    }
 
-  #colectionOfDrop {
-    width: 100%;
-    display: flex;
-    flex: 8;
-    flex-direction: column;
-    justify-content: space-around;
-    align-items: center;
-    display: none;
-    transition: all 0.3s ease;
+    .navbar.menu-open {
+      border-bottom-color: transparent;
+      box-shadow: none;
+    }
+
+    #colectionOfDrop {
+      position: absolute;
+      top: 100px;
+      left: 0;
+      width: 100%;
+      z-index: 998;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+
+      background: linear-gradient(
+        to right,
+        #ffe4e1 100%,
+        #ffc6cc 70%,
+        #ff9aa2 0%
+      );
+      border-bottom: 1px solid rgba(255, 182, 193, 0.6);
+      box-shadow: 0 10px 15px rgba(255, 182, 193, 0.5);
+      margin-top: -1px;
+
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        max-height 0.35s ease,
+        opacity 0.25s ease;
+    }
+
+    .navbar.menu-open #colectionOfDrop {
+      max-height: 355px; /* adjust if needed */
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #navlistDrop {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+      list-style-type: none;
+      padding: 20px 0 10px;
+      margin: 0;
+    }
   }
 
   #navlistDrop {
@@ -187,49 +269,75 @@ header#hideHeader {
     width: 100%;
     text-align: center;
   }
-  
+
   #navlistDrop a {
-    /* box-shadow: inset 0 0 5px #ff758f; */
-    border: 5px inset #ffffff;
-    background-color: #ffe1e4;
-    border-radius: 5px;
+    border: 3px solid rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
     width: 90%;
     color: #a05070;
     font-family: "addBtn";
     font-size: 16px;
     text-decoration: none;
-    transition: all 0.3s ease;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+
+    transform: translateY(0) scale(1);
+    transition: all 0.35s ease;
   }
-  
+
   #navlistDrop a:hover {
-    color: #ff758f;
-    border: 1px solid rgba(255, 182, 193, 0.6);
-    cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
-    box-shadow: 0 0 5px rgb(255, 255, 255);
-        border: 5px outset #ff758f;
+    transform: translateY(-4px) scale(1.03);
+
+    color: #ff5d8f;
+    background: linear-gradient(to right, #fff5f7, #ffd9e1);
+
+    border: 3px solid #ff8fb1;
+
+    box-shadow:
+      0 0 8px rgba(255, 117, 143, 0.45),
+      0 0 18px rgba(255, 117, 143, 0.25),
+      inset 0 0 10px rgba(255, 255, 255, 0.65);
+        cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
 
   }
-
   #logOutDrop {
     width: 90%;
-    padding: 10px;
-    text-align: center;
+    padding: 13px;
+    border: none;
+    border-radius: 14px;
+    margin-bottom: 20px;
+
+    background: linear-gradient(135deg, #ff8fa8, #ff5d8f);
+
+    color: white;
     font-size: 16px;
     font-family: "addBtn";
-    background: none;
-    border: 1px solid #ffffff;
-    border-radius: 10px;
-    color: white;
-    transition: all 0.3s ease;
-    background: #ff758f;
-    cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
-    margin-bottom: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+
+    transition: all 0.35s ease;
   }
 
   #logOutDrop:hover {
-    color: white;
-    box-shadow: 0 0 10px #ffc6cc;
+    transform: translateY(-3px) scale(1.03);
+
+    box-shadow:
+      0 0 10px #ff8fa8,
+      0 0 20px #ff6f91,
+      0 0 35px rgba(255, 111, 145, 0.6);
+        cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
+
+
+    filter: brightness(1.08);
+  }
+
+  #logOutDrop:active {
+    transform: scale(0.97);
   }
 
   #logOutDrop span {
@@ -239,9 +347,8 @@ header#hideHeader {
 }
 
 @media (max-width: 450px) {
-   .favouriteH1 {
+  .favouriteH1 {
     font-size: 50px;
-
   }
 
   #menu {
@@ -250,14 +357,6 @@ header#hideHeader {
     width: 36px;
   }
 }
-
-
-
-
-
-
-
-
 
 .wrapper {
   height: auto;
@@ -333,7 +432,7 @@ header#hideHeader {
 
 .exampleDiv:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 10px #ff9aa2;
 }
 
 @media (max-width: 500px) {
@@ -371,10 +470,20 @@ header#hideHeader {
   position: fixed;
   inset: 0;
   background: radial-gradient(rgba(39, 39, 39, 0.7));
+  z-index: 998;
+  display: none;
+}
+#shadow2 {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(rgba(39, 39, 39, 0.7));
   z-index: 996;
   display: none;
 }
 
+.menu-expanded {
+  height: 455px;
+}
 /* POPUP HEADER */
 .popup-header {
   display: flex;
@@ -426,7 +535,9 @@ header#hideHeader {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+  cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
   transition: background 0.2s;
 }
 
@@ -459,7 +570,9 @@ header#hideHeader {
 
   font-size: clamp(12px, 1.8vw, 16px);
 
-  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+  cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
   transition: all 0.3s ease-in-out;
   color: #ffffff;
 
@@ -561,7 +674,6 @@ header#hideHeader {
   margin-left: auto;
 }
 
-
 .btn-icon {
   height: inherit;
   width: inherit;
@@ -613,18 +725,18 @@ header#hideHeader {
   border-color: #ff758f;
 }
 
-.btn-icon{
+.btn-icon {
   height: calc(100% - 2px) !important;
   width: calc(100% - 2px) !important;
 }
 
-.plus-icon-now{
+.plus-icon-now {
   width: 60% !important;
   height: 60% !important;
 }
 
-.add-to-fav-btn:hover .plus-icon-now{
- filter: brightness(0) invert(1);
+.add-to-fav-btn:hover .plus-icon-now {
+  filter: brightness(0) invert(1);
 }
 
 /* MINI PLAYER */
@@ -850,10 +962,8 @@ header#hideHeader {
   color: #bbb;
   margin-top: 2px;
 }
-.hvrBtn{
-    cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, auto;
+.hvrBtn {
+  cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
 }
-
-
-
-
