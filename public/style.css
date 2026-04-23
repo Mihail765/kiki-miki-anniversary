@@ -204,7 +204,7 @@ header {
 }
 
 #timeTogether {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: row;
   position: relative;
@@ -370,6 +370,7 @@ header {
   filter: brightness(50%);
   background-position: center;
   background-size: cover;
+  background-repeat: repeat;
 }
 /* spin */
 
