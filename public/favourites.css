@@ -678,6 +678,10 @@ header#hideHeader {
   height: inherit;
   width: inherit;
   filter: invert(100%);
+    cursor:
+    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
+    auto;
+
 }
 .skipBFr {
   filter: invert(0%);
