@@ -1,25 +1,9 @@
 // public/js/database-helpers.js
 // Firebase: Text data (songs, movies, memories metadata)
 // Cloudinary: Images
-// Auth guard now uses Firebase Auth state (not sessionStorage alone)
+// Auth is handled entirely by safetyCode.js (Firebase Auth state) — no sessionStorage
 
 console.log("🔧 Loading database-helpers.js...");
-
-// ===== AUTHENTICATION CHECK =====
-// Call this at the top of any page script that reads/writes data.
-// Returns a Promise that resolves with the current Firebase user,
-// or redirects to login if unauthenticated.
-function checkAuthentication() {
-  return new Promise((resolve) => {
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.replace("/index.html");
-      } else {
-        resolve(user);
-      }
-    });
-  });
-}
 
 // ===== FAVOURITE SONGS =====
 
@@ -91,7 +75,7 @@ async function addFavouriteMovie(movieData) {
       console.log("📤 Uploading movie poster to Cloudinary...");
       posterUrl = await uploadImageToCloudinary(
         movieData.posterFile,
-        "movie-posters"
+        "movie-posters",
       );
     }
 
@@ -157,9 +141,9 @@ async function addMemory(memoryData) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
 
-    if (memoryData.city)        memoryDoc.city        = memoryData.city;
-    if (memoryData.place)       memoryDoc.place       = memoryData.place;
-    if (memoryData.country)     memoryDoc.country     = memoryData.country;
+    if (memoryData.city) memoryDoc.city = memoryData.city;
+    if (memoryData.place) memoryDoc.place = memoryData.place;
+    if (memoryData.country) memoryDoc.country = memoryData.country;
     if (memoryData.description) memoryDoc.description = memoryData.description;
 
     console.log("💾 Saving to Firebase:", memoryDoc);

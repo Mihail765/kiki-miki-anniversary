@@ -1,4 +1,4 @@
-// v4 - added verifySecretDate - keeps secret off frontend
+// v5 — verifySecretDate issues a real custom token with { verified, who } claims
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
@@ -6,11 +6,11 @@ admin.initializeApp();
 
 const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 
-// ===== VERIFY SECRET DATE =====
+// ===== VERIFY SECRET DATE + ISSUE CUSTOM TOKEN =====
 exports.verifySecretDate = onCall(
   { region: "europe-west1" },
   async (request) => {
-    const { day, month, year, time } = request.data;
+    const { day, month, year, time, who } = request.data;
 
     const correctDay = 26;
     const correctMonth = 4;
@@ -23,7 +23,30 @@ exports.verifySecretDate = onCall(
       parseInt(year) === correctYear &&
       correctTimes.includes(time);
 
-    return { valid };
+    // Step 1 — just checking the date (no `who` sent yet)
+    if (!who) {
+      return { valid };
+    }
+
+    // Step 2 — date already confirmed, now issue the real token
+    if (!valid) {
+      // Shouldn't happen (client re-sends same date), but guard anyway
+      throw new Error("Invalid date");
+    }
+
+    if (who !== "mikica" && who !== "kikica") {
+      throw new Error("Invalid user");
+    }
+
+    // Stable UID per user so Firestore rules & FCM token docs are consistent
+    const uid = who === "mikica" ? "uid_mikica" : "uid_kikica";
+
+    const token = await admin.auth().createCustomToken(uid, {
+      verified: true,
+      who,
+    });
+
+    return { valid: true, token };
   },
 );
 
