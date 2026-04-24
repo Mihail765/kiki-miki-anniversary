@@ -1002,20 +1002,23 @@ header {
 
 #firstImageSlider {
   width: 100%;
-  height: 100%;
+  height: 500px;
 
-background: linear-gradient(
+  background: linear-gradient(
     to bottom,
-    #ffe4e1 0%,   
+    #ffe4e1 0%,
     #f3cfd8 15%,
     #d8cce6 30%,
     #a9b3d9 45%,
     #6b7bbd 60%,
     #2f3e7a 75%,
     #020617 90%,
-    #010207 100%   
+    #010207 100%
   );
-
+  border: none;
+  margin-top: -1px;
+  margin-bottom: -30px;
+  /* border: 2px solid rgb(0, 0, 0); */
 }
 #slider {
   width: 100%;
@@ -1060,14 +1063,14 @@ background: linear-gradient(
 
 #wrapperOfHearts {
   /* border: 3px solid rgb(0, 255, 0); */
-position: relative;
-z-index: 1;
+  position: relative;
+  z-index: 1;
 
   padding-bottom: clamp(10px, 6vw, 85px);
   height: auto;
   overflow: hidden;
 }
-#wrapperOfHearts::before{
+#wrapperOfHearts::before {
   /* border: 2px solid red; */
   content: "";
   inset: 0;
@@ -1082,12 +1085,12 @@ z-index: 1;
   z-index: -1;
 }
 
-#firstImageSlider{
-    /* background-image: url(https://cdn.pixabay.com/photo/2021/01/13/03/27/heart-5913128_1280.png); */
-  background-size: contain;
-  background-position: center;
+#firstImageSlider {
+  /* background-image: url(https://cdn.pixabay.com/photo/2021/01/13/03/27/heart-5913128_1280.png); */
+  /* background-size: contain;
+  background-position: center; */
   /* background-attachment: fixed; */
-height: 500px;
+  /* height: 500px; */
 }
 
 /* @media (max-width: 1200px) {
@@ -1299,6 +1302,13 @@ height: 500px;
   border-radius: 15px;
   border: 2px dashed #662244;
   cursor: url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: cursive;
+  color: white;
+
+  font-size: 30px;
 }
 .pointShow:hover {
   box-shadow: 0 0 10px white;
@@ -1329,7 +1339,6 @@ height: 500px;
   }
   100% {
     transform: rotateZ(180deg);
-
     background-color: white;
   }
 }
@@ -1337,7 +1346,7 @@ height: 500px;
 /* moon section */
 
 #moonTime {
-  /* border: 1px solid rgb(0, 0, 0); */
+  /* border: 1px solid rgb(255, 0, 0); */
   /* background: linear-gradient(to bottom,#000000,#020617,#020617,#000000); */
   /* background: linear-gradient(to bottom,#000000 0%,#050816 40%,#0a0f2c 70%,#000000 100%); */
   /* background: radial-gradient(circle at center,#0a0f2c 0%,#020617 40%,#000000 100%); */
@@ -1350,8 +1359,9 @@ height: 500px;
   );
   /* box-shadow: 0 0 20px black; */
 
+  margin: 0;
   width: 100%;
-  border-top: 1px solid rgb(0, 0, 0);
+  /* border-top: 1px solid rgb(0, 0, 0); */
 }
 
 #moonHolderDiv {
@@ -1432,6 +1442,7 @@ height: 500px;
     place-items: center;
   }
   .moonTextUnderImage {
-  font-size: clamp(16px, 3.5vw, 28px);
+    font-size: clamp(16px, 3.5vw, 28px);
+  }
 }
-}
+

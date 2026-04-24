@@ -511,3 +511,24 @@ document.querySelectorAll(".logOut").forEach((btn) => {
     window.location.replace("/index.html");
   });
 });
+
+window.addEventListener("load", async () => {
+  const loader = document.getElementById("loader");
+  if (typeof getAllFavourites !== "function") {
+    loader.style.display = "none";
+    return;
+  }
+  try {
+    const favs = await getAllFavourites();
+    favs.forEach((f) => {
+      if (f.previewUrl) {
+        savedIds.add(f.trackId);
+        addSongCard(f);
+      }
+    });
+  } catch (e) {
+    console.error(e);
+  } finally {
+    loader.style.display = "none";
+  }
+});
