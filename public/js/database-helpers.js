@@ -31,7 +31,7 @@ async function getAllSongs() {
   try {
     const snapshot = await db
       .collection("songs")
-      .orderBy("createdAt", "desc")
+      .orderBy("createdAt", "asc")
       .get();
 
     const songs = [];

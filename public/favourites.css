@@ -419,13 +419,11 @@ header#hideHeader {
   backdrop-filter: blur(8px);
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(255, 127, 164, 0.35);
+
   aspect-ratio: 1 / 1;
   border-radius: 20px;
   transition: transform 0.2s ease-in-out;
-  cursor:
-    url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0,
-    auto;
 }
 
 .exampleDiv:hover {
@@ -1011,5 +1009,91 @@ header#hideHeader {
   }
   50% {
     transform: scale(0.6) rotate(-45deg);
+  }
+}
+
+/* Mobile Spotify-like cards but elegant/light */
+@media (max-width: 650px) {
+  .wrapper {
+    width: 100%;
+    padding: 0 14px;
+  }
+
+  #songsGrid.gridItems {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 0;
+  }
+
+  #songsGrid .exampleDiv {
+    aspect-ratio: unset;
+    width: 100%;
+    min-height: 82px;
+    padding: 12px 14px;
+
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px);
+
+    border: 1.5px solid #ffd4de;
+    border-radius: 18px;
+
+    box-shadow:
+      0 6px 20px rgba(255, 182, 193, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+    transition: 0.25s ease;
+  }
+
+  #songsGrid .exampleDiv:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(255, 182, 193, 0.28);
+  }
+
+  #songsGrid .song-card-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+  }
+
+  #songsGrid .song-card-art {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  #songsGrid .song-card-name {
+    color: #442233;
+    font-size: 15px;
+    font-weight: 700;
+    max-width: 170px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #songsGrid .song-card-artist {
+    color: #9a6a7c;
+    font-size: 12px;
+  }
+
+  #songsGrid .song-card-controls {
+    margin-left: auto;
+  }
+
+  #songsGrid .card-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #ff7fa4;
+    box-shadow: 0 4px 12px rgba(255, 127, 164, 0.35);
+  }
+
+  #songsGrid .card-progress,
+  #songsGrid .preview-badge {
+    display: none;
   }
 }

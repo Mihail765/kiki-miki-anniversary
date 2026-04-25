@@ -766,6 +766,7 @@ header {
   margin-bottom: 1rem;
   color: #662244;
   /* text-transform: capitalize; */
+  line-height: 0.9;
 }
 
 #spinText {
@@ -1276,7 +1277,7 @@ header {
   text-align: center;
   font-size: 36px;
   font-weight: 400;
-  /* border: 2px solid blueviolet; */
+  /* border: 2px solid rgb(43, 226, 67); */
 }
 .gornenTekst {
   /* border: 2px solid blue; */
@@ -1288,59 +1289,81 @@ header {
   flex-flow: row wrap;
   justify-content: space-evenly;
   align-items: center;
-  /* border: 2px solid red; */
+  /* border: 3px solid rgb(161, 161, 161); */
   height: calc(100% - 50px);
   padding-bottom: 20px 0;
 }
 
 .pointShow {
-  background-color: #e59a9a;
-  width: clamp(200px, 80%, 350px);
-  height: clamp(150px, 25vh, 250px);
-  /* border: 2px solid green; */
+  width: clamp(200px, 40%, 320px);
+  min-height: 180px;
   margin: 10px 20px;
-  border-radius: 15px;
-  border: 2px dashed #662244;
+  perspective: 800px;
   cursor: url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), auto;
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 18px;
+}
+
+.pointShow:hover .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  font-family: cursive;
-  color: white;
+  gap: 12px;
+  padding: 24px 16px;
+  border: 2px dashed #662244;
+}
 
+.card-front {
+  background-color: #e59a9a;
   font-size: 30px;
+  color: white;
+  font-family: cursive;
 }
-.pointShow:hover {
-  box-shadow: 0 0 10px white;
-  transform: scale(1.01);
-  perspective: 100px;
-  transition: all 0.3s ease;
+
+.card-back {
+  background: white;
+  border: 2px dashed #cc3366;
+  box-shadow: 0 4px 24px rgba(204, 51, 102, 0.12);
+  transform: rotateY(180deg);
 }
-.animatedCards {
-  animation: cardAni 2s ease-in-out;
-  animation-fill-mode: forwards;
+
+.card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #ffb6c1;
+  color: #662244;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
 }
-@keyframes cardAni {
-  0% {
-    transform: translateY(-20px);
-  }
-  5% {
-    transform: translateY(-10px);
-  }
-  10% {
-    transform: translateY(-20px);
-  }
-  15% {
-    transform: translateY(-10px);
-  }
-  50% {
-    transform: rotateZ(180deg);
-    background-color: white;
-  }
-  100% {
-    transform: rotateZ(180deg);
-    background-color: white;
-  }
+
+.card-emoji { font-size: 36px; line-height: 1; }
+.card-title { font-size: clamp(14px, 2vw, 18px); font-weight: 700; color: #662244; text-align: center; }
+.card-text { font-size: clamp(12px, 1.5vw, 14px); color: #993355; text-align: center; line-height: 1.5; }
+@media (max-width: 520px) {
+  .pointShow { width: 100%; max-width: 100%; }
+  .points { padding: 16px; gap: 14px; }
 }
 
 /* moon section */
@@ -1446,3 +1469,61 @@ header {
   }
 }
 
+
+/* footer */
+footer {
+  background: linear-gradient(180deg, #000000, #090b25, #16091f);
+  padding: 90px 20px 45px;
+  overflow: hidden;
+}
+
+.mapi {
+  display: flex;
+  justify-content: center;
+  gap: 35px;
+  flex-wrap: wrap;
+}
+
+.map {
+  width: min(430px, 100%);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 182, 193, 0.25);
+  border-radius: 28px;
+  padding: 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.map h1 {
+  color: white;
+  font-size: 24px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.map p {
+  color: #ffc6d9;
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.map-frame-wrapper {
+  height: 330px;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 182, 193, 0.35);
+}
+
+.map-frame-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.footer-note {
+  margin-top: 50px;
+  text-align: center;
+  color: #ffd6e4;
+  font-family: "Pacifico", cursive;
+  font-size: 22px;
+}

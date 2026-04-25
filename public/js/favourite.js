@@ -412,20 +412,6 @@ function toggleCard(trackId, previewUrl, name, artist, artwork) {
 }
 
 // ── LOAD FROM FIREBASE ────────────────────────────────────────
-window.addEventListener("load", async () => {
-  if (typeof getAllFavourites !== "function") return;
-  try {
-    const favs = await getAllFavourites();
-    favs.forEach((f) => {
-      if (f.previewUrl) {
-        savedIds.add(f.trackId);
-        addSongCard(f);
-      }
-    });
-  } catch (e) {
-    console.error(e);
-  }
-});
 
 // ── POPUP ─────────────────────────────────────────────────────
 const shadow = document.getElementById("shadow");
