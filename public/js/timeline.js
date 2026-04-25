@@ -86,9 +86,14 @@ document.addEventListener("DOMContentLoaded", function () {
       if (selectedFile) {
         const reader = new FileReader();
         reader.onload = function (ev) {
+          // Big screen preview
           document.getElementById("imagePreview").src = ev.target.result;
           document.getElementById("imagePreviewHolder").style.display = "flex";
           document.getElementById("uploadLabelLeft").style.display = "none";
+          // Small screen preview
+          document.getElementById("smallImagePreview").src = ev.target.result;
+          document.getElementById("smallImagePreviewHolder").style.display = "flex";
+          document.getElementById("uploadLabelSmall").style.display = "none";
         };
         reader.readAsDataURL(selectedFile);
       }
@@ -102,6 +107,24 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("imagePreview").src = "";
       document.getElementById("imagePreviewHolder").style.display = "none";
       document.getElementById("uploadLabelLeft").style.display = "flex";
+      document.getElementById("smallImagePreview").src = "";
+      document.getElementById("smallImagePreviewHolder").style.display = "none";
+      document.getElementById("uploadLabelSmall").style.display = "";
+      document
+        .querySelectorAll(".imageInputFile")
+        .forEach((inp) => (inp.value = ""));
+    });
+
+  document
+    .getElementById("removeSmallImageBtn")
+    .addEventListener("click", function () {
+      selectedFile = null;
+      document.getElementById("imagePreview").src = "";
+      document.getElementById("imagePreviewHolder").style.display = "none";
+      document.getElementById("uploadLabelLeft").style.display = "flex";
+      document.getElementById("smallImagePreview").src = "";
+      document.getElementById("smallImagePreviewHolder").style.display = "none";
+      document.getElementById("uploadLabelSmall").style.display = "";
       document
         .querySelectorAll(".imageInputFile")
         .forEach((inp) => (inp.value = ""));
@@ -166,6 +189,9 @@ document
       document.getElementById("imagePreview").src = "";
       document.getElementById("imagePreviewHolder").style.display = "none";
       document.getElementById("uploadLabelLeft").style.display = "flex";
+      document.getElementById("smallImagePreview").src = "";
+      document.getElementById("smallImagePreviewHolder").style.display = "none";
+      document.getElementById("uploadLabelSmall").style.display = "";
 
       popupOfInp.style.display = "none";
       shadow.style.display = "none";

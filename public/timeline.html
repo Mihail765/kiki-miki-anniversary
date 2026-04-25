@@ -162,7 +162,11 @@
                       hidden
                       accept="image/*"
                     />
-                    <label for="fileInput2" class="custom-file-btn">
+                    <div id="smallImagePreviewHolder">
+                      <img id="smallImagePreview" src="" alt="preview" />
+                      <button id="removeSmallImageBtn">✕</button>
+                    </div>
+                    <label for="fileInput2" class="custom-file-btn" id="uploadLabelSmall">
                       <span id="uploadImgDisap">Upload an Image</span>
                       <span class="material-symbols-outlined">add_2</span>
                     </label>
