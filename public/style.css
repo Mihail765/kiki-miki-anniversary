@@ -42,7 +42,7 @@ header {
   height: 90px;
   top: 0;
   left: 0;
-  z-index: 999;
+  z-index: 998;
   /* backdrop-filter: blur(10px); */
   /* background: linear-gradient(45deg, #ff9aa2 0%, #ffc6cc 70%, #ffe4e1 100%); */
   background: linear-gradient(
@@ -260,7 +260,7 @@ header {
   width: 100%;
   top: 0;
   left: 0;
-  z-index: 998;
+  z-index: 997;
   overflow: hidden;
   display: none;
 }
