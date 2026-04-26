@@ -1097,3 +1097,238 @@ header#hideHeader {
     display: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   PLACES POPUP
+═══════════════════════════════════════════════════ */
+
+#placePopUpWindow {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, 94vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(255, 100, 140, 0.22);
+  z-index: 1001;
+  padding: 24px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#placePopUpWindow.visible {
+  display: flex;
+}
+
+.place-popup-title {
+  font-family: "addBtn", sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #c05070;
+  margin: 0;
+}
+
+.place-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.place-upload-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 4/3;
+  border: 2px dashed #ffc6cc;
+  border-radius: 16px;
+  background: #fff5f7;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, pointer;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.place-upload-area:hover {
+  border-color: #ff758f;
+  background: #fff0f3;
+}
+
+.place-upload-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #c08090;
+  font-family: "addBtn", sans-serif;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.place-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+
+.place-input {
+  font-family: "addBtn", sans-serif;
+  font-size: 15px;
+  padding: 12px 16px;
+  border: 1.5px solid #ffd4de;
+  border-radius: 12px;
+  outline: none;
+  color: #442233;
+  background: #fff8fa;
+  transition: border-color 0.2s;
+}
+
+.place-input:focus {
+  border-color: #ff758f;
+}
+
+.place-input::placeholder {
+  color: #c0909a;
+}
+
+.place-save-btn {
+  background: linear-gradient(135deg, #ff758f, #ff9aa2);
+  color: white;
+  font-family: "addBtn", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.place-save-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.place-save-btn:disabled {
+  opacity: 0.55;
+  transform: none;
+}
+
+.place-status {
+  font-family: "addBtn", sans-serif;
+  font-size: 14px;
+  text-align: center;
+  min-height: 20px;
+  color: #888;
+}
+
+/* ═══════════════════════════════════════════════════
+   PLACE CARDS
+═══════════════════════════════════════════════════ */
+
+.place-card-inner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.place-card-img {
+  width: 100%;
+  flex: 1;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+  transition: transform 0.35s ease;
+}
+
+.place-card-inner:hover .place-card-img {
+  transform: scale(1.04);
+}
+
+.place-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, transparent 100%);
+  padding: 24px 12px 12px;
+  border-radius: 0 0 inherit inherit;
+}
+
+.place-card-name {
+  font-family: "addBtn", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  margin-bottom: 2px;
+}
+
+.place-card-caption {
+  font-family: "addBtn", sans-serif;
+  font-size: 11px;
+  color: rgba(255,255,255,0.82);
+}
+
+.place-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  color: #ff5577;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: url(/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png) 0 0, pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  backdrop-filter: blur(4px);
+  line-height: 1;
+}
+
+.exampleDiv:hover .place-delete-btn {
+  opacity: 1;
+}
+
+.place-empty-msg {
+  color: #dba0b0;
+  font-family: "addBtn", sans-serif;
+  font-size: 15px;
+  text-align: center;
+  padding: 32px 0;
+  width: 100%;
+}
+
+/* Upload progress overlay */
+.place-upload-progress {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: "addBtn", sans-serif;
+  font-size: 14px;
+  color: #c05070;
+  border-radius: inherit;
+}
+
+.place-upload-progress .spinner {
+  margin: 0;
+}

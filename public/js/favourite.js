@@ -518,3 +518,205 @@ window.addEventListener("load", async () => {
     loader.style.display = "none";
   }
 });
+
+// ══════════════════════════════════════════════════════
+//  PLACES SECTION
+// ══════════════════════════════════════════════════════
+
+const placePopUp = document.getElementById("placePopUpWindow");
+const placeImageInput = document.getElementById("placeImageInput");
+const placePreviewImg = document.getElementById("placePreviewImg");
+const placeUploadPrompt = document.getElementById("placeUploadPrompt");
+let selectedPlaceFile = null;
+
+// Open / close popup
+document.getElementById("addPlaceBtn").addEventListener("click", () => {
+  shadow.style.display = "block";
+  placePopUp.classList.add("visible");
+  document.body.style.overflow = "hidden";
+});
+
+document
+  .getElementById("placeBackBtn")
+  .addEventListener("click", closePlacePopup);
+shadow.addEventListener("click", () => {
+  // close whichever popup is open
+  if (placePopUp.classList.contains("visible")) closePlacePopup();
+});
+
+function closePlacePopup() {
+  shadow.style.display = "none";
+  placePopUp.classList.remove("visible");
+  document.body.style.overflow = "";
+  resetPlaceForm();
+}
+
+function resetPlaceForm() {
+  selectedPlaceFile = null;
+  placePreviewImg.style.display = "none";
+  placePreviewImg.src = "";
+  placeUploadPrompt.style.display = "flex";
+  document.getElementById("placeName").value = "";
+  document.getElementById("placeCaption").value = "";
+  document.getElementById("placeStatus").textContent = "";
+  document.getElementById("savePlaceBtn").disabled = false;
+}
+
+// Image preview
+document.getElementById("placeUploadArea").addEventListener("click", () => {
+  placeImageInput.click();
+});
+
+placeImageInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  selectedPlaceFile = file;
+  const url = URL.createObjectURL(file);
+  placePreviewImg.src = url;
+  placePreviewImg.style.display = "block";
+  placeUploadPrompt.style.display = "none";
+  // reset input so same file can be re-selected
+  placeImageInput.value = "";
+});
+
+// Save place
+document.getElementById("savePlaceBtn").addEventListener("click", savePlace);
+
+async function savePlace() {
+  const name = document.getElementById("placeName").value.trim();
+  const caption = document.getElementById("placeCaption").value.trim();
+  const status = document.getElementById("placeStatus");
+  const btn = document.getElementById("savePlaceBtn");
+
+  if (!selectedPlaceFile && !name) {
+    status.textContent = "Please add a photo or a name 💕";
+    status.style.color = "#ff5577";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Uploading… ";
+  status.textContent = selectedPlaceFile ? "Uploading photo…" : "Saving…";
+  status.style.color = "#888";
+
+  try {
+    const result = await addFavouritePlace({
+      name,
+      caption,
+      imageFile: selectedPlaceFile,
+    });
+
+    addPlaceCard({ id: result.id, name, caption, imageUrl: result.imageUrl });
+    status.textContent = "Saved! 💖";
+    status.style.color = "#ff758f";
+
+    setTimeout(closePlacePopup, 900);
+  } catch (err) {
+    console.error(err);
+    status.textContent = "Something went wrong, try again 😕";
+    status.style.color = "#ff5577";
+    btn.disabled = false;
+    btn.textContent = "Save Place 💕";
+  }
+}
+
+// Render a place card
+function addPlaceCard(place) {
+  const grid = document.getElementById("placesGrid");
+
+  // Remove empty state message if present
+  const emptyMsg = grid.querySelector(".place-empty-msg");
+  if (emptyMsg) emptyMsg.remove();
+
+  const div = document.createElement("div");
+  div.className = "exampleDiv";
+  div.setAttribute("data-place-id", place.id);
+
+  const inner = document.createElement("div");
+  inner.className = "place-card-inner";
+
+  if (place.imageUrl) {
+    const img = document.createElement("img");
+    img.className = "place-card-img";
+    img.src = place.imageUrl;
+    img.alt = place.name || "Our place";
+    img.crossOrigin = "anonymous";
+    inner.appendChild(img);
+  } else {
+    // No image — show a coloured placeholder
+    const placeholder = document.createElement("div");
+    placeholder.style.cssText =
+      "flex:1;background:linear-gradient(135deg,#ffc6cc,#ff9aa2);display:flex;align-items:center;justify-content:center;font-size:48px;";
+    placeholder.textContent = "📍";
+    inner.appendChild(placeholder);
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "place-card-overlay";
+
+  if (place.name) {
+    const nameEl = document.createElement("div");
+    nameEl.className = "place-card-name";
+    nameEl.textContent = place.name;
+    overlay.appendChild(nameEl);
+  }
+
+  if (place.caption) {
+    const captionEl = document.createElement("div");
+    captionEl.className = "place-card-caption";
+    captionEl.textContent = place.caption;
+    overlay.appendChild(captionEl);
+  }
+
+  inner.appendChild(overlay);
+
+  // Delete button
+  const delBtn = document.createElement("button");
+  delBtn.className = "place-delete-btn";
+  delBtn.innerHTML = "✕";
+  delBtn.title = "Remove";
+  delBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (!confirm("Remove this place?")) return;
+    try {
+      await deletePlace(place.id);
+      div.remove();
+      if (!grid.querySelector(".exampleDiv")) {
+        showPlacesEmpty(grid);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  inner.appendChild(delBtn);
+  div.appendChild(inner);
+  grid.appendChild(div);
+}
+
+function showPlacesEmpty(grid) {
+  const msg = document.createElement("p");
+  msg.className = "place-empty-msg";
+  msg.textContent = "No places yet — add your first one!";
+  grid.appendChild(msg);
+}
+
+// Load places on startup
+window.addEventListener(
+  "load",
+  async () => {
+    if (typeof getAllPlaces !== "function") return;
+    try {
+      const places = await getAllPlaces();
+      const grid = document.getElementById("placesGrid");
+      if (places.length === 0) {
+        showPlacesEmpty(grid);
+      } else {
+        places.forEach(addPlaceCard);
+      }
+    } catch (e) {
+      console.error("Could not load places:", e);
+    }
+  },
+  { once: false },
+); // piggybacks on the existing load event; fine since getAllPlaces is fast

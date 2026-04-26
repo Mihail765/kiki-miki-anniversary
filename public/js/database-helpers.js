@@ -247,3 +247,64 @@ async function getAllFavourites() {
 console.log("✅ Database helpers loaded!");
 console.log("   Text data → Firebase");
 console.log("   Images → Cloudinary");
+
+// ===== FAVOURITE PLACES =====
+
+async function addFavouritePlace(placeData) {
+  try {
+    let imageUrl = "";
+    if (placeData.imageFile) {
+      console.log("📤 Uploading place image to Cloudinary...");
+      imageUrl = await uploadImageToCloudinary(placeData.imageFile, "places");
+    }
+
+    const docRef = await db.collection("places").add({
+      name: placeData.name || "",
+      caption: placeData.caption || "",
+      imageUrl: imageUrl,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log("✅ Place added:", docRef.id);
+    return { id: docRef.id, imageUrl };
+  } catch (error) {
+    console.error("❌ Error adding place:", error);
+    throw error;
+  }
+}
+
+async function getAllPlaces() {
+  try {
+    const snapshot = await db
+      .collection("places")
+      .orderBy("createdAt", "asc")
+      .get();
+
+    const places = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      places.push({
+        id: doc.id,
+        name: data.name || "",
+        caption: data.caption || "",
+        imageUrl: data.imageUrl || "",
+      });
+    });
+
+    console.log(`✅ Retrieved ${places.length} places`);
+    return places;
+  } catch (error) {
+    console.error("❌ Error getting places:", error);
+    return [];
+  }
+}
+
+async function deletePlace(placeId) {
+  try {
+    await db.collection("places").doc(placeId).delete();
+    console.log("✅ Place deleted");
+  } catch (error) {
+    console.error("❌ Error deleting place:", error);
+    throw error;
+  }
+}
