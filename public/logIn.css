@@ -8,11 +8,6 @@
   src: url(FontsLogInPage/Rokkitt-VariableFont_wght.ttf);
 }
 
-@font-face {
-  font-family: "";
-  src: url();
-}
-
 body {
   background: linear-gradient(
     180deg,

@@ -68,6 +68,23 @@ let capturedBlob = null;
 let unreadInserted = false;
 let lastReadTimestamp = null;
 
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
+function fixChatViewport() {
+  window.scrollTo(0, 0);
+
+  const messages = document.getElementById("messages-container");
+  if (messages) {
+    messages.scrollTop = messages.scrollHeight;
+  }
+}
+
+window.addEventListener("load", fixChatViewport);
+window.addEventListener("pageshow", fixChatViewport); // important for PWA reopen
+window.addEventListener("focus", fixChatViewport);
+
 // ─── NOTIFICATIONS ───────────────────────────────────────────────
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
 const isInStandaloneMode =
@@ -641,7 +658,7 @@ function renderMessage(msg, id, animate = true) {
 function scrollToBottom(smooth = true) {
   msgContainer.scrollTo({
     top: msgContainer.scrollHeight,
-    behavior: smooth ? "smooth" : "instant",
+    behavior: smooth ? "smooth" : "auto",
   });
 }
 
