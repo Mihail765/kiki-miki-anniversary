@@ -10,7 +10,7 @@
     />
     <title>Our Favourites</title>
     <link rel="icon" href="sliki/icons/mk.png" />
-
+    <link rel="manifest" href="/manifest.json" />
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -141,17 +141,46 @@
         <h3 class="place-popup-title">Add a Place 📍</h3>
       </div>
       <div class="place-form">
-        <label class="place-upload-area" id="placeUploadArea" for="placeImageInput">
-          <img id="placePreviewImg" class="place-preview-img" src="" alt="" style="display:none;" />
+        <label
+          class="place-upload-area"
+          id="placeUploadArea"
+          for="placeImageInput"
+        >
+          <img
+            id="placePreviewImg"
+            class="place-preview-img"
+            src=""
+            alt=""
+            style="display: none"
+          />
           <div id="placeUploadPrompt" class="place-upload-prompt">
-            <span style="font-size:36px;">📷</span>
+            <span style="font-size: 36px">📷</span>
             <span>Tap to choose a photo</span>
           </div>
         </label>
-        <input type="file" id="placeImageInput" accept="image/*" style="display:none;" />
-        <input type="text" id="placeName" class="place-input" placeholder="Place name (e.g. Ohrid)" maxlength="60" />
-        <input type="text" id="placeCaption" class="place-input" placeholder="Caption (optional)" maxlength="100" />
-        <button id="savePlaceBtn" class="place-save-btn hvrBtn">Save Place 💕</button>
+        <input
+          type="file"
+          id="placeImageInput"
+          accept="image/*"
+          style="display: none"
+        />
+        <input
+          type="text"
+          id="placeName"
+          class="place-input"
+          placeholder="Place name (e.g. Ohrid)"
+          maxlength="60"
+        />
+        <input
+          type="text"
+          id="placeCaption"
+          class="place-input"
+          placeholder="Caption (optional)"
+          maxlength="100"
+        />
+        <button id="savePlaceBtn" class="place-save-btn hvrBtn">
+          Save Place 💕
+        </button>
         <div id="placeStatus" class="place-status"></div>
       </div>
     </div>

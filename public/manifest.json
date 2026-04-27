@@ -1,0 +1,24 @@
+{
+  "name": "Our World",
+  "short_name": "Our World",
+  "description": "Our little corner of the internet 💕",
+  "start_url": "/landingPage.html",
+  "display": "standalone",
+  "background_color": "#fff0f5",
+  "theme_color": "#e8638a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/sliki/icons/mk.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/sliki/icons/mk.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
