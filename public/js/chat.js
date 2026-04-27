@@ -68,28 +68,6 @@ let capturedBlob = null;
 let unreadInserted = false;
 let lastReadTimestamp = null;
 
-// ─── FCM TOKEN REGISTRATION ──────────────────────────────────────
-async function registerFCMToken() {
-  try {
-    const messaging = firebase.messaging();
-    const token = await messaging.getToken({
-      vapidKey:
-        "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
-      serviceWorkerRegistration: swRegistration,
-    });
-    if (token) {
-      await db.collection("fcmTokens").doc(WHO).set({
-        token,
-        user: WHO,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-      console.log("FCM token saved for", WHO);
-    }
-  } catch (err) {
-    console.warn("FCM token registration failed:", err);
-  }
-}
-
 // ─── NOTIFICATIONS ───────────────────────────────────────────────
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
 const isInStandaloneMode =
