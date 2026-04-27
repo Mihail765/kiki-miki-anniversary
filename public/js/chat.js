@@ -809,7 +809,49 @@ function buildMessageElements(msg, id, animate) {
         grid.appendChild(cellWrap);
       } else {
         const idx = i;
-        gridImg.addEventListener("click", () => openLightbox(images, idx));
+        // ── Tap/click with double-tap detection for reactions ──────────────
+        // On touch: delay single-tap 220ms to check if a double-tap is coming.
+        // Double-tap reacts; single-tap opens lightbox. On desktop (click), open immediately.
+        let imgTapTimer = null;
+        let imgLastTap = 0;
+
+        gridImg.addEventListener("touchend", (e) => {
+          const now = Date.now();
+          const gap = now - imgLastTap;
+          imgLastTap = now;
+
+          if (gap < 280 && gap > 0) {
+            // ── Double-tap on image → react with default emoji ──
+            clearTimeout(imgTapTimer);
+            imgTapTimer = null;
+            e.preventDefault();
+            e.stopPropagation();
+            if (id) {
+              const emoji = getDoubleTapEmoji();
+              saveReaction(id, emoji);
+              showHeartBurst(gridImg, emoji);
+            }
+          } else {
+            // ── Single tap → wait to see if another tap follows ──
+            clearTimeout(imgTapTimer);
+            imgTapTimer = setTimeout(() => {
+              imgTapTimer = null;
+              openLightbox(images, idx);
+            }, 230);
+          }
+        }, { passive: false });
+
+        // Desktop (mouse) click — open lightbox immediately.
+        // On touch devices, the ghost "click" fires ~300ms after touchend.
+        // We block it if a touch sequence already handled the tap.
+        let imgTouchHandled = false;
+        gridImg.addEventListener("touchstart", () => { imgTouchHandled = false; }, { passive: true });
+        gridImg.addEventListener("touchend", () => { imgTouchHandled = true; }, { passive: true });
+        gridImg.addEventListener("click", (e) => {
+          if (imgTouchHandled) { imgTouchHandled = false; return; } // was a touch tap, already handled
+          openLightbox(images, idx);
+        });
+
         grid.appendChild(gridImg);
       }
     }
@@ -885,14 +927,19 @@ function renderReactions(wrap, reactions, msgId) {
   const existing = wrap.querySelector(".reaction-row");
   if (existing) existing.remove();
 
-  if (!reactions || Object.keys(reactions).length === 0) return;
+  if (!reactions || Object.keys(reactions).length === 0) {
+    wrap.classList.remove("has-reactions");
+    return;
+  }
 
   const counts = {};
   for (const [user, emoji] of Object.entries(reactions)) {
-    counts[emoji] = (counts[emoji] || { emoji, users: [] });
+    if (!counts[emoji]) counts[emoji] = { emoji, users: [] };
     counts[emoji].users.push(user);
   }
 
+  // Reactions are absolutely positioned overlapping the bottom of .bubble-wrap
+  // We insert them INSIDE bubble-wrap (not after), anchored to the bubble bottom
   const row = document.createElement("div");
   row.className = "reaction-row";
 
@@ -908,7 +955,15 @@ function renderReactions(wrap, reactions, msgId) {
     row.appendChild(pill);
   }
 
-  wrap.appendChild(row);
+  // Insert reaction-row inside bubble-wrap so it's positioned relative to it
+  // Place it after the bubble element so absolute positioning works correctly
+  const bubble = wrap.querySelector(".bubble");
+  if (bubble) {
+    bubble.appendChild(row);
+  } else {
+    wrap.appendChild(row);
+  }
+  wrap.classList.add("has-reactions");
 }
 
 function closeReactionBar() {

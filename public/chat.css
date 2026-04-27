@@ -382,6 +382,11 @@ body {
   flex-direction: column;
   gap: 3px;
   position: relative;
+  /* padding-bottom is added dynamically via .has-reactions class */
+}
+/* When reactions are present, bubble-wrap needs extra space below for the pills */
+.bubble-wrap.has-reactions {
+  margin-bottom: 14px;
 }
 .msg-row.sent .bubble-wrap {
   align-items: flex-end;
@@ -398,7 +403,8 @@ body {
   word-break: break-word;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  contain: content;
+  /* overflow visible so reaction pills can peek below the bubble edge */
+  overflow: visible;
 }
 .msg-row.sent .bubble {
   background: var(--mikica-bubble);
@@ -1279,16 +1285,28 @@ body {
 }
 
 /* ─── REACTION PILLS (below bubble) ─── */
+/* ─── REACTION ROW — Instagram style: overlaps bottom edge of bubble ─── */
+/* .reaction-row lives INSIDE .bubble which is position:relative */
 .reaction-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 3px;
+  position: absolute;
+  bottom: -13px;          /* half-overlap out of the bubble */
+  z-index: 5;
+  pointer-events: auto;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.12));
 }
+/* sent bubble → pills hug the right */
 .msg-row.sent .reaction-row {
+  right: 10px;
+  left: auto;
   justify-content: flex-end;
 }
+/* recv bubble → pills hug the left */
 .msg-row.recv .reaction-row {
+  left: 10px;
+  right: auto;
   justify-content: flex-start;
 }
 
