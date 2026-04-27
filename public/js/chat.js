@@ -73,18 +73,30 @@ if ("scrollRestoration" in history) {
 }
 
 function fixChatViewport() {
+  // kill restored page scroll
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
   window.scrollTo(0, 0);
 
-  const messages = document.getElementById("messages-container");
-  if (messages) {
-    messages.scrollTop = messages.scrollHeight;
-  }
+  // force layout recalculation
+  document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => {
+    document.body.style.overflow = "";
+
+    const messages = document.getElementById("messages-container");
+    if (messages) {
+      messages.scrollTop = messages.scrollHeight;
+    }
+  });
 }
 
 window.addEventListener("load", fixChatViewport);
-window.addEventListener("pageshow", fixChatViewport); // important for PWA reopen
-window.addEventListener("focus", fixChatViewport);
 
+window.addEventListener("pageshow", () => {
+  fixChatViewport();
+  setTimeout(fixChatViewport, 100);
+  setTimeout(fixChatViewport, 300);
+});
 // ─── NOTIFICATIONS ───────────────────────────────────────────────
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
 const isInStandaloneMode =
