@@ -2,7 +2,7 @@
   "name": "Our World",
   "short_name": "Our World",
   "description": "Our little corner of the internet 💕",
-  "start_url": "/landingPage.html",
+  "start_url": "/chat.html",
   "display": "standalone",
   "background_color": "#fff0f5",
   "theme_color": "#e8638a",
