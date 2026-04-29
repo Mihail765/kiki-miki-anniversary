@@ -1836,3 +1836,28 @@ img[data-lazy-src] {
   background: var(--rose-pale);
   color: var(--rose-dark);
 }
+/* ─── AUTO-LOAD TOP SPINNER ─── */
+#load-more-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 0 8px;
+}
+.load-spinner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rose);
+  opacity: 0.5;
+  animation: spinnerBounce 1.2s ease-in-out infinite;
+}
+.load-spinner-dot:nth-child(2) { animation-delay: 0.2s; }
+.load-spinner-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes spinnerBounce {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+  40% { transform: scale(1.1); opacity: 1; }
+}
+
+/* Hide old load-more button if it ever renders */
+#load-more-btn { display: none !important; }

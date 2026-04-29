@@ -81,14 +81,29 @@ let unreadInserted = false;
 let lastReadTimestamp = null;
 
 // ─── BLURRED IMAGES STATE ─────────────────────────────────────────
-// Stores URLs that the user has manually blurred. Persisted in localStorage.
-let _blurredImages = new Set(
-  JSON.parse(localStorage.getItem("mk_blurred_imgs") || "[]"),
-);
+// Stored in Firestore so blur/unblur is shared between both users and all devices.
+const blurRef = db.collection("chats").doc(CHAT_ID).collection("blurredImages").doc("state");
+let _blurredImages = new Set();
+
+// Listen for real-time blur changes from either user on any device
+blurRef.onSnapshot((snap) => {
+  if (snap.exists) {
+    _blurredImages = new Set(snap.data().urls || []);
+  } else {
+    _blurredImages = new Set();
+  }
+  // Re-apply blur classes to all currently rendered images
+  document.querySelectorAll(".grid-img[data-img-url]").forEach((img) => {
+    img.classList.toggle("img-blurred", _blurredImages.has(img.dataset.imgUrl));
+  });
+});
+
 function isImageBlurred(url) {
   return _blurredImages.has(url);
 }
-function toggleImageBlur(url, imgEl) {
+
+async function toggleImageBlur(url, imgEl) {
+  // Optimistic UI update immediately
   if (_blurredImages.has(url)) {
     _blurredImages.delete(url);
     imgEl.classList.remove("img-blurred");
@@ -96,12 +111,12 @@ function toggleImageBlur(url, imgEl) {
     _blurredImages.add(url);
     imgEl.classList.add("img-blurred");
   }
+  // Persist to Firestore — onSnapshot will sync to the other user instantly
   try {
-    localStorage.setItem(
-      "mk_blurred_imgs",
-      JSON.stringify([..._blurredImages]),
-    );
-  } catch (_) {}
+    await blurRef.set({ urls: [..._blurredImages] });
+  } catch (e) {
+    console.warn("Could not save blur state:", e);
+  }
 }
 
 // ─── BOTTOM-LOCK ─────────────────────────────────────────────────
@@ -822,8 +837,7 @@ function flushFirstBatch() {
   });
   msgContainer.appendChild(frag);
 
-  // Map each message id → its DOM row AFTER the fragment is in the DOM
-  // (DocumentFragment is emptied by appendChild, so we must query after insertion)
+  // Map ids after insertion (fragment is empty after appendChild, must query DOM)
   _pendingFirstBatch.forEach(({ id }) => {
     if (id) {
       const row = msgContainer.querySelector(`.msg-row[data-id="${id}"]`);
@@ -954,13 +968,20 @@ function buildMessageElements(msg, id, animate) {
       replyImg.className = "reply-preview-img";
       replyImg.src = msg.replyTo.imageUrl;
       replyImg.loading = "lazy";
+      // Block events so thumbnail tap doesn't open lightbox or action menu
+      replyImg.addEventListener("click", (e) => e.stopPropagation());
+      replyImg.addEventListener("touchend", (e) => e.stopPropagation(), { passive: false });
+      replyImg.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
       replyDiv.appendChild(replyImg);
     }
 
     replyDiv.appendChild(replySndr);
     replyDiv.appendChild(replyTxt);
 
-    replyDiv.addEventListener("click", () => jumpToMessage(msg.replyTo.id));
+    replyDiv.addEventListener("click", (e) => {
+      e.stopPropagation();
+      jumpToMessage(msg.replyTo.id);
+    });
     bubble.appendChild(replyDiv);
   }
 
@@ -1000,9 +1021,8 @@ function buildMessageElements(msg, id, animate) {
       gridImg.addEventListener("load", () => gridImg.classList.add("loaded"), {
         once: true,
       });
-      // Use lazy loading: set data-lazy-src so IntersectionObserver loads it
-      // only when scrolled into view (200px margin). src is intentionally blank.
-      gridImg.dataset.lazySrc = images[i];
+      gridImg.dataset.lazySrc = images[i]; // lazy load via IntersectionObserver
+      gridImg.dataset.imgUrl = images[i];   // used by blur onSnapshot
 
       if (i === MAX_SHOWN - 1 && images.length > MAX_SHOWN) {
         const cellWrap = document.createElement("div");
@@ -1087,6 +1107,10 @@ function buildMessageElements(msg, id, animate) {
 
             if (imgScrolled || imgLongPressed) return;
 
+            // Always stop propagation so the bubble's touchend doesn't also
+            // fire and open the reaction capsule on every image tap.
+            e.stopPropagation();
+
             const now = Date.now();
             const gap = now - imgLastTap;
             imgLastTap = now;
@@ -1096,7 +1120,6 @@ function buildMessageElements(msg, id, animate) {
               clearTimeout(imgTapTimer);
               imgTapTimer = null;
               e.preventDefault();
-              e.stopPropagation();
               if (id) {
                 saveReaction(id, getDoubleTapEmoji());
                 showHeartBurst(gridImg, getDoubleTapEmoji());
@@ -1816,37 +1839,40 @@ function jumpToMessage(id) {
   setTimeout(() => row.classList.remove("highlight-flash"), 1300);
 }
 
-// ─── PAGINATION ───────────────────────────────────────────────────
+// ─── PAGINATION ───────────────────────────────────────────
 const PAGE_SIZE = 40;
-let _oldestDoc = null;          // cursor for "load more"
-let _allLoaded = false;         // true once we've reached the very first message
-let _loadingMore = false;       // debounce guard
-let _liveUnsub = null;          // unsubscribe for the live tail listener
-let _loadMoreBtn = null;        // "Load earlier messages" button
+let _oldestDoc = null;
+let _allLoaded = false;
+let _loadingMore = false;
+let _liveUnsub = null;
 
-function ensureLoadMoreBtn() {
-  if (_loadMoreBtn) return;
-  _loadMoreBtn = document.createElement("button");
-  _loadMoreBtn.id = "load-more-btn";
-  _loadMoreBtn.textContent = "⬆ Load earlier messages";
-  _loadMoreBtn.addEventListener("click", loadMoreMessages);
-  msgContainer.prepend(_loadMoreBtn);
+// Spinner shown at the top while loading older messages
+let _topSpinner = null;
+
+function showTopSpinner() {
+  if (_topSpinner) return;
+  _topSpinner = document.createElement("div");
+  _topSpinner.id = "load-more-spinner";
+  _topSpinner.innerHTML = `<span class="load-spinner-dot"></span><span class="load-spinner-dot"></span><span class="load-spinner-dot"></span>`;
+  msgContainer.prepend(_topSpinner);
 }
 
-function removeLoadMoreBtn() {
-  if (_loadMoreBtn) { _loadMoreBtn.remove(); _loadMoreBtn = null; }
+function hideTopSpinner() {
+  if (_topSpinner) { _topSpinner.remove(); _topSpinner = null; }
 }
 
-// Prepend older messages above the existing ones (no flicker)
 async function loadMoreMessages() {
   if (_loadingMore || _allLoaded || !_oldestDoc) return;
   _loadingMore = true;
-  if (_loadMoreBtn) _loadMoreBtn.textContent = "Loading…";
+  showTopSpinner();
 
-  // Remember scroll anchor so position doesn't jump
-  const anchorEl = msgContainer.firstElementChild === _loadMoreBtn
-    ? msgContainer.children[1]
-    : msgContainer.firstElementChild;
+  // Pick a stable anchor — first real message row after the spinner
+  const anchorEl = (() => {
+    for (const child of msgContainer.children) {
+      if (child !== _topSpinner) return child;
+    }
+    return null;
+  })();
   const anchorTop = anchorEl ? anchorEl.getBoundingClientRect().top : 0;
 
   try {
@@ -1856,82 +1882,68 @@ async function loadMoreMessages() {
       .limitToLast(PAGE_SIZE)
       .get();
 
-    if (snap.empty || snap.docs.length === 0) {
+    hideTopSpinner();
+
+    if (snap.empty) {
       _allLoaded = true;
-      removeLoadMoreBtn();
       _loadingMore = false;
       return;
     }
 
-    // Save state before touching lastDate/lastSender (they belong to the tail)
     const savedLastDate = lastDate;
     const savedLastSender = lastSender;
-
-    // Build DOM for the older batch (newest-first from endBefore, so reverse)
     lastDate = null;
     lastSender = null;
 
     const frag = document.createDocumentFragment();
-    snap.docs.forEach(({ id, data }) => {
-      const els = buildMessageElements(data(), id, false);
+    snap.docs.forEach((doc) => {
+      const els = buildMessageElements(doc.data(), doc.id, false);
       els.forEach((el) => frag.appendChild(el));
     });
 
-    // Insert after the load-more button (or at the top)
-    const insertAfter = _loadMoreBtn || null;
-    if (insertAfter && insertAfter.nextSibling) {
-      msgContainer.insertBefore(frag, insertAfter.nextSibling);
+    // Insert right after the spinner slot (or at the very top)
+    if (anchorEl) {
+      msgContainer.insertBefore(frag, anchorEl);
     } else {
       msgContainer.prepend(frag);
     }
 
-    // Map ids after insertion
-    snap.docs.forEach(({ id }) => {
-      const row = msgContainer.querySelector(`.msg-row[data-id="${id}"]`);
-      if (row) msgRowMap.set(id, row);
+    snap.docs.forEach((doc) => {
+      const row = msgContainer.querySelector(`.msg-row[data-id="${doc.id}"]`);
+      if (row) msgRowMap.set(doc.id, row);
     });
 
-    // Observe any new lazy images
     msgContainer.querySelectorAll("img[data-lazy-src]")
       .forEach((img) => _imgObserver.observe(img));
 
-    // Restore tail rendering state
     lastDate = savedLastDate;
     lastSender = savedLastSender;
-
-    // Update cursor
     _oldestDoc = snap.docs[0];
 
     if (snap.docs.length < PAGE_SIZE) {
       _allLoaded = true;
-      removeLoadMoreBtn();
-    } else {
-      ensureLoadMoreBtn();
-      if (_loadMoreBtn) _loadMoreBtn.textContent = "⬆ Load earlier messages";
     }
 
-    // Restore scroll position so the view doesn't jump
+    // Restore scroll position so the user stays at the same visual spot
     if (anchorEl) {
       const newTop = anchorEl.getBoundingClientRect().top;
       msgContainer.scrollTop += newTop - anchorTop;
     }
   } catch (e) {
     console.error("Load more failed:", e);
-    if (_loadMoreBtn) _loadMoreBtn.textContent = "⬆ Load earlier messages";
+    hideTopSpinner();
   }
   _loadingMore = false;
 }
 
-// Scroll-to-top triggers load-more automatically
+// Auto-trigger when user scrolls near the top (200px threshold — generous for mobile)
 msgContainer.addEventListener("scroll", () => {
-  if (msgContainer.scrollTop < 80 && !_loadingMore && !_allLoaded) {
+  if (msgContainer.scrollTop < 200 && !_loadingMore && !_allLoaded) {
     loadMoreMessages();
   }
 }, { passive: true });
 
 // ─── REAL-TIME LISTENER ───────────────────────────────────────────
-// Step 1: fetch the initial tail (last PAGE_SIZE messages) once
-// Step 2: attach a live listener from that point forward for new messages
 messagesRef
   .orderBy("timestamp", "asc")
   .limitToLast(PAGE_SIZE)
@@ -1939,29 +1951,19 @@ messagesRef
   .then((snap) => {
     if (!snap.empty) {
       _oldestDoc = snap.docs[0];
-
-      // Render initial batch
       lastDate = null;
       lastSender = null;
       _pendingFirstBatch = snap.docs.map((doc) => ({ msg: doc.data(), id: doc.id }));
       clearTimeout(_firstBatchTimer);
       _firstBatchTimer = setTimeout(flushFirstBatch, 60);
-
-      // Show load-more button if there might be older messages
-      if (snap.docs.length === PAGE_SIZE) {
-        // We'll add the button after flush so it's at the top
-        setTimeout(ensureLoadMoreBtn, 120);
-      } else {
+      if (snap.docs.length < PAGE_SIZE) {
         _allLoaded = true;
       }
     } else {
-      // Empty chat
       loader.style.display = "none";
       firstLoad = false;
     }
 
-    // Step 2: live listener — only listens for messages AFTER the last doc we loaded
-    // (or from the beginning if the chat was empty)
     const liveQuery = snap.empty
       ? messagesRef.orderBy("timestamp", "asc")
       : messagesRef.orderBy("timestamp", "asc").startAfter(snap.docs[snap.docs.length - 1]);
@@ -1970,10 +1972,7 @@ messagesRef
       liveSnap.docChanges().forEach((change) => {
         if (change.type === "added") {
           const msg = change.doc.data();
-          // firstLoad guard: the very first onSnapshot fires with 0 docs (we already loaded
-          // history above), so treat everything from the live listener as "new"
           renderMessage(msg, change.doc.id, true);
-
           if (msg.sender !== WHO) {
             sendBrowserNotif(
               SENDER_DISPLAY[msg.sender] || msg.sender,
@@ -1984,12 +1983,9 @@ messagesRef
           }
         }
       });
-
       if (firstLoad) {
         firstLoad = false;
-        if (_pendingFirstBatch.length === 0) {
-          loader.style.display = "none";
-        }
+        if (_pendingFirstBatch.length === 0) loader.style.display = "none";
       }
     });
   })
@@ -2131,6 +2127,7 @@ function openImageActionMenu(imgUrl, imgEl, anchorEl) {
       fn: () => {
         toggleImageBlur(imgUrl, imgEl);
         popover.remove();
+        closeReactionBar(); // dismiss reaction capsule if it was open
       },
     },
   ];
