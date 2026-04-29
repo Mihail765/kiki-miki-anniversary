@@ -388,6 +388,10 @@ body {
 .bubble-wrap.has-reactions {
   margin-bottom: 14px;
 }
+/* Push the timestamp down so reaction pills don't cover it */
+.bubble-wrap.has-reactions .msg-time {
+  margin-top: 18px;
+}
 .msg-row.sent .bubble-wrap {
   align-items: flex-end;
 }
@@ -566,6 +570,13 @@ body {
   transition: filter 0.2s;
   position: relative;
   background: linear-gradient(135deg, var(--rose-light), var(--rose-pale));
+  /* Prevent browser long-press "Save Image" menu on iOS/Android */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Let vertical scroll pass through; horizontal handled by swipe code */
+  touch-action: pan-y;
+  pointer-events: auto;
 }
 .img-grid.count-1 .grid-img {
   aspect-ratio: auto;
@@ -591,6 +602,10 @@ body {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
+  /* Block long-press context menu at the container level too */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .more-overlay {
   position: absolute;
@@ -1526,7 +1541,8 @@ body {
   transition: opacity 0.18s ease;
   z-index: 50;
 }
-.msg-row:hover .msg-hover-actions {
+.msg-row:hover .msg-hover-actions,
+.msg-hover-actions.pinned {
   opacity: 1;
   pointer-events: all;
 }
@@ -1727,4 +1743,96 @@ img[data-lazy-src] {
   background: linear-gradient(135deg, var(--rose-pale), var(--rose-light));
   min-width: 60px;
   min-height: 60px;
+}
+
+/* ─── TYPING DOTS ANIMATION ─── */
+#typing-indicator {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  margin-left: 2px;
+}
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+}
+.typing-dots span {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  animation: typingBounce 1.2s ease infinite;
+}
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ─── BLURRED IMAGE ─── */
+.grid-img.img-blurred {
+  filter: blur(18px) brightness(0.9);
+  transition: filter 0.3s ease;
+}
+.grid-img.img-blurred:hover {
+  filter: blur(18px) brightness(1); /* stay blurred on hover — user must use menu */
+}
+
+/* ─── IMAGE ACTION POPOVER (long-press inline menu) ─── */
+/* Small floating menu anchored near the image — does NOT cover reactions or bubble */
+.img-action-popover {
+  position: fixed;
+  z-index: 995;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 32px rgba(204, 51, 102, 0.22),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+  border: 1.5px solid rgba(232, 99, 138, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.88) translateY(4px);
+  transform-origin: bottom center;
+  transition:
+    opacity 0.15s ease,
+    transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  min-width: 140px;
+}
+.img-action-popover.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: all;
+}
+.img-action-popover-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border: none;
+  background: none;
+  font-family: "Quicksand", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.12s;
+  text-align: left;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.img-action-popover-btn + .img-action-popover-btn {
+  border-top: 1px solid rgba(232, 99, 138, 0.1);
+}
+.img-action-popover-btn:hover,
+.img-action-popover-btn:active {
+  background: var(--rose-pale);
+  color: var(--rose-dark);
 }

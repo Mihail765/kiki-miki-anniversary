@@ -1,8 +1,21 @@
 // ─── WHO AM I? ───────────────────────────────────────────────────
 const WHO = localStorage.getItem("mk_user") || "mikica";
+if (!localStorage.getItem("mk_user")) {
+  console.warn("⚠️ mk_user not set in localStorage, defaulting to 'mikica'");
+}
 const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 const AVATARS = { mikica: "💙", kikica: "💗" };
 const CHAT_ID = "mikica_kikica_chat";
+
+// Set header to show the partner's name (not your own)
+const _partnerName = WHO === "mikica" ? "Кикица 💗" : "Микица 💙";
+document.addEventListener("DOMContentLoaded", () => {
+  const headerName = document.getElementById("header-name");
+  if (headerName) headerName.textContent = _partnerName;
+});
+// Also set immediately in case DOMContentLoaded already fired
+const _hdrEl = document.getElementById("header-name");
+if (_hdrEl) _hdrEl.textContent = _partnerName;
 
 // ─── FIREBASE REFS ───────────────────────────────────────────────
 const storage = firebase.storage();
@@ -67,6 +80,30 @@ let capturedBlob = null;
 let unreadInserted = false;
 let lastReadTimestamp = null;
 
+// ─── BLURRED IMAGES STATE ─────────────────────────────────────────
+// Stores URLs that the user has manually blurred. Persisted in localStorage.
+let _blurredImages = new Set(
+  JSON.parse(localStorage.getItem("mk_blurred_imgs") || "[]"),
+);
+function isImageBlurred(url) {
+  return _blurredImages.has(url);
+}
+function toggleImageBlur(url, imgEl) {
+  if (_blurredImages.has(url)) {
+    _blurredImages.delete(url);
+    imgEl.classList.remove("img-blurred");
+  } else {
+    _blurredImages.add(url);
+    imgEl.classList.add("img-blurred");
+  }
+  try {
+    localStorage.setItem(
+      "mk_blurred_imgs",
+      JSON.stringify([..._blurredImages]),
+    );
+  } catch (_) {}
+}
+
 // ─── BOTTOM-LOCK ─────────────────────────────────────────────────
 let isAtBottom = true;
 let unreadWhileScrolled = 0;
@@ -74,6 +111,9 @@ let unreadWhileScrolled = 0;
 // ─── RENDERING STATE ─────────────────────────────────────────────
 let lastDate = null;
 let lastSender = null;
+
+// ─── REACTION LISTENER REGISTRY (prevents listener leak) ─────────
+const _reactionUnsubs = new Map(); // msgId → unsubscribe fn
 
 // Message id → DOM row (for reply jump-to, tick updates)
 const msgRowMap = new Map();
@@ -90,7 +130,11 @@ let _capsuleEmojis = [...DEFAULT_QUICK_REACTIONS];
 let _doubleTapEmoji = DEFAULT_DOUBLE_TAP_EMOJI;
 
 // Firestore ref for this user's private capsule (lives under users/{WHO}/capsule/settings)
-const capsuleRef = db.collection("users").doc(WHO).collection("capsule").doc("settings");
+const capsuleRef = db
+  .collection("users")
+  .doc(WHO)
+  .collection("capsule")
+  .doc("settings");
 
 async function loadCapsuleFromFirestore() {
   try {
@@ -118,7 +162,9 @@ async function saveCapsuleToFirestore(emojis, doubleTapEmoji) {
   _capsuleEmojis = emojis;
   _doubleTapEmoji = doubleTapEmoji;
   // Also write to localStorage as instant offline cache
-  try { localStorage.setItem("mk_quick_reactions", JSON.stringify(emojis)); } catch (_) {}
+  try {
+    localStorage.setItem("mk_quick_reactions", JSON.stringify(emojis));
+  } catch (_) {}
   try {
     await capsuleRef.set({
       emojis,
@@ -130,8 +176,12 @@ async function saveCapsuleToFirestore(emojis, doubleTapEmoji) {
   }
 }
 
-function getQuickReactions() { return _capsuleEmojis; }
-function getDoubleTapEmoji() { return _doubleTapEmoji; }
+function getQuickReactions() {
+  return _capsuleEmojis;
+}
+function getDoubleTapEmoji() {
+  return _doubleTapEmoji;
+}
 
 // Legacy shim — still used by picker to save individual slots
 function saveQuickReactions(arr) {
@@ -139,10 +189,59 @@ function saveQuickReactions(arr) {
 }
 
 const ALL_REACTION_EMOJIS = [
-  "❤️","😂","😘","🥺","😍","👍","💕","💖","💗","🥰","💋","🌹","✨",
-  "😊","💌","🎀","🌸","💞","💓","💝","🙈","🫶","😭","🤣","😅","😆",
-  "🔥","💯","🎉","✅","👏","🙏","💀","😤","🥳","😇","🤩","😜","😎",
-  "💫","⭐","🌙","🎶","🤍","💭","🫠","🩷","💙","💚","💛","🧡","🤎","🖤",
+  "❤️",
+  "😂",
+  "😘",
+  "🥺",
+  "😍",
+  "👍",
+  "💕",
+  "💖",
+  "💗",
+  "🥰",
+  "💋",
+  "🌹",
+  "✨",
+  "😊",
+  "💌",
+  "🎀",
+  "🌸",
+  "💞",
+  "💓",
+  "💝",
+  "🙈",
+  "🫶",
+  "😭",
+  "🤣",
+  "😅",
+  "😆",
+  "🔥",
+  "💯",
+  "🎉",
+  "✅",
+  "👏",
+  "🙏",
+  "💀",
+  "😤",
+  "🥳",
+  "😇",
+  "🤩",
+  "😜",
+  "😎",
+  "💫",
+  "⭐",
+  "🌙",
+  "🎶",
+  "🤍",
+  "💭",
+  "🫠",
+  "🩷",
+  "💙",
+  "💚",
+  "💛",
+  "🧡",
+  "🤎",
+  "🖤",
 ];
 
 let activeReactionBar = null;
@@ -174,7 +273,9 @@ const BOTTOM_THRESHOLD = 120;
 
 function checkScrollPosition() {
   const distFromBottom =
-    msgContainer.scrollHeight - msgContainer.scrollTop - msgContainer.clientHeight;
+    msgContainer.scrollHeight -
+    msgContainer.scrollTop -
+    msgContainer.clientHeight;
   isAtBottom = distFromBottom < BOTTOM_THRESHOLD;
 
   if (isAtBottom) {
@@ -188,7 +289,8 @@ function checkScrollPosition() {
     if (unreadWhileScrolled > 0) {
       // Show "N new ↓" label inside the button
       scrollToBottomBtn.textContent = "";
-      const countStr = unreadWhileScrolled > 99 ? "99+" : String(unreadWhileScrolled);
+      const countStr =
+        unreadWhileScrolled > 99 ? "99+" : String(unreadWhileScrolled);
       let badge = scrollToBottomBtn.querySelector(".unread-badge");
       if (!badge) {
         badge = document.createElement("span");
@@ -210,7 +312,10 @@ scrollToBottomBtn.addEventListener("click", () => {
 
 function scrollToBottom(smooth = true) {
   if (smooth) {
-    msgContainer.scrollTo({ top: msgContainer.scrollHeight, behavior: "smooth" });
+    msgContainer.scrollTo({
+      top: msgContainer.scrollHeight,
+      behavior: "smooth",
+    });
   } else {
     msgContainer.scrollTop = msgContainer.scrollHeight;
   }
@@ -226,7 +331,9 @@ let swRegistration = null;
 async function initNotifications() {
   if ("serviceWorker" in navigator) {
     try {
-      swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      swRegistration = await navigator.serviceWorker.register(
+        "/firebase-messaging-sw.js",
+      );
     } catch (e) {
       console.warn("SW registration failed:", e);
     }
@@ -252,19 +359,29 @@ notifAllowBtn.addEventListener("click", async () => {
   try {
     perm = await Notification.requestPermission();
   } catch (e) {
-    perm = await new Promise((resolve) => Notification.requestPermission(resolve));
+    perm = await new Promise((resolve) =>
+      Notification.requestPermission(resolve),
+    );
   }
   notifBanner.classList.remove("visible");
   if (perm === "granted") {
-    showMiniNotif("🔔 Notifications enabled! You'll know when a message arrives 💌");
+    showMiniNotif(
+      "🔔 Notifications enabled! You'll know when a message arrives 💌",
+    );
     await registerFCMToken();
-    setTimeout(() => sendBrowserNotif("System", "Notifications are working! 💌", null, true), 800);
+    setTimeout(
+      () =>
+        sendBrowserNotif("System", "Notifications are working! 💌", null, true),
+      800,
+    );
   } else {
     showMiniNotif("⚠️ Permission denied — check your browser settings");
   }
 });
 
-notifDismissBtn.addEventListener("click", () => notifBanner.classList.remove("visible"));
+notifDismissBtn.addEventListener("click", () =>
+  notifBanner.classList.remove("visible"),
+);
 
 async function sendBrowserNotif(senderName, text, imageUrl, force = false) {
   if (Notification.permission !== "granted") return;
@@ -273,13 +390,29 @@ async function sendBrowserNotif(senderName, text, imageUrl, force = false) {
   const body = text || (imageUrl ? "📷 Sent a photo" : "New message");
   if (swRegistration && swRegistration.active) {
     try {
-      swRegistration.active.postMessage({ type: "NOTIFY", title, body, icon: "favicon.ico", tag: "chat-message", url: window.location.href });
+      swRegistration.active.postMessage({
+        type: "NOTIFY",
+        title,
+        body,
+        icon: "favicon.ico",
+        tag: "chat-message",
+        url: window.location.href,
+      });
       return;
     } catch (e) {}
   }
   try {
-    const notif = new Notification(title, { body, icon: "favicon.ico", badge: "favicon.ico", tag: "chat-message", renotify: true });
-    notif.onclick = () => { window.focus(); notif.close(); };
+    const notif = new Notification(title, {
+      body,
+      icon: "favicon.ico",
+      badge: "favicon.ico",
+      tag: "chat-message",
+      renotify: true,
+    });
+    notif.onclick = () => {
+      window.focus();
+      notif.close();
+    };
     setTimeout(() => notif.close(), 6000);
   } catch (e) {}
 }
@@ -336,7 +469,38 @@ function updateAllTicks() {
 }
 
 // ─── EMOJIS ──────────────────────────────────────────────────────
-const EMOJIS = ["❤️","💕","💖","💗","😍","🥰","😘","💋","🌹","✨","😊","🥺","💌","🎀","🌸","💞","💓","💝","😂","🙈","🫶","🙂‍↕️","🥂","🌙","⭐","🎶","🤍","💭","🫠","🩷"];
+const EMOJIS = [
+  "❤️",
+  "💕",
+  "💖",
+  "💗",
+  "😍",
+  "🥰",
+  "😘",
+  "💋",
+  "🌹",
+  "✨",
+  "😊",
+  "🥺",
+  "💌",
+  "🎀",
+  "🌸",
+  "💞",
+  "💓",
+  "💝",
+  "😂",
+  "🙈",
+  "🫶",
+  "🙂‍↕️",
+  "🥂",
+  "🌙",
+  "⭐",
+  "🎶",
+  "🤍",
+  "💭",
+  "🫠",
+  "🩷",
+];
 
 const emojiFragment = document.createDocumentFragment();
 EMOJIS.forEach((e) => {
@@ -358,7 +522,8 @@ emojiToggleBtn.addEventListener("click", (ev) => {
 document.addEventListener("click", () => emojiTray.classList.remove("open"));
 
 function insertAtCursor(el, text) {
-  const s = el.selectionStart, e = el.selectionEnd;
+  const s = el.selectionStart,
+    e = el.selectionEnd;
   el.value = el.value.slice(0, s) + text + el.value.slice(e);
   el.selectionStart = el.selectionEnd = s + text.length;
 }
@@ -386,6 +551,10 @@ function addFilesToSelection(files) {
 }
 
 function renderPreviewBar() {
+  // Revoke old object URLs to prevent memory leak before removing elements
+  previewScroll.querySelectorAll(".preview-item img").forEach((img) => {
+    if (img.src && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+  });
   previewScroll.querySelectorAll(".preview-item").forEach((el) => el.remove());
   const frag = document.createDocumentFragment();
   selectedFiles.forEach((file, idx) => {
@@ -409,13 +578,21 @@ function renderPreviewBar() {
   imgPreviewBar.classList.toggle("visible", selectedFiles.length > 0);
 }
 
-clearAllBtn.addEventListener("click", () => { selectedFiles = []; renderPreviewBar(); });
+clearAllBtn.addEventListener("click", () => {
+  selectedFiles = [];
+  renderPreviewBar();
+});
 
 // ─── TYPING INDICATOR ─────────────────────────────────────────────
 function handleTyping() {
   if (!isTyping) {
     isTyping = true;
-    typingRef.doc(WHO).set({ typing: true, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    typingRef
+      .doc(WHO)
+      .set({
+        typing: true,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      });
   }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
@@ -426,10 +603,12 @@ function handleTyping() {
 
 typingRef.doc(partner).onSnapshot((snap) => {
   if (snap.exists && snap.data().typing) {
-    typingIndicator.textContent = SENDER_DISPLAY[partner] + " is typing…";
-    typingIndicator.style.display = "inline";
+    typingIndicator.innerHTML = `<span class="typing-dots"><span></span><span></span><span></span></span>`;
+    typingIndicator.style.display = "inline-flex";
+    typingIndicator.title = SENDER_DISPLAY[partner] + " is typing…";
   } else {
     typingIndicator.style.display = "none";
+    typingIndicator.innerHTML = "";
   }
 });
 
@@ -439,7 +618,7 @@ function startReply(msg, id) {
     id,
     sender: msg.sender,
     text: msg.text || null,
-    imageUrl: msg.imageUrls ? msg.imageUrls[0] : (msg.imageUrl || null),
+    imageUrl: msg.imageUrls ? msg.imageUrls[0] : msg.imageUrl || null,
   };
 
   replyBar.innerHTML = "";
@@ -455,7 +634,8 @@ function startReply(msg, id) {
 
   const textEl = document.createElement("div");
   textEl.className = "reply-bar-text";
-  textEl.textContent = msg.text || (msg.imageUrls || msg.imageUrl ? "📷 Photo" : "");
+  textEl.textContent =
+    msg.text || (msg.imageUrls || msg.imageUrl ? "📷 Photo" : "");
 
   content.appendChild(senderEl);
   content.appendChild(textEl);
@@ -501,6 +681,10 @@ async function sendMessage() {
 
   const filesToSend = [...selectedFiles];
   const currentReply = replyingTo;
+  // Revoke preview blob URLs before clearing
+  previewScroll.querySelectorAll(".preview-item img").forEach((img) => {
+    if (img.src && img.src.startsWith("blob:")) URL.revokeObjectURL(img.src);
+  });
   selectedFiles = [];
   renderPreviewBar();
   cancelReply();
@@ -533,7 +717,7 @@ async function sendMessage() {
     updateMyReadTime();
   } catch (err) {
     console.error("Send error:", err);
-    alert("Couldn't send message: " + err.message);
+    showMiniNotif("⚠️ Couldn't send message: " + err.message);
   } finally {
     sendBtn.disabled = false;
     msgInput.focus();
@@ -544,16 +728,27 @@ async function sendMessage() {
 async function uploadImagesWithProgress(files) {
   uploadProgress.style.display = "block";
   const urls = [];
+  let failedCount = 0;
   for (let i = 0; i < files.length; i++) {
     const progressBase = (i / files.length) * 100;
     const progressChunk = (1 / files.length) * 100;
     uploadProgressBar.style.width = progressBase + "%";
     try {
-      const url = await uploadSingleImage(files[i], progressBase, progressChunk);
+      const url = await uploadSingleImage(
+        files[i],
+        progressBase,
+        progressChunk,
+      );
       urls.push(url);
     } catch (e) {
       console.error("Upload failed for one image:", e);
+      failedCount++;
     }
+  }
+  if (failedCount > 0) {
+    showMiniNotif(
+      `⚠️ ${failedCount} image${failedCount > 1 ? "s" : ""} couldn't be uploaded and were skipped`,
+    );
   }
   uploadProgressBar.style.width = "100%";
   setTimeout(() => {
@@ -564,54 +759,31 @@ async function uploadImagesWithProgress(files) {
 }
 
 async function uploadSingleImage(file, progressBase, progressChunk) {
+  // Delegate to the shared uploadImageToCloudinary from cloudinary-config.js
+  // (handles compression, WebP, resize, timeout — no duplication needed here)
   try {
-    const compressed = await compressImage(file);
-    const formData = new FormData();
-    formData.append("file", compressed);
-    formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
-    formData.append("folder", "chat");
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
-      { method: "POST", body: formData }
-    );
-    if (!res.ok) throw new Error("Cloudinary upload failed");
-    const data = await res.json();
+    uploadProgressBar.style.width = progressBase + "%";
+    const url = await uploadImageToCloudinary(file, "chat");
     uploadProgressBar.style.width = progressBase + progressChunk + "%";
-    return data.secure_url;
+    return url;
   } catch (err) {
+    // Fallback: Firebase Storage
     const ref = storage.ref(`chat/${Date.now()}_${file.name}`);
     const task = ref.put(file);
     return new Promise((resolve, reject) => {
       task.on(
         "state_changed",
         (snap) => {
-          const pct = progressBase + (snap.bytesTransferred / snap.totalBytes) * progressChunk;
+          const pct =
+            progressBase +
+            (snap.bytesTransferred / snap.totalBytes) * progressChunk;
           uploadProgressBar.style.width = pct + "%";
         },
         reject,
-        async () => resolve(await task.snapshot.ref.getDownloadURL())
+        async () => resolve(await task.snapshot.ref.getDownloadURL()),
       );
     });
   }
-}
-
-async function compressImage(file, maxW = 1200, quality = 0.82) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      let w = img.naturalWidth, h = img.naturalHeight;
-      if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      canvas.toBlob((blob) => resolve(blob || file), file.type || "image/jpeg", quality);
-      URL.revokeObjectURL(url);
-    };
-    img.onerror = () => resolve(file);
-    img.src = url;
-  });
 }
 
 // ─── RENDER MESSAGE ───────────────────────────────────────────────
@@ -619,18 +791,21 @@ let _pendingFirstBatch = [];
 let _firstBatchTimer = null;
 
 // ─── IntersectionObserver for lazy image loading ──────────────────
-const _imgObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      const img = entry.target;
-      if (img.dataset.lazySrc) {
-        img.src = img.dataset.lazySrc;
-        delete img.dataset.lazySrc;
-        _imgObserver.unobserve(img);
+const _imgObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        if (img.dataset.lazySrc) {
+          img.src = img.dataset.lazySrc;
+          delete img.dataset.lazySrc;
+          _imgObserver.unobserve(img);
+        }
       }
-    }
-  });
-}, { rootMargin: "200px" });
+    });
+  },
+  { rootMargin: "200px" },
+);
 
 function flushFirstBatch() {
   if (!_pendingFirstBatch.length) return;
@@ -644,24 +819,36 @@ function flushFirstBatch() {
   _pendingFirstBatch.forEach(({ msg, id }) => {
     const els = buildMessageElements(msg, id, false);
     els.forEach((el) => frag.appendChild(el));
-    msgRowMap.set(id, frag.lastElementChild);
   });
   msgContainer.appendChild(frag);
 
+  // Map each message id → its DOM row AFTER the fragment is in the DOM
+  // (DocumentFragment is emptied by appendChild, so we must query after insertion)
+  _pendingFirstBatch.forEach(({ id }) => {
+    if (id) {
+      const row = msgContainer.querySelector(`.msg-row[data-id="${id}"]`);
+      if (row) msgRowMap.set(id, row);
+    }
+  });
+
   // Register lazy images with observer after DOM insertion
-  msgContainer.querySelectorAll("img[data-lazy-src]").forEach((img) => _imgObserver.observe(img));
+  msgContainer
+    .querySelectorAll("img[data-lazy-src]")
+    .forEach((img) => _imgObserver.observe(img));
 
   _pendingFirstBatch = [];
   _firstBatchTimer = null;
 
   // Use double-rAF so layout is fully calculated before scrolling
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    msgContainer.scrollTop = msgContainer.scrollHeight;
-    loader.style.display = "none";
-    updateMyReadTime();
-    updateAllTicks();
-    checkScrollPosition();
-  }));
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      msgContainer.scrollTop = msgContainer.scrollHeight;
+      loader.style.display = "none";
+      updateMyReadTime();
+      updateAllTicks();
+      checkScrollPosition();
+    }),
+  );
 }
 
 function renderMessage(msg, id, animate = true) {
@@ -680,7 +867,9 @@ function renderMessage(msg, id, animate = true) {
   msgContainer.appendChild(frag);
 
   // Observe any new lazy images
-  msgContainer.querySelectorAll("img[data-lazy-src]").forEach((img) => _imgObserver.observe(img));
+  msgContainer
+    .querySelectorAll("img[data-lazy-src]")
+    .forEach((img) => _imgObserver.observe(img));
 
   const row = msgContainer.lastElementChild;
   if (id) msgRowMap.set(id, row);
@@ -701,7 +890,11 @@ function buildMessageElements(msg, id, animate) {
   const ts = msg.timestamp ? msg.timestamp.toDate() : new Date();
   const tsMs = ts.getTime();
 
-  const dateStr = ts.toLocaleDateString("mk-MK", { weekday: "long", month: "long", day: "numeric" });
+  const dateStr = ts.toLocaleDateString("mk-MK", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
   if (dateStr !== lastDate) {
     lastDate = dateStr;
     const sep = document.createElement("div");
@@ -748,11 +941,13 @@ function buildMessageElements(msg, id, animate) {
 
     const replySndr = document.createElement("div");
     replySndr.className = "reply-preview-sender";
-    replySndr.textContent = SENDER_DISPLAY[msg.replyTo.sender] || msg.replyTo.sender;
+    replySndr.textContent =
+      SENDER_DISPLAY[msg.replyTo.sender] || msg.replyTo.sender;
 
     const replyTxt = document.createElement("div");
     replyTxt.className = "reply-preview-text";
-    replyTxt.textContent = msg.replyTo.text || (msg.replyTo.imageUrl ? "📷 Photo" : "");
+    replyTxt.textContent =
+      msg.replyTo.text || (msg.replyTo.imageUrl ? "📷 Photo" : "");
 
     if (msg.replyTo.imageUrl) {
       const replyImg = document.createElement("img");
@@ -770,7 +965,11 @@ function buildMessageElements(msg, id, animate) {
   }
 
   // Images
-  const images = msg.imageUrls ? msg.imageUrls : msg.imageUrl ? [msg.imageUrl] : [];
+  const images = msg.imageUrls
+    ? msg.imageUrls
+    : msg.imageUrl
+      ? [msg.imageUrl]
+      : [];
   if (images.length > 0) {
     const gridWrap = document.createElement("div");
     gridWrap.className = "img-grid-wrap";
@@ -778,11 +977,15 @@ function buildMessageElements(msg, id, animate) {
     const MAX_SHOWN = 6;
     const showCount = Math.min(images.length, MAX_SHOWN);
     const countClass =
-      images.length === 1 ? "count-1"
-      : images.length === 2 ? "count-2"
-      : images.length === 3 ? "count-3"
-      : images.length === 4 ? "count-4"
-      : "count-many";
+      images.length === 1
+        ? "count-1"
+        : images.length === 2
+          ? "count-2"
+          : images.length === 3
+            ? "count-3"
+            : images.length === 4
+              ? "count-4"
+              : "count-many";
 
     const grid = document.createElement("div");
     grid.className = `img-grid ${countClass}`;
@@ -794,8 +997,12 @@ function buildMessageElements(msg, id, animate) {
       gridImg.loading = "lazy";
       gridImg.decoding = "async";
 
-      gridImg.addEventListener("load", () => gridImg.classList.add("loaded"), { once: true });
-      gridImg.src = images[i];
+      gridImg.addEventListener("load", () => gridImg.classList.add("loaded"), {
+        once: true,
+      });
+      // Use lazy loading: set data-lazy-src so IntersectionObserver loads it
+      // only when scrolled into view (200px margin). src is intentionally blank.
+      gridImg.dataset.lazySrc = images[i];
 
       if (i === MAX_SHOWN - 1 && images.length > MAX_SHOWN) {
         const cellWrap = document.createElement("div");
@@ -804,51 +1011,128 @@ function buildMessageElements(msg, id, animate) {
         const overlay = document.createElement("div");
         overlay.className = "more-overlay";
         overlay.textContent = `+${images.length - MAX_SHOWN + 1}`;
-        overlay.addEventListener("click", () => openLightbox(images, MAX_SHOWN - 1));
+        overlay.addEventListener("click", () =>
+          openLightbox(images, MAX_SHOWN - 1),
+        );
         cellWrap.appendChild(overlay);
         grid.appendChild(cellWrap);
       } else {
         const idx = i;
-        // ── Tap/click with double-tap detection for reactions ──────────────
-        // On touch: delay single-tap 220ms to check if a double-tap is coming.
-        // Double-tap reacts; single-tap opens lightbox. On desktop (click), open immediately.
+        const imgUrl = images[i];
+
+        // Apply saved blur state
+        if (isImageBlurred(imgUrl)) gridImg.classList.add("img-blurred");
+
+        // ── Touch interaction ─────────────────────────────────────────
+        // • Long-press (500ms)  → image action menu (save / blur)
+        // • Single tap          → open lightbox (only if no scroll detected)
+        // • Double-tap          → react with default emoji
+        // • Scroll              → do nothing (pass through to chat scroll)
+        // • contextmenu         → blocked (no browser save-image popup)
+
         let imgTapTimer = null;
         let imgLastTap = 0;
-
-        gridImg.addEventListener("touchend", (e) => {
-          const now = Date.now();
-          const gap = now - imgLastTap;
-          imgLastTap = now;
-
-          if (gap < 280 && gap > 0) {
-            // ── Double-tap on image → react with default emoji ──
-            clearTimeout(imgTapTimer);
-            imgTapTimer = null;
-            e.preventDefault();
-            e.stopPropagation();
-            if (id) {
-              const emoji = getDoubleTapEmoji();
-              saveReaction(id, emoji);
-              showHeartBurst(gridImg, emoji);
-            }
-          } else {
-            // ── Single tap → wait to see if another tap follows ──
-            clearTimeout(imgTapTimer);
-            imgTapTimer = setTimeout(() => {
-              imgTapTimer = null;
-              openLightbox(images, idx);
-            }, 230);
-          }
-        }, { passive: false });
-
-        // Desktop (mouse) click — open lightbox immediately.
-        // On touch devices, the ghost "click" fires ~300ms after touchend.
-        // We block it if a touch sequence already handled the tap.
+        let imgLongPressTimer = null;
+        let imgLongPressed = false;
+        let imgTouchStartX = 0;
+        let imgTouchStartY = 0;
+        let imgScrolled = false;
         let imgTouchHandled = false;
-        gridImg.addEventListener("touchstart", () => { imgTouchHandled = false; }, { passive: true });
-        gridImg.addEventListener("touchend", () => { imgTouchHandled = true; }, { passive: true });
+
+        gridImg.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        });
+
+        gridImg.addEventListener(
+          "touchstart",
+          (e) => {
+            imgTouchStartX = e.touches[0].clientX;
+            imgTouchStartY = e.touches[0].clientY;
+            imgScrolled = false;
+            imgLongPressed = false;
+            imgLongPressTimer = setTimeout(() => {
+              if (!imgScrolled) {
+                imgLongPressed = true;
+                if (navigator.vibrate) navigator.vibrate(30);
+                openImageActionMenu(imgUrl, gridImg, gridImg);
+              }
+            }, 500);
+          },
+          { passive: true },
+        );
+
+        gridImg.addEventListener(
+          "touchmove",
+          (e) => {
+            const dy = Math.abs(e.touches[0].clientY - imgTouchStartY);
+            const dx = Math.abs(e.touches[0].clientX - imgTouchStartX);
+            if (dy > 8 || (dy > 4 && dy >= dx)) {
+              imgScrolled = true;
+              clearTimeout(imgLongPressTimer);
+            }
+          },
+          { passive: true },
+        );
+
+        gridImg.addEventListener(
+          "touchend",
+          (e) => {
+            clearTimeout(imgLongPressTimer);
+            imgTouchHandled = true;
+            setTimeout(() => {
+              imgTouchHandled = false;
+            }, 400);
+
+            if (imgScrolled || imgLongPressed) return;
+
+            const now = Date.now();
+            const gap = now - imgLastTap;
+            imgLastTap = now;
+
+            if (gap < 280 && gap > 0) {
+              // Double-tap → react
+              clearTimeout(imgTapTimer);
+              imgTapTimer = null;
+              e.preventDefault();
+              e.stopPropagation();
+              if (id) {
+                saveReaction(id, getDoubleTapEmoji());
+                showHeartBurst(gridImg, getDoubleTapEmoji());
+              }
+            } else {
+              // Single tap → open lightbox after confirming not double-tap
+              clearTimeout(imgTapTimer);
+              imgTapTimer = setTimeout(() => {
+                imgTapTimer = null;
+                openLightbox(images, idx);
+              }, 230);
+            }
+          },
+          { passive: false },
+        );
+
+        // Desktop click — open lightbox; long-press handled by mousedown timer
+        let imgMouseLongTimer = null;
+        gridImg.addEventListener("mousedown", () => {
+          imgMouseLongTimer = setTimeout(() => {
+            imgMouseLongTimer = null;
+            openImageActionMenu(imgUrl, gridImg, gridImg);
+          }, 500);
+        });
+        gridImg.addEventListener("mouseup", () =>
+          clearTimeout(imgMouseLongTimer),
+        );
+        gridImg.addEventListener("mouseleave", () =>
+          clearTimeout(imgMouseLongTimer),
+        );
         gridImg.addEventListener("click", (e) => {
-          if (imgTouchHandled) { imgTouchHandled = false; return; } // was a touch tap, already handled
+          if (imgTouchHandled) {
+            imgTouchHandled = false;
+            return;
+          }
+          if (!imgMouseLongTimer && imgMouseLongTimer !== null) return; // was a long press
           openLightbox(images, idx);
         });
 
@@ -872,9 +1156,12 @@ function buildMessageElements(msg, id, animate) {
   // Time + ticks
   const timeRow = document.createElement("span");
   timeRow.className = "msg-time";
-  timeRow.appendChild(document.createTextNode(
-    ts.toLocaleTimeString("mk-MK", { hour: "2-digit", minute: "2-digit" }) + " "
-  ));
+  timeRow.appendChild(
+    document.createTextNode(
+      ts.toLocaleTimeString("mk-MK", { hour: "2-digit", minute: "2-digit" }) +
+        " ",
+    ),
+  );
 
   if (isSent) {
     const tickSpan = document.createElement("span");
@@ -917,7 +1204,9 @@ async function saveReaction(msgId, emoji) {
   if (!snap.exists) return;
   const reactions = snap.data().reactions || {};
   if (reactions[WHO] === emoji) {
-    await ref.update({ [`reactions.${WHO}`]: firebase.firestore.FieldValue.delete() });
+    await ref.update({
+      [`reactions.${WHO}`]: firebase.firestore.FieldValue.delete(),
+    });
   } else {
     await ref.update({ [`reactions.${WHO}`]: emoji });
   }
@@ -1114,9 +1403,11 @@ function openReactionPicker(msgId, row) {
   modeHint.className = "reaction-picker-subtitle";
   function updateModeHint() {
     if (editMode === null) {
-      modeHint.textContent = "Tap an emoji below to react — or tap a capsule slot above to edit it";
+      modeHint.textContent =
+        "Tap an emoji below to react — or tap a capsule slot above to edit it";
     } else if (editMode === "default") {
-      modeHint.textContent = "Now tap any emoji below to set your double-tap default ↓";
+      modeHint.textContent =
+        "Now tap any emoji below to set your double-tap default ↓";
     } else {
       const idx = parseInt(editMode.split("-")[1]);
       modeHint.textContent = `Editing capsule slot ${idx + 1} — tap an emoji below to replace it ↓`;
@@ -1188,6 +1479,18 @@ document.addEventListener("click", (e) => {
   if (activeReactionBar && !activeReactionBar.contains(e.target)) {
     closeReactionBar();
   }
+  // Close any open 3-dot dropdown if click was outside it
+  document.querySelectorAll(".msg-actions-dropdown.open").forEach((d) => {
+    if (
+      !d.contains(e.target) &&
+      !d.previousElementSibling?.contains(e.target)
+    ) {
+      d.classList.remove("open");
+      d.previousElementSibling?.classList.remove("open");
+      // Unpin the actionsWrap
+      d.closest(".msg-hover-actions")?.classList.remove("pinned");
+    }
+  });
 });
 
 // ─── ATTACH REACTIONS TO A ROW ────────────────────────────────────
@@ -1195,27 +1498,43 @@ function attachReactions(row, msg, msgId) {
   const bubble = row.querySelector(".bubble");
 
   // Long-press (touch)
-  bubble.addEventListener("touchstart", (e) => {
-    longPressTimer = setTimeout(() => {
+  bubble.addEventListener(
+    "touchstart",
+    (e) => {
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        openReactionBar(msgId, row, msg);
+      }, 480);
+    },
+    { passive: true },
+  );
+
+  bubble.addEventListener(
+    "touchmove",
+    () => {
+      clearTimeout(longPressTimer);
       longPressTimer = null;
-      openReactionBar(msgId, row, msg);
-    }, 480);
-  }, { passive: true });
+    },
+    { passive: true },
+  );
 
-  bubble.addEventListener("touchmove", () => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }, { passive: true });
+  bubble.addEventListener(
+    "touchend",
+    () => {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    },
+    { passive: true },
+  );
 
-  bubble.addEventListener("touchend", () => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }, { passive: true });
-
-  bubble.addEventListener("touchcancel", () => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }, { passive: true });
+  bubble.addEventListener(
+    "touchcancel",
+    () => {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    },
+    { passive: true },
+  );
 
   // Long-press (mouse/desktop)
   bubble.addEventListener("mousedown", () => {
@@ -1224,15 +1543,27 @@ function attachReactions(row, msg, msgId) {
       openReactionBar(msgId, row, msg);
     }, 500);
   });
-  bubble.addEventListener("mouseup", () => { clearTimeout(longPressTimer); longPressTimer = null; });
-  bubble.addEventListener("mouseleave", () => { clearTimeout(longPressTimer); longPressTimer = null; });
+  bubble.addEventListener("mouseup", () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  });
+  bubble.addEventListener("mouseleave", () => {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  });
 
   // Double-tap — reacts with user's saved default emoji, toggles off if tapped again
   let lastTap = 0;
   let doubleTapBlocked = false;
   bubble.addEventListener("touchend", (e) => {
-    if (longPressTimer) { doubleTapBlocked = true; return; }
-    if (doubleTapBlocked) { doubleTapBlocked = false; return; }
+    if (longPressTimer) {
+      doubleTapBlocked = true;
+      return;
+    }
+    if (doubleTapBlocked) {
+      doubleTapBlocked = false;
+      return;
+    }
     const now = Date.now();
     if (now - lastTap < 300) {
       e.preventDefault();
@@ -1259,11 +1590,14 @@ function showHeartBurst(bubble, emoji) {
 
 // ─── REAL-TIME REACTION UPDATES ───────────────────────────────────
 function watchReactions(msgId, wrap) {
-  messagesRef.doc(msgId).onSnapshot((snap) => {
+  // If already watching this message, don't add a second listener
+  if (_reactionUnsubs.has(msgId)) return;
+  const unsub = messagesRef.doc(msgId).onSnapshot((snap) => {
     if (!snap.exists) return;
     const reactions = snap.data().reactions || {};
     renderReactions(wrap, reactions, msgId);
   });
+  _reactionUnsubs.set(msgId, unsub);
 }
 
 // ─── DESKTOP HOVER ACTIONS (3-dot menu) ──────────────────────────
@@ -1271,7 +1605,8 @@ function attachHoverActions(row, msg, msgId) {
   const isSent = row.classList.contains("sent");
 
   const actionsWrap = document.createElement("div");
-  actionsWrap.className = "msg-hover-actions " + (isSent ? "actions-sent" : "actions-recv");
+  actionsWrap.className =
+    "msg-hover-actions " + (isSent ? "actions-sent" : "actions-recv");
 
   // Three-dot trigger button
   const trigger = document.createElement("button");
@@ -1283,77 +1618,113 @@ function attachHoverActions(row, msg, msgId) {
   const dropdown = document.createElement("div");
   dropdown.className = "msg-actions-dropdown";
 
-  // React item
-  const reactItem = document.createElement("button");
-  reactItem.className = "msg-action-item";
-  const reactIcon = document.createElement("span");
-  reactIcon.className = "action-icon";
-  reactIcon.textContent = "😊";
-  reactItem.appendChild(reactIcon);
-  reactItem.appendChild(document.createTextNode(" React"));
-  reactItem.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeDropdown();
-    openReactionBar(msgId, row, msg);
-  });
+  function makeItem(icon, label, fn) {
+    const item = document.createElement("button");
+    item.className = "msg-action-item";
+    const iconEl = document.createElement("span");
+    iconEl.className = "action-icon";
+    iconEl.textContent = icon;
+    item.appendChild(iconEl);
+    item.appendChild(document.createTextNode(" " + label));
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      fn();
+    });
+    return item;
+  }
 
-  // Divider
-  const divider = document.createElement("hr");
-  divider.className = "msg-action-divider";
+  function makeDivider() {
+    const hr = document.createElement("hr");
+    hr.className = "msg-action-divider";
+    return hr;
+  }
 
-  // Reply item
-  const replyItem = document.createElement("button");
-  replyItem.className = "msg-action-item";
-  const replyIcon = document.createElement("span");
-  replyIcon.className = "action-icon";
-  replyIcon.textContent = "↩";
-  replyItem.appendChild(replyIcon);
-  replyItem.appendChild(document.createTextNode(" Reply"));
-  replyItem.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeDropdown();
-    startReply(msg, msgId);
-  });
+  // React
+  dropdown.appendChild(
+    makeItem("😊", "React", () => openReactionBar(msgId, row, msg)),
+  );
+  dropdown.appendChild(makeDivider());
+  // Reply
+  dropdown.appendChild(makeItem("↩", "Reply", () => startReply(msg, msgId)));
 
-  dropdown.appendChild(reactItem);
-  dropdown.appendChild(divider);
-  dropdown.appendChild(replyItem);
+  // Save & Blur — only shown when message has images
+  const imgUrls = msg.imageUrls
+    ? msg.imageUrls
+    : msg.imageUrl
+      ? [msg.imageUrl]
+      : [];
+  let blurItem = null;
+  if (imgUrls.length > 0) {
+    dropdown.appendChild(makeDivider());
+    // Save image(s) — real blob download
+    dropdown.appendChild(
+      makeItem(
+        "💾",
+        imgUrls.length > 1 ? "Save Images" : "Save Image",
+        async () => {
+          for (const url of imgUrls) await saveImageToDevice(url);
+        },
+      ),
+    );
+    // Blur/Unblur — icon+label rebuilt each time dropdown opens
+    blurItem = document.createElement("button");
+    blurItem.className = "msg-action-item";
+    blurItem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      const gridImgs = row.querySelectorAll(".grid-img");
+      imgUrls.forEach((url, i) => {
+        const el = gridImgs[i];
+        if (el) toggleImageBlur(url, el);
+      });
+    });
+    dropdown.appendChild(blurItem);
+  }
+
+  function refreshBlurItem() {
+    if (!blurItem || imgUrls.length === 0) return;
+    const anyBlurred = imgUrls.some((u) => isImageBlurred(u));
+    const icon = anyBlurred ? "👁️" : "🫣";
+    const label = anyBlurred ? "Unblur Image" : "Blur Image";
+    blurItem.innerHTML = "";
+    const iconEl = document.createElement("span");
+    iconEl.className = "action-icon";
+    iconEl.textContent = icon;
+    blurItem.appendChild(iconEl);
+    blurItem.appendChild(document.createTextNode(" " + label));
+  }
 
   function openDropdown() {
-    // Close any other open dropdowns first
-    document.querySelectorAll(".msg-actions-dropdown.open").forEach((d) => {
-      d.classList.remove("open");
-    });
-    document.querySelectorAll(".msg-actions-trigger.open").forEach((t) => {
-      t.classList.remove("open");
-    });
+    document
+      .querySelectorAll(".msg-actions-dropdown.open")
+      .forEach((d) => d.classList.remove("open"));
+    document
+      .querySelectorAll(".msg-actions-trigger.open")
+      .forEach((t) => t.classList.remove("open"));
+    document
+      .querySelectorAll(".msg-hover-actions.pinned")
+      .forEach((a) => a.classList.remove("pinned"));
+    refreshBlurItem(); // re-read blur state so label is always current
     trigger.classList.add("open");
     dropdown.classList.add("open");
+    actionsWrap.classList.add("pinned");
   }
 
   function closeDropdown() {
     trigger.classList.remove("open");
     dropdown.classList.remove("open");
+    actionsWrap.classList.remove("pinned");
   }
 
-  function toggleDropdown(e) {
+  trigger.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (dropdown.classList.contains("open")) {
-      closeDropdown();
-    } else {
-      openDropdown();
-    }
-  }
-
-  trigger.addEventListener("click", toggleDropdown);
-
-  // Close on outside click — stored as named fn so we keep one global handler pattern
-  document.addEventListener("click", () => closeDropdown());
+    dropdown.classList.contains("open") ? closeDropdown() : openDropdown();
+  });
 
   actionsWrap.appendChild(trigger);
   actionsWrap.appendChild(dropdown);
 
-  // Attach to the bubble-wrap (not the row) so positioning is relative to the bubble area
   const wrap = row.querySelector(".bubble-wrap");
   wrap.appendChild(actionsWrap);
 }
@@ -1362,61 +1733,78 @@ function attachHoverActions(row, msg, msgId) {
 const SWIPE_THRESHOLD = 55;
 
 function attachSwipeReply(row, msg, id) {
-  let startX = 0, startY = 0, dx = 0;
+  let startX = 0,
+    startY = 0,
+    dx = 0;
   let swiping = false;
   let triggered = false;
 
-  row.addEventListener("touchstart", (e) => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    dx = 0;
-    swiping = false;
-    triggered = false;
-  }, { passive: true });
+  row.addEventListener(
+    "touchstart",
+    (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx = 0;
+      swiping = false;
+      triggered = false;
+    },
+    { passive: true },
+  );
 
-  row.addEventListener("touchmove", (e) => {
-    const x = e.touches[0].clientX;
-    const y = e.touches[0].clientY;
-    dx = x - startX;
-    const dy = Math.abs(y - startY);
+  row.addEventListener(
+    "touchmove",
+    (e) => {
+      const x = e.touches[0].clientX;
+      const y = e.touches[0].clientY;
+      dx = x - startX;
+      const dy = Math.abs(y - startY);
 
-    if (!swiping && Math.abs(dx) > 8 && dy < Math.abs(dx)) {
-      swiping = true;
-      row.classList.add("swiping");
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-    if (!swiping) return;
+      if (!swiping && Math.abs(dx) > 8 && dy < Math.abs(dx)) {
+        swiping = true;
+        row.classList.add("swiping");
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+      if (!swiping) return;
 
-    const isSent = row.classList.contains("sent");
-    const validDir = isSent ? dx < 0 : dx > 0;
-    if (!validDir) { dx = 0; return; }
+      const isSent = row.classList.contains("sent");
+      const validDir = isSent ? dx < 0 : dx > 0;
+      if (!validDir) {
+        dx = 0;
+        return;
+      }
 
-    const absDx = Math.abs(dx);
-    const limited = Math.min(absDx, SWIPE_THRESHOLD * 1.2);
-    const translateX = isSent ? -limited : limited;
+      const absDx = Math.abs(dx);
+      const limited = Math.min(absDx, SWIPE_THRESHOLD * 1.2);
+      const translateX = isSent ? -limited : limited;
 
-    row.style.transform = `translateX(${translateX}px)`;
+      row.style.transform = `translateX(${translateX}px)`;
 
-    if (absDx > SWIPE_THRESHOLD * 0.6) {
-      row.classList.add("swipe-reveal");
-    } else {
+      if (absDx > SWIPE_THRESHOLD * 0.6) {
+        row.classList.add("swipe-reveal");
+      } else {
+        row.classList.remove("swipe-reveal");
+      }
+    },
+    { passive: true },
+  );
+
+  row.addEventListener(
+    "touchend",
+    () => {
+      if (!swiping) return;
+      row.classList.remove("swiping");
       row.classList.remove("swipe-reveal");
-    }
-  }, { passive: true });
+      row.style.transform = "";
 
-  row.addEventListener("touchend", () => {
-    if (!swiping) return;
-    row.classList.remove("swiping");
-    row.classList.remove("swipe-reveal");
-    row.style.transform = "";
-
-    if (Math.abs(dx) > SWIPE_THRESHOLD && !triggered) {
-      triggered = true;
-      if (navigator.vibrate) navigator.vibrate(20);
-      startReply(msg, id);
-    }
-  }, { passive: true });
+      if (Math.abs(dx) > SWIPE_THRESHOLD && !triggered) {
+        triggered = true;
+        if (navigator.vibrate) navigator.vibrate(20);
+        startReply(msg, id);
+      }
+    },
+    { passive: true },
+  );
 }
 
 // ─── JUMP TO QUOTED MESSAGE ───────────────────────────────────────
@@ -1428,32 +1816,188 @@ function jumpToMessage(id) {
   setTimeout(() => row.classList.remove("highlight-flash"), 1300);
 }
 
-// ─── REAL-TIME LISTENER ───────────────────────────────────────────
-messagesRef.orderBy("timestamp", "asc").onSnapshot((snap) => {
-  snap.docChanges().forEach((change) => {
-    if (change.type === "added") {
-      const msg = change.doc.data();
-      const isNew = !firstLoad;
-      renderMessage(msg, change.doc.id, isNew);
+// ─── PAGINATION ───────────────────────────────────────────────────
+const PAGE_SIZE = 40;
+let _oldestDoc = null;          // cursor for "load more"
+let _allLoaded = false;         // true once we've reached the very first message
+let _loadingMore = false;       // debounce guard
+let _liveUnsub = null;          // unsubscribe for the live tail listener
+let _loadMoreBtn = null;        // "Load earlier messages" button
 
-      if (isNew && msg.sender !== WHO) {
-        sendBrowserNotif(
-          SENDER_DISPLAY[msg.sender] || msg.sender,
-          msg.text,
-          msg.imageUrls ? msg.imageUrls[0] : msg.imageUrl
-        );
-        if (!document.hidden) updateMyReadTime();
-      }
-    }
-  });
+function ensureLoadMoreBtn() {
+  if (_loadMoreBtn) return;
+  _loadMoreBtn = document.createElement("button");
+  _loadMoreBtn.id = "load-more-btn";
+  _loadMoreBtn.textContent = "⬆ Load earlier messages";
+  _loadMoreBtn.addEventListener("click", loadMoreMessages);
+  msgContainer.prepend(_loadMoreBtn);
+}
 
-  if (firstLoad) {
-    firstLoad = false;
-    if (_pendingFirstBatch.length === 0) {
-      loader.style.display = "none";
+function removeLoadMoreBtn() {
+  if (_loadMoreBtn) { _loadMoreBtn.remove(); _loadMoreBtn = null; }
+}
+
+// Prepend older messages above the existing ones (no flicker)
+async function loadMoreMessages() {
+  if (_loadingMore || _allLoaded || !_oldestDoc) return;
+  _loadingMore = true;
+  if (_loadMoreBtn) _loadMoreBtn.textContent = "Loading…";
+
+  // Remember scroll anchor so position doesn't jump
+  const anchorEl = msgContainer.firstElementChild === _loadMoreBtn
+    ? msgContainer.children[1]
+    : msgContainer.firstElementChild;
+  const anchorTop = anchorEl ? anchorEl.getBoundingClientRect().top : 0;
+
+  try {
+    const snap = await messagesRef
+      .orderBy("timestamp", "asc")
+      .endBefore(_oldestDoc)
+      .limitToLast(PAGE_SIZE)
+      .get();
+
+    if (snap.empty || snap.docs.length === 0) {
+      _allLoaded = true;
+      removeLoadMoreBtn();
+      _loadingMore = false;
+      return;
     }
+
+    // Save state before touching lastDate/lastSender (they belong to the tail)
+    const savedLastDate = lastDate;
+    const savedLastSender = lastSender;
+
+    // Build DOM for the older batch (newest-first from endBefore, so reverse)
+    lastDate = null;
+    lastSender = null;
+
+    const frag = document.createDocumentFragment();
+    snap.docs.forEach(({ id, data }) => {
+      const els = buildMessageElements(data(), id, false);
+      els.forEach((el) => frag.appendChild(el));
+    });
+
+    // Insert after the load-more button (or at the top)
+    const insertAfter = _loadMoreBtn || null;
+    if (insertAfter && insertAfter.nextSibling) {
+      msgContainer.insertBefore(frag, insertAfter.nextSibling);
+    } else {
+      msgContainer.prepend(frag);
+    }
+
+    // Map ids after insertion
+    snap.docs.forEach(({ id }) => {
+      const row = msgContainer.querySelector(`.msg-row[data-id="${id}"]`);
+      if (row) msgRowMap.set(id, row);
+    });
+
+    // Observe any new lazy images
+    msgContainer.querySelectorAll("img[data-lazy-src]")
+      .forEach((img) => _imgObserver.observe(img));
+
+    // Restore tail rendering state
+    lastDate = savedLastDate;
+    lastSender = savedLastSender;
+
+    // Update cursor
+    _oldestDoc = snap.docs[0];
+
+    if (snap.docs.length < PAGE_SIZE) {
+      _allLoaded = true;
+      removeLoadMoreBtn();
+    } else {
+      ensureLoadMoreBtn();
+      if (_loadMoreBtn) _loadMoreBtn.textContent = "⬆ Load earlier messages";
+    }
+
+    // Restore scroll position so the view doesn't jump
+    if (anchorEl) {
+      const newTop = anchorEl.getBoundingClientRect().top;
+      msgContainer.scrollTop += newTop - anchorTop;
+    }
+  } catch (e) {
+    console.error("Load more failed:", e);
+    if (_loadMoreBtn) _loadMoreBtn.textContent = "⬆ Load earlier messages";
   }
-});
+  _loadingMore = false;
+}
+
+// Scroll-to-top triggers load-more automatically
+msgContainer.addEventListener("scroll", () => {
+  if (msgContainer.scrollTop < 80 && !_loadingMore && !_allLoaded) {
+    loadMoreMessages();
+  }
+}, { passive: true });
+
+// ─── REAL-TIME LISTENER ───────────────────────────────────────────
+// Step 1: fetch the initial tail (last PAGE_SIZE messages) once
+// Step 2: attach a live listener from that point forward for new messages
+messagesRef
+  .orderBy("timestamp", "asc")
+  .limitToLast(PAGE_SIZE)
+  .get()
+  .then((snap) => {
+    if (!snap.empty) {
+      _oldestDoc = snap.docs[0];
+
+      // Render initial batch
+      lastDate = null;
+      lastSender = null;
+      _pendingFirstBatch = snap.docs.map((doc) => ({ msg: doc.data(), id: doc.id }));
+      clearTimeout(_firstBatchTimer);
+      _firstBatchTimer = setTimeout(flushFirstBatch, 60);
+
+      // Show load-more button if there might be older messages
+      if (snap.docs.length === PAGE_SIZE) {
+        // We'll add the button after flush so it's at the top
+        setTimeout(ensureLoadMoreBtn, 120);
+      } else {
+        _allLoaded = true;
+      }
+    } else {
+      // Empty chat
+      loader.style.display = "none";
+      firstLoad = false;
+    }
+
+    // Step 2: live listener — only listens for messages AFTER the last doc we loaded
+    // (or from the beginning if the chat was empty)
+    const liveQuery = snap.empty
+      ? messagesRef.orderBy("timestamp", "asc")
+      : messagesRef.orderBy("timestamp", "asc").startAfter(snap.docs[snap.docs.length - 1]);
+
+    _liveUnsub = liveQuery.onSnapshot((liveSnap) => {
+      liveSnap.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const msg = change.doc.data();
+          // firstLoad guard: the very first onSnapshot fires with 0 docs (we already loaded
+          // history above), so treat everything from the live listener as "new"
+          renderMessage(msg, change.doc.id, true);
+
+          if (msg.sender !== WHO) {
+            sendBrowserNotif(
+              SENDER_DISPLAY[msg.sender] || msg.sender,
+              msg.text,
+              msg.imageUrls ? msg.imageUrls[0] : msg.imageUrl,
+            );
+            if (!document.hidden) updateMyReadTime();
+          }
+        }
+      });
+
+      if (firstLoad) {
+        firstLoad = false;
+        if (_pendingFirstBatch.length === 0) {
+          loader.style.display = "none";
+        }
+      }
+    });
+  })
+  .catch((err) => {
+    console.error("Initial message load failed:", err);
+    loader.style.display = "none";
+    firstLoad = false;
+  });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) updateMyReadTime();
@@ -1481,28 +2025,191 @@ function showLightboxImage() {
   lbNext.disabled = lbIndex === lbImages.length - 1;
 }
 
-lbPrev.addEventListener("click", () => { if (lbIndex > 0) { lbIndex--; showLightboxImage(); } });
-lbNext.addEventListener("click", () => { if (lbIndex < lbImages.length - 1) { lbIndex++; showLightboxImage(); } });
+lbPrev.addEventListener("click", () => {
+  if (lbIndex > 0) {
+    lbIndex--;
+    showLightboxImage();
+  }
+});
+lbNext.addEventListener("click", () => {
+  if (lbIndex < lbImages.length - 1) {
+    lbIndex++;
+    showLightboxImage();
+  }
+});
 
 let lbTouchStartX = null;
-lightboxImg.addEventListener("touchstart", (e) => { lbTouchStartX = e.touches[0].clientX; }, { passive: true });
-lightboxImg.addEventListener("touchend", (e) => {
-  if (lbTouchStartX === null) return;
-  const dx = e.changedTouches[0].clientX - lbTouchStartX;
-  if (Math.abs(dx) > 50) {
-    if (dx < 0 && lbIndex < lbImages.length - 1) { lbIndex++; showLightboxImage(); }
-    else if (dx > 0 && lbIndex > 0) { lbIndex--; showLightboxImage(); }
-  }
-  lbTouchStartX = null;
-}, { passive: true });
+lightboxImg.addEventListener(
+  "touchstart",
+  (e) => {
+    lbTouchStartX = e.touches[0].clientX;
+  },
+  { passive: true },
+);
+lightboxImg.addEventListener(
+  "touchend",
+  (e) => {
+    if (lbTouchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - lbTouchStartX;
+    if (Math.abs(dx) > 50) {
+      if (dx < 0 && lbIndex < lbImages.length - 1) {
+        lbIndex++;
+        showLightboxImage();
+      } else if (dx > 0 && lbIndex > 0) {
+        lbIndex--;
+        showLightboxImage();
+      }
+    }
+    lbTouchStartX = null;
+  },
+  { passive: true },
+);
 
 lightboxClose.addEventListener("click", closeLightbox);
-lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLightbox(); });
+lightbox.addEventListener("click", (e) => {
+  if (e.target === lightbox) closeLightbox();
+});
 function closeLightbox() {
   lightbox.classList.remove("open");
   document.body.style.overflow = "";
   lbImages = [];
   lbIndex = 0;
+}
+
+// ─── IMAGE ACTION MENU (long-press on image) ──────────────────────
+// Small inline popover near the image — doesn't cover reactions or bubble
+async function saveImageToDevice(url) {
+  try {
+    // Fetch the image as a blob so cross-origin download works on mobile
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("fetch failed");
+    const blob = await res.blob();
+    const ext = blob.type.includes("webp")
+      ? "webp"
+      : blob.type.includes("png")
+        ? "png"
+        : "jpg";
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objUrl;
+    a.download = `photo_${Date.now()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(objUrl);
+      a.remove();
+    }, 1000);
+    showMiniNotif("💾 Image saved!");
+  } catch (err) {
+    // Fallback for browsers that block fetch on Cloudinary (CORS) — open in new tab
+    window.open(url, "_blank", "noopener");
+    showMiniNotif("📂 Opened in new tab — long-press to save");
+  }
+}
+
+function openImageActionMenu(imgUrl, imgEl, anchorEl) {
+  // Remove any existing image popover
+  document.querySelectorAll(".img-action-popover").forEach((p) => p.remove());
+
+  const popover = document.createElement("div");
+  popover.className = "img-action-popover";
+
+  // Build items
+  const isBlurred = isImageBlurred(imgUrl);
+  const items = [
+    {
+      icon: "💾",
+      label: "Save Image",
+      fn: async () => {
+        popover.remove();
+        await saveImageToDevice(imgUrl);
+      },
+    },
+    {
+      icon: isBlurred ? "👁️" : "🫣",
+      label: isBlurred ? "Unblur" : "Blur",
+      fn: () => {
+        toggleImageBlur(imgUrl, imgEl);
+        popover.remove();
+      },
+    },
+  ];
+
+  items.forEach(({ icon, label, fn }) => {
+    const btn = document.createElement("button");
+    btn.className = "img-action-popover-btn";
+    btn.innerHTML = `<span>${icon}</span><span>${label}</span>`;
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fn();
+    });
+    popover.appendChild(btn);
+  });
+
+  // Position the popover anchored to the image element
+  document.body.appendChild(popover);
+
+  // Position after insert so we know its dimensions
+  requestAnimationFrame(() => {
+    const rect = anchorEl.getBoundingClientRect();
+    const pw = popover.offsetWidth;
+    const ph = popover.offsetHeight;
+
+    const margin = 10;
+    const screenPadding = 8;
+
+    // vertically center next to image
+    let top = rect.top + rect.height / 2 - ph / 2;
+
+    let left;
+
+    // Your images -> show menu on left
+    if (anchorEl.closest(".msg-row.sent")) {
+      left = rect.left - pw - margin;
+    }
+
+    // Partner images -> show menu on right
+    else {
+      left = rect.right + margin;
+    }
+
+    // If preferred side has no room, flip sides
+    if (left < screenPadding) {
+      left = rect.right + margin;
+    }
+
+    if (left + pw > window.innerWidth - screenPadding) {
+      left = rect.left - pw - margin;
+    }
+
+    // FINAL safety clamp (prevents going off screen)
+    left = Math.max(
+      screenPadding,
+      Math.min(left, window.innerWidth - pw - screenPadding),
+    );
+
+    top = Math.max(
+      screenPadding,
+      Math.min(top, window.innerHeight - ph - screenPadding),
+    );
+
+    popover.style.top = top + "px";
+    popover.style.left = left + "px";
+    popover.classList.add("visible");
+  });
+
+  // Close on outside click
+  const closeOnOutside = (e) => {
+    if (!popover.contains(e.target)) {
+      popover.remove();
+      document.removeEventListener("click", closeOnOutside, true);
+    }
+  };
+  // Delay to avoid the triggering touchend/click closing it immediately
+  setTimeout(
+    () => document.addEventListener("click", closeOnOutside, true),
+    50,
+  );
 }
 
 // ─── CAMERA ──────────────────────────────────────────────────────
@@ -1533,14 +2240,21 @@ snapBtn.addEventListener("click", () => {
   snapCanvas.width = video.videoWidth;
   snapCanvas.height = video.videoHeight;
   const ctx = snapCanvas.getContext("2d");
-  if (facingMode === "user") { ctx.translate(snapCanvas.width, 0); ctx.scale(-1, 1); }
+  if (facingMode === "user") {
+    ctx.translate(snapCanvas.width, 0);
+    ctx.scale(-1, 1);
+  }
   ctx.drawImage(video, 0, 0);
-  snapCanvas.toBlob((blob) => {
-    capturedBlob = blob;
-    cameraPreviewImg.src = URL.createObjectURL(blob);
-    cameraLiveWrap.style.display = "none";
-    cameraPreviewWrap.classList.add("visible");
-  }, "image/jpeg", 0.9);
+  snapCanvas.toBlob(
+    (blob) => {
+      capturedBlob = blob;
+      cameraPreviewImg.src = URL.createObjectURL(blob);
+      cameraLiveWrap.style.display = "none";
+      cameraPreviewWrap.classList.add("visible");
+    },
+    "image/jpeg",
+    0.9,
+  );
 });
 
 retakeBtn.addEventListener("click", () => {
@@ -1551,7 +2265,9 @@ retakeBtn.addEventListener("click", () => {
 
 usePhotoBtn.addEventListener("click", () => {
   if (!capturedBlob) return;
-  const file = new File([capturedBlob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
+  const file = new File([capturedBlob], `photo_${Date.now()}.jpg`, {
+    type: "image/jpeg",
+  });
   addFilesToSelection([file]);
   closeCamera();
 });
@@ -1579,7 +2295,10 @@ async function openCamera() {
 }
 
 function closeCamera() {
-  if (cameraStream) { cameraStream.getTracks().forEach((t) => t.stop()); cameraStream = null; }
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((t) => t.stop());
+    cameraStream = null;
+  }
   cameraModal.classList.remove("open");
   document.body.style.overflow = "";
   if (history.state && history.state.cameraOpen) history.back();
@@ -1589,13 +2308,15 @@ async function registerFCMToken() {
   try {
     const messaging = firebase.messaging();
     const token = await messaging.getToken({
-      vapidKey: "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
+      vapidKey:
+        "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
       serviceWorkerRegistration: swRegistration,
     });
     if (token) {
       const docRef = db.collection("fcmTokens").doc(WHO);
       const doc = await docRef.get();
-      const existingTokens = doc.exists && doc.data().tokens ? doc.data().tokens : [];
+      const existingTokens =
+        doc.exists && doc.data().tokens ? doc.data().tokens : [];
       if (!existingTokens.includes(token)) {
         await docRef.set({
           tokens: [...existingTokens, token],
@@ -1613,6 +2334,10 @@ async function registerFCMToken() {
 // Load the user's private reaction capsule from Firestore (cross-device sync)
 loadCapsuleFromFirestore();
 initNotifications();
+// Safety fallback: always hide loader after 4s in case auth never resolves
+setTimeout(() => {
+  loader.style.display = "none";
+}, 4000);
 if (typeof checkAuthentication === "function") {
-  setTimeout(() => { loader.style.display = "none"; }, 4000);
+  checkAuthentication();
 }
