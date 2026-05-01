@@ -91,7 +91,7 @@ body {
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
-  position: relative; /* typing bubble anchors to this */
+  position: relative;
 }
 
 /* ─── HEADER ─── */
@@ -302,8 +302,6 @@ body {
   will-change: scroll-position;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  /* Disable browser scroll anchoring — we manage scrollTop manually
-     in loadMoreMessages to prevent content-load jumps */
   overflow-anchor: none;
   background:
     radial-gradient(
@@ -423,11 +421,6 @@ body {
   flex-direction: column;
   gap: 3px;
   position: relative;
-  /* padding-bottom is added dynamically via .has-reactions class */
-}
-/* When reactions are present, bubble-wrap needs extra space below for the pills */
-.bubble-wrap.has-reactions {
-  /* spacing handled by reaction-row margin-bottom in normal flow */
 }
 .msg-row.sent .bubble-wrap {
   align-items: flex-end;
@@ -444,7 +437,6 @@ body {
   word-break: break-word;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  /* overflow visible so reaction pills can peek below the bubble edge */
   overflow: visible;
 }
 .msg-row.sent .bubble {
@@ -505,7 +497,6 @@ body {
 }
 .reply-preview-text {
   opacity: 0.75;
-  /* max 2 lines then ellipsis — prevents long replies blowing out bubble width */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -614,9 +605,17 @@ body {
   object-fit: cover;
   display: block;
   cursor: url("/cursor/Preppy-Pinky-Spider-Man-Arrow--p.png"), pointer;
-  transition: filter 0.2s;
+  transition: filter 0.35s ease;
   position: relative;
   background: linear-gradient(135deg, var(--rose-light), var(--rose-pale));
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none;
+  user-drag: none;
+  /* pan-y: lets vertical scroll work natively while JS handles taps */
+  touch-action: pan-y;
+  pointer-events: auto;
 }
 .img-grid.count-1 .grid-img {
   aspect-ratio: auto;
@@ -642,6 +641,9 @@ body {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 .more-overlay {
   position: absolute;
@@ -948,7 +950,6 @@ body {
   opacity: 1;
   pointer-events: all;
 }
-/* When only showing arrow (no badge), keep it circular */
 #scroll-to-bottom:not(:has(.unread-badge)) {
   min-width: 42px;
   padding: 0;
@@ -1118,7 +1119,7 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.88);
+  background: rgba(0, 0, 0, 0.92);
   z-index: 9998;
   justify-content: center;
   align-items: center;
@@ -1127,14 +1128,127 @@ body {
 }
 #lightbox.open {
   display: flex;
+  animation: lbFadeIn 0.2s ease;
 }
-#lightbox img {
+@keyframes lbFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ─── LIGHTBOX IMAGE WRAPPER + CLICK ZONE ARROWS ─── */
+#lb-img-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 92vw;
+  max-height: 85vh;
+}
+
+#lightbox-img {
   max-width: 92vw;
   max-height: 85vh;
   border-radius: 16px;
   box-shadow: 0 0 50px rgba(255, 182, 193, 0.3);
   object-fit: contain;
+  display: block;
+  cursor: pointer;
+  /* Image fade transition when switching */
+  transition: opacity 0.18s ease;
 }
+#lightbox-img.lb-fade {
+  animation: lbImgFade 0.22s ease;
+}
+@keyframes lbImgFade {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Click zone buttons on left/right of lightbox image */
+.lb-img-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+#lb-img-prev {
+  left: 0;
+  justify-content: flex-start;
+  border-radius: 16px 0 0 16px;
+}
+#lb-img-next {
+  right: 0;
+  justify-content: flex-end;
+  border-radius: 0 16px 16px 0;
+}
+.lb-img-zone:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.lb-img-zone:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+.lb-img-zone.lb-zone-hidden {
+  display: none;
+}
+
+/* Arrow indicators inside click zones */
+.lb-zone-arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition:
+    background 0.15s,
+    transform 0.15s;
+  /* Only show on hover of the zone */
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    transform 0.15s;
+}
+.lb-img-zone:hover .lb-zone-arrow {
+  opacity: 1;
+}
+/* Always show on touch devices */
+@media (hover: none) {
+  .lb-zone-arrow {
+    opacity: 0.6;
+  }
+}
+.lb-img-zone:active .lb-zone-arrow {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.28);
+}
+
 #lightbox-close {
   position: fixed;
   top: 20px;
@@ -1151,6 +1265,7 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s;
+  z-index: 10;
 }
 #lightbox-close:hover {
   background: rgba(255, 255, 255, 0.3);
@@ -1335,24 +1450,20 @@ body {
   color: var(--rose);
 }
 
-/* ─── REACTION PILLS (below bubble, above timestamp) ─── */
-/* .reaction-row sits in normal flow between .bubble and .msg-time
-   so it naturally pushes the timestamp down — no overlap. */
+/* ─── REACTION PILLS (below bubble) ─── */
 .reaction-row {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
-  margin-top: -6px; /* slight overlap up into the bubble edge */
+  margin-top: -6px;
   margin-bottom: 2px;
   pointer-events: auto;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.12));
 }
-/* sent bubble → pills align right */
 .msg-row.sent .reaction-row {
   justify-content: flex-end;
   padding-right: 4px;
 }
-/* recv bubble → pills align left */
 .msg-row.recv .reaction-row {
   justify-content: flex-start;
   padding-left: 4px;
@@ -1575,21 +1686,19 @@ body {
   transition: opacity 0.18s ease;
   z-index: 50;
 }
-.msg-row:hover .msg-hover-actions {
+.msg-row:hover .msg-hover-actions,
+.msg-hover-actions.pinned {
   opacity: 1;
   pointer-events: all;
 }
 
-/* sent: appears to the left of the bubble-wrap */
 .actions-sent {
   right: calc(100% + 6px);
 }
-/* recv: appears to the right of the bubble-wrap */
 .actions-recv {
   left: calc(100% + 6px);
 }
 
-/* The three-dot trigger button */
 .msg-actions-trigger {
   background: #fff;
   border: 1.5px solid rgba(232, 99, 138, 0.25);
@@ -1613,7 +1722,6 @@ body {
   line-height: 1;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
-  /* nudge dots to look visually centered */
   padding-bottom: 3px;
 }
 .msg-actions-trigger:hover {
@@ -1628,10 +1736,10 @@ body {
   box-shadow: 0 4px 14px rgba(204, 51, 102, 0.22);
 }
 
-/* Dropdown menu */
 .msg-actions-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
+  padding-top: 6px;
   background: #fff;
   border: 1.5px solid rgba(232, 99, 138, 0.18);
   border-radius: 16px;
@@ -1652,12 +1760,10 @@ body {
   z-index: 300;
   white-space: nowrap;
 }
-/* sent messages: dropdown opens to the right of the dot button */
 .actions-sent .msg-actions-dropdown {
   left: 0;
   transform-origin: top left;
 }
-/* recv messages: dropdown opens to the left of the dot button */
 .actions-recv .msg-actions-dropdown {
   right: 0;
   transform-origin: top right;
@@ -1668,7 +1774,6 @@ body {
   pointer-events: all;
 }
 
-/* Individual menu items */
 .msg-action-item {
   display: flex;
   align-items: center;
@@ -1697,7 +1802,6 @@ body {
   background: rgba(232, 99, 138, 0.2);
 }
 
-/* Icon badge inside each menu item */
 .action-icon {
   width: 22px;
   height: 22px;
@@ -1711,7 +1815,6 @@ body {
   transition: background 0.13s;
 }
 
-/* Divider between menu items */
 .msg-action-divider {
   height: 1px;
   background: rgba(232, 99, 138, 0.1);
@@ -1719,12 +1822,12 @@ body {
   border: none;
 }
 
-/* Only show on real pointer devices (hides on touch screens) */
 @media (hover: none) {
   .msg-hover-actions {
     display: none !important;
   }
 }
+
 /* ─── REACTION CAPSULE EDITOR — DEFAULT SLOT ─── */
 .reaction-picker-default-row {
   display: flex;
@@ -1845,7 +1948,6 @@ img[data-lazy-src] {
 /* ─── BLURRED IMAGE ─── */
 .grid-img.img-blurred {
   filter: blur(18px) brightness(0.9);
-  transition: filter 0.3s ease;
 }
 .grid-img.img-blurred:hover {
   filter: blur(18px) brightness(1);

@@ -7,7 +7,6 @@ const SENDER_DISPLAY = { mikica: "Микица", kikica: "Кикица" };
 const AVATARS = { mikica: "💙", kikica: "💗" };
 const CHAT_ID = "mikica_kikica_chat";
 
-// Set header to show partner's name (not both names)
 const _partnerName = WHO === "mikica" ? "Кикица 💗" : "Микица 💙";
 const _hdrEl = document.getElementById("header-name");
 if (_hdrEl) _hdrEl.textContent = _partnerName;
@@ -17,6 +16,44 @@ const storage = firebase.storage();
 const messagesRef = db.collection("chats").doc(CHAT_ID).collection("messages");
 const typingRef = db.collection("chats").doc(CHAT_ID).collection("typing");
 const readRef = db.collection("chats").doc(CHAT_ID).collection("readStatus");
+
+// ─── BLURRED IMAGES STATE ─────────────────────────────────────────
+const blurRef = db
+  .collection("chats")
+  .doc(CHAT_ID)
+  .collection("blurredImages")
+  .doc("state");
+let _blurredImages = new Set();
+
+blurRef.onSnapshot((snap) => {
+  if (snap.exists) {
+    _blurredImages = new Set(snap.data().urls || []);
+  } else {
+    _blurredImages = new Set();
+  }
+  document.querySelectorAll(".grid-img[data-img-url]").forEach((img) => {
+    img.classList.toggle("img-blurred", _blurredImages.has(img.dataset.imgUrl));
+  });
+});
+
+function isImageBlurred(url) {
+  return _blurredImages.has(url);
+}
+
+async function toggleImageBlur(url, imgEl) {
+  if (_blurredImages.has(url)) {
+    _blurredImages.delete(url);
+    if (imgEl) imgEl.classList.remove("img-blurred");
+  } else {
+    _blurredImages.add(url);
+    if (imgEl) imgEl.classList.add("img-blurred");
+  }
+  try {
+    await blurRef.set({ urls: [..._blurredImages] });
+  } catch (e) {
+    console.warn("Could not save blur state:", e);
+  }
+}
 
 // ─── ELEMENTS ────────────────────────────────────────────────────
 const msgContainer = document.getElementById("messages-container");
@@ -83,21 +120,18 @@ let unreadWhileScrolled = 0;
 let lastDate = null;
 let lastSender = null;
 
-// Message id → DOM row (for reply jump-to, tick updates)
 const msgRowMap = new Map();
 
 // ─── REPLY STATE ─────────────────────────────────────────────────
-let replyingTo = null; // { id, sender, text, imageUrl }
+let replyingTo = null;
 
 // ─── REACTION STATE ───────────────────────────────────────────────
 const DEFAULT_QUICK_REACTIONS = ["❤️", "😂", "😘", "🥺", "😍", "👍"];
 const DEFAULT_DOUBLE_TAP_EMOJI = "❤️";
 
-// In-memory capsule — loaded from Firestore once on init, updated on save
 let _capsuleEmojis = [...DEFAULT_QUICK_REACTIONS];
 let _doubleTapEmoji = DEFAULT_DOUBLE_TAP_EMOJI;
 
-// Firestore ref for this user's private capsule (lives under users/{WHO}/capsule/settings)
 const capsuleRef = db
   .collection("users")
   .doc(WHO)
@@ -118,7 +152,6 @@ async function loadCapsuleFromFirestore() {
     }
   } catch (e) {
     console.warn("Could not load capsule from Firestore, using defaults:", e);
-    // Fallback: try localStorage
     try {
       const saved = localStorage.getItem("mk_quick_reactions");
       if (saved) _capsuleEmojis = JSON.parse(saved);
@@ -129,7 +162,6 @@ async function loadCapsuleFromFirestore() {
 async function saveCapsuleToFirestore(emojis, doubleTapEmoji) {
   _capsuleEmojis = emojis;
   _doubleTapEmoji = doubleTapEmoji;
-  // Also write to localStorage as instant offline cache
   try {
     localStorage.setItem("mk_quick_reactions", JSON.stringify(emojis));
   } catch (_) {}
@@ -151,7 +183,6 @@ function getDoubleTapEmoji() {
   return _doubleTapEmoji;
 }
 
-// Legacy shim — still used by picker to save individual slots
 function saveQuickReactions(arr) {
   saveCapsuleToFirestore(arr, _doubleTapEmoji);
 }
@@ -255,7 +286,6 @@ function checkScrollPosition() {
   } else {
     scrollToBottomBtn.classList.add("visible");
     if (unreadWhileScrolled > 0) {
-      // Show "N new ↓" label inside the button
       scrollToBottomBtn.textContent = "";
       const countStr =
         unreadWhileScrolled > 99 ? "99+" : String(unreadWhileScrolled);
@@ -551,12 +581,10 @@ clearAllBtn.addEventListener("click", () => {
 function handleTyping() {
   if (!isTyping) {
     isTyping = true;
-    typingRef
-      .doc(WHO)
-      .set({
-        typing: true,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      });
+    typingRef.doc(WHO).set({
+      typing: true,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    });
   }
   clearTimeout(typingTimeout);
   typingTimeout = setTimeout(() => {
@@ -814,7 +842,6 @@ function flushFirstBatch() {
   });
   msgContainer.appendChild(frag);
 
-  // Register lazy images with observer after DOM insertion
   msgContainer
     .querySelectorAll("img[data-lazy-src]")
     .forEach((img) => _imgObserver.observe(img));
@@ -822,7 +849,6 @@ function flushFirstBatch() {
   _pendingFirstBatch = [];
   _firstBatchTimer = null;
 
-  // Use double-rAF so layout is fully calculated before scrolling
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       msgContainer.scrollTop = msgContainer.scrollHeight;
@@ -849,7 +875,6 @@ function renderMessage(msg, id, animate = true) {
   els.forEach((el) => frag.appendChild(el));
   msgContainer.appendChild(frag);
 
-  // Observe any new lazy images
   msgContainer
     .querySelectorAll("img[data-lazy-src]")
     .forEach((img) => _imgObserver.observe(img));
@@ -896,20 +921,16 @@ function buildMessageElements(msg, id, animate) {
   row.dataset.id = id || "";
   if (isSent) row.dataset.ts = tsMs;
 
-  // Swipe-to-reply icon placeholder
   const swipeIcon = document.createElement("span");
   swipeIcon.className = "swipe-reply-icon";
   swipeIcon.textContent = "↩";
   row.appendChild(swipeIcon);
 
-  // Avatar — Instagram style: no avatar for sent messages, always visible for received
   const avatar = document.createElement("div");
   avatar.className = "bubble-avatar";
   if (isSent) {
-    // Sent messages: no avatar at all — keep element for layout spacing but empty & hidden
     avatar.style.display = "none";
   } else {
-    // Received messages: always show avatar (every message, not just first in group)
     avatar.textContent = AVATARS[msg.sender] || "👤";
   }
 
@@ -919,7 +940,7 @@ function buildMessageElements(msg, id, animate) {
   const bubble = document.createElement("div");
   bubble.className = "bubble";
 
-  // Reply preview (quoted message)
+  // Reply preview
   if (msg.replyTo) {
     const replyDiv = document.createElement("div");
     replyDiv.className = "reply-preview";
@@ -944,7 +965,6 @@ function buildMessageElements(msg, id, animate) {
 
     replyDiv.appendChild(replySndr);
     replyDiv.appendChild(replyTxt);
-
     replyDiv.addEventListener("click", () => jumpToMessage(msg.replyTo.id));
     bubble.appendChild(replyDiv);
   }
@@ -955,6 +975,7 @@ function buildMessageElements(msg, id, animate) {
     : msg.imageUrl
       ? [msg.imageUrl]
       : [];
+
   if (images.length > 0) {
     const gridWrap = document.createElement("div");
     gridWrap.className = "img-grid-wrap";
@@ -985,7 +1006,8 @@ function buildMessageElements(msg, id, animate) {
       gridImg.addEventListener("load", () => gridImg.classList.add("loaded"), {
         once: true,
       });
-      gridImg.src = images[i];
+      gridImg.dataset.lazySrc = images[i];
+      gridImg.dataset.imgUrl = images[i];
 
       if (i === MAX_SHOWN - 1 && images.length > MAX_SHOWN) {
         const cellWrap = document.createElement("div");
@@ -1001,38 +1023,67 @@ function buildMessageElements(msg, id, animate) {
         grid.appendChild(cellWrap);
       } else {
         const idx = i;
-        // ── Tap/click with double-tap detection for reactions ──────────────
-        // On touch: delay single-tap 220ms to check if a double-tap is coming.
-        // Double-tap reacts; single-tap opens lightbox. On desktop (click), open immediately.
+        const imgUrl = images[i];
+
+        if (isImageBlurred(imgUrl)) gridImg.classList.add("img-blurred");
+
+        // ── FIX: Unified touch state per image ────────────────────
+        // All touch interactions handled here cleanly.
+        // We do NOT stopPropagation on touchstart/touchmove so that:
+        //   1. Swipe-to-reply on the row still works
+        //   2. Bubble long-press reaction still works (via row-level handler)
+        // We only handle: long-press → image action menu, double-tap → react, single tap → lightbox
+
         let imgTapTimer = null;
         let imgLastTap = 0;
-
-        // Long-press guard — if the user holds the image, the bubble's long-press
-        // timer will fire (480ms) and open the reaction bar. We must cancel the
-        // single-tap lightbox timer so the image doesn't also open on finger-up.
         let imgLongPressTimer = null;
         let imgLongPressFired = false;
+        let imgTouchStartX = 0;
+        let imgTouchStartY = 0;
+        let imgMoved = false;
+
+        // Desktop mouse state
+        let imgMouseLongFired = false;
+        let imgMouseLongTimer = null;
+        let imgMouseClickBlocked = false;
+
+        gridImg.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        });
 
         gridImg.addEventListener(
           "touchstart",
-          () => {
+          (e) => {
+            // Do NOT stopPropagation — let swipe-to-reply on row work
+            imgTouchStartX = e.touches[0].clientX;
+            imgTouchStartY = e.touches[0].clientY;
+            imgMoved = false;
             imgLongPressFired = false;
-            // Mirror the bubble long-press threshold so they cancel together
+            clearTimeout(imgLongPressTimer);
             imgLongPressTimer = setTimeout(() => {
-              imgLongPressFired = true;
-              imgLongPressTimer = null;
-              clearTimeout(imgTapTimer);
-              imgTapTimer = null;
-            }, 460); // slightly before bubble fires (480ms) so timer is cleared in time
+              if (!imgMoved) {
+                imgLongPressFired = true;
+                if (navigator.vibrate) navigator.vibrate(30);
+                openImageActionMenu(imgUrl, gridImg, gridImg);
+              }
+            }, 600);
           },
           { passive: true },
         );
 
         gridImg.addEventListener(
           "touchmove",
-          () => {
-            clearTimeout(imgLongPressTimer);
-            imgLongPressTimer = null;
+          (e) => {
+            // Do NOT stopPropagation — let swipe-to-reply work
+            const dy = Math.abs(e.touches[0].clientY - imgTouchStartY);
+            const dx = Math.abs(e.touches[0].clientX - imgTouchStartX);
+            if (dy > 10 || dx > 10) {
+              imgMoved = true;
+              clearTimeout(imgLongPressTimer);
+              clearTimeout(imgTapTimer);
+              imgTapTimer = null;
+            }
           },
           { passive: true },
         );
@@ -1041,8 +1092,10 @@ function buildMessageElements(msg, id, animate) {
           "touchcancel",
           () => {
             clearTimeout(imgLongPressTimer);
-            imgLongPressTimer = null;
+            clearTimeout(imgTapTimer);
+            imgTapTimer = null;
             imgLongPressFired = false;
+            imgMoved = false;
           },
           { passive: true },
         );
@@ -1051,61 +1104,61 @@ function buildMessageElements(msg, id, animate) {
           "touchend",
           (e) => {
             clearTimeout(imgLongPressTimer);
-            imgLongPressTimer = null;
 
-            // Long-press fired — bubble will handle the reaction bar, do nothing here
-            if (imgLongPressFired) {
+            // If moved (scrolling/swiping) or long-press fired → do nothing
+            if (imgMoved || imgLongPressFired) {
               imgLongPressFired = false;
-              e.stopPropagation();
               return;
             }
+
+            // Prevent the default click from also firing (avoids double-open)
+            e.preventDefault();
 
             const now = Date.now();
             const gap = now - imgLastTap;
             imgLastTap = now;
 
-            if (gap < 280 && gap > 0) {
-              // ── Double-tap on image → react ──
+            if (gap < 350 && gap > 30) {
+              // Double tap → react
               clearTimeout(imgTapTimer);
               imgTapTimer = null;
-              e.preventDefault();
-              e.stopPropagation();
               if (id) {
-                const emoji = getDoubleTapEmoji();
-                saveReaction(id, emoji);
-                showHeartBurst(gridImg, emoji);
+                saveReaction(id, getDoubleTapEmoji());
+                showHeartBurst(gridImg, getDoubleTapEmoji());
               }
             } else {
-              // ── Single tap → wait to confirm no second tap follows ──
+              // Single tap → open lightbox after delay to catch double-tap
               clearTimeout(imgTapTimer);
               imgTapTimer = setTimeout(() => {
                 imgTapTimer = null;
                 openLightbox(images, idx);
-              }, 230);
+              }, 270);
             }
           },
           { passive: false },
         );
 
-        // Desktop click — open immediately; block ghost click on touch
-        let imgTouchHandled = false;
-        gridImg.addEventListener(
-          "touchstart",
-          () => {
-            imgTouchHandled = false;
-          },
-          { passive: true },
-        );
-        gridImg.addEventListener(
-          "touchend",
-          () => {
-            imgTouchHandled = true;
-          },
-          { passive: true },
-        );
+        // Desktop: long press → image action menu
+        gridImg.addEventListener("mousedown", (e) => {
+          e.stopPropagation(); // prevent bubble long-press on desktop for images
+          imgMouseLongFired = false;
+          imgMouseClickBlocked = false;
+          imgMouseLongTimer = setTimeout(() => {
+            imgMouseLongFired = true;
+            imgMouseClickBlocked = true;
+            openImageActionMenu(imgUrl, gridImg, gridImg);
+          }, 500);
+        });
+        gridImg.addEventListener("mouseup", () => {
+          clearTimeout(imgMouseLongTimer);
+        });
+        gridImg.addEventListener("mouseleave", () => {
+          clearTimeout(imgMouseLongTimer);
+        });
         gridImg.addEventListener("click", (e) => {
-          if (imgTouchHandled) {
-            imgTouchHandled = false;
+          e.stopPropagation();
+          if (imgMouseClickBlocked) {
+            imgMouseClickBlocked = false;
             return;
           }
           openLightbox(images, idx);
@@ -1128,7 +1181,6 @@ function buildMessageElements(msg, id, animate) {
 
   wrap.appendChild(bubble);
 
-  // Time + ticks
   const timeRow = document.createElement("span");
   timeRow.className = "msg-time";
   timeRow.appendChild(
@@ -1153,17 +1205,14 @@ function buildMessageElements(msg, id, animate) {
   row.appendChild(avatar);
   row.appendChild(wrap);
 
-  // Attach swipe-to-reply gesture
   attachSwipeReply(row, msg, id || "");
 
-  // Attach reactions (long-press bar + double-tap heart)
   if (id) {
     attachReactions(row, msg, id);
     if (msg.reactions && Object.keys(msg.reactions).length > 0) {
       renderReactions(wrap, msg.reactions, id);
     }
     watchReactions(id, wrap);
-    // Desktop 3-dot hover menu
     attachHoverActions(row, msg, id);
   }
 
@@ -1202,8 +1251,6 @@ function renderReactions(wrap, reactions, msgId) {
     counts[emoji].users.push(user);
   }
 
-  // Reactions are absolutely positioned overlapping the bottom of .bubble-wrap
-  // We insert them INSIDE bubble-wrap (not after), anchored to the bubble bottom
   const row = document.createElement("div");
   row.className = "reaction-row";
 
@@ -1228,8 +1275,6 @@ function renderReactions(wrap, reactions, msgId) {
     row.appendChild(pill);
   }
 
-  // Insert reaction-row BETWEEN .bubble and .msg-time so it stays in normal
-  // flow and pushes the timestamp down rather than overlapping it.
   const bubble = wrap.querySelector(".bubble");
   const msgTime = wrap.querySelector(".msg-time");
   if (bubble && msgTime) {
@@ -1307,11 +1352,8 @@ function openReactionPicker(msgId, row) {
   title.textContent = "React with…";
   sheet.appendChild(title);
 
-  // ── Mode: "react" (tap emoji → react to message) or "edit" (tap slot → pick replacement) ──
-  // Default mode is react. Tapping a capsule slot switches to edit mode for that slot.
-  let editMode = null; // null = react mode, "slot-N" = editing slot N, "default" = editing default emoji
+  let editMode = null;
 
-  // ── Capsule section ──
   const capsuleLabel = document.createElement("div");
   capsuleLabel.className = "reaction-picker-section-label";
   capsuleLabel.textContent = "Your capsule — tap a slot to edit it";
@@ -1320,7 +1362,7 @@ function openReactionPicker(msgId, row) {
   const quickRow = document.createElement("div");
   quickRow.className = "reaction-picker-quick-row";
   const currentQuick = getQuickReactions();
-  const workingQuick = [...currentQuick]; // local copy for editing, only saved on Done
+  const workingQuick = [...currentQuick];
 
   function renderQuickSlots() {
     quickRow.innerHTML = "";
@@ -1332,12 +1374,7 @@ function openReactionPicker(msgId, row) {
       slot.dataset.slotIdx = idx;
       if (editMode === `slot-${idx}`) slot.classList.add("active-slot");
       slot.addEventListener("click", () => {
-        if (editMode === `slot-${idx}`) {
-          // deselect
-          editMode = null;
-        } else {
-          editMode = `slot-${idx}`;
-        }
+        editMode = editMode === `slot-${idx}` ? null : `slot-${idx}`;
         renderQuickSlots();
         updateModeHint();
       });
@@ -1347,7 +1384,6 @@ function openReactionPicker(msgId, row) {
   renderQuickSlots();
   sheet.appendChild(quickRow);
 
-  // ── Default double-tap emoji ──
   const defaultLabel = document.createElement("div");
   defaultLabel.className = "reaction-picker-section-label";
   defaultLabel.textContent = "Double-tap emoji (shown on double-tap)";
@@ -1385,7 +1421,6 @@ function openReactionPicker(msgId, row) {
   defaultRow.appendChild(defaultSlot);
   sheet.appendChild(defaultRow);
 
-  // ── Mode hint ──
   const modeHint = document.createElement("div");
   modeHint.className = "reaction-picker-subtitle";
   function updateModeHint() {
@@ -1417,7 +1452,6 @@ function openReactionPicker(msgId, row) {
     btn.textContent = emoji;
     btn.addEventListener("click", () => {
       if (editMode === null) {
-        // React mode — react to message and close
         saveReaction(msgId, emoji);
         overlay.remove();
       } else if (editMode === "default") {
@@ -1439,7 +1473,6 @@ function openReactionPicker(msgId, row) {
   });
   sheet.appendChild(grid);
 
-  // ── Done — save capsule changes to Firestore ──
   const closeBtn = document.createElement("button");
   closeBtn.className = "reaction-picker-close";
   closeBtn.textContent = "Save & Close";
@@ -1452,7 +1485,6 @@ function openReactionPicker(msgId, row) {
   overlay.appendChild(sheet);
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) {
-      // Save on dismiss too
       saveCapsuleToFirestore(workingQuick, workingDefault);
       overlay.remove();
     }
@@ -1461,14 +1493,12 @@ function openReactionPicker(msgId, row) {
   requestAnimationFrame(() => overlay.classList.add("visible"));
 }
 
-// Close reaction bar on outside tap
 document.addEventListener("click", (e) => {
   if (activeReactionBar && !activeReactionBar.contains(e.target)) {
     closeReactionBar();
   }
 });
 
-// Single global handler to close any open 3-dot dropdown (replaces per-message listeners)
 document.addEventListener("click", (e) => {
   if (
     !e.target.closest(".msg-actions-trigger") &&
@@ -1484,45 +1514,53 @@ document.addEventListener("click", (e) => {
 });
 
 // ─── ATTACH REACTIONS TO A ROW ────────────────────────────────────
+// On mobile: long-press on bubble (including over images) opens reaction bar.
+// Images handle their own double-tap/single-tap via touch handlers above.
+// We listen at the bubble level but skip if the exact target is a grid-img
+// (the image touchend already called e.preventDefault() so no click fires,
+// but touchstart/touchmove still bubble up for swipe detection).
 function attachReactions(row, msg, msgId) {
   const bubble = row.querySelector(".bubble");
 
-  // ── Per-bubble gesture state ──
-  let _bubbleLongPressTimer = null;
-  let _bubbleLongPressFired = false;
-  let _bubbleLastTap = 0; // timestamp of last touchend
-  let _bubbleLastTouchStart = 0; // timestamp of last touchstart
+  let _lp = null;
+  let _lpFired = false;
+  let _lastTap = 0;
+  let _moved = false;
+  let _startX = 0;
+  let _startY = 0;
 
-  // LONG-PRESS (touch) ─────────────────────────────────────────────
-  // Do NOT start the long-press timer if a tap was registered very recently —
-  // that means we are inside a double-tap window and must not open the capsule.
   bubble.addEventListener(
     "touchstart",
-    () => {
-      _bubbleLongPressFired = false;
-      _bubbleLastTouchStart = Date.now();
+    (e) => {
+      // Images handle their own logic; still allow long-press on image area for reaction bar
+      _moved = false;
+      _lpFired = false;
+      _startX = e.touches[0].clientX;
+      _startY = e.touches[0].clientY;
+      const sinceLastTap = Date.now() - _lastTap;
+      if (sinceLastTap < 350) return;
 
-      // If the last touchend was <320ms ago, user is double-tapping — skip long-press
-      if (Date.now() - _bubbleLastTap < 320) return;
-
-      _bubbleLongPressTimer = setTimeout(() => {
-        _bubbleLongPressTimer = null;
-        _bubbleLongPressFired = true;
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
+      _lp = setTimeout(() => {
+        _lp = null;
+        if (_moved) return;
+        _lpFired = true;
         openReactionBar(msgId, row, msg);
-      }, 500);
+      }, 650);
     },
     { passive: true },
   );
 
   bubble.addEventListener(
     "touchmove",
-    () => {
-      clearTimeout(_bubbleLongPressTimer);
-      _bubbleLongPressTimer = null;
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
+    (e) => {
+      const t = e.touches[0];
+      const dx = Math.abs(t.clientX - _startX);
+      const dy = Math.abs(t.clientY - _startY);
+      if (dx > 10 || dy > 10) {
+        _moved = true;
+        clearTimeout(_lp);
+        _lp = null;
+      }
     },
     { passive: true },
   );
@@ -1530,59 +1568,59 @@ function attachReactions(row, msg, msgId) {
   bubble.addEventListener(
     "touchcancel",
     () => {
-      clearTimeout(_bubbleLongPressTimer);
-      _bubbleLongPressTimer = null;
-      _bubbleLongPressFired = false;
+      clearTimeout(_lp);
+      _lp = null;
+      _lpFired = false;
     },
     { passive: true },
   );
 
-  // DOUBLE-TAP (touch) ─────────────────────────────────────────────
-  // Fires on touchend. Cancels the long-press timer first — so a normal
-  // tap that lifts before 500ms never opens the capsule.
-  // The capsule ONLY opens when the long-press timer fires (above).
   bubble.addEventListener(
     "touchend",
     (e) => {
-      clearTimeout(_bubbleLongPressTimer);
-      _bubbleLongPressTimer = null;
+      clearTimeout(_lp);
+      _lp = null;
 
-      // Long-press already opened the capsule — ignore this touchend entirely
-      if (_bubbleLongPressFired) {
-        _bubbleLongPressFired = false;
+      if (_moved) return;
+      if (_lpFired) {
+        _lpFired = false;
         return;
       }
 
-      const now = Date.now();
-      const gap = now - _bubbleLastTap;
-      _bubbleLastTap = now;
+      // Only handle double-tap-to-react on non-image parts of the bubble
+      // (images handle their own double-tap)
+      if (e.target.classList.contains("grid-img")) return;
 
-      if (gap < 320 && gap > 0) {
+      const now = Date.now();
+      const gap = now - _lastTap;
+      _lastTap = now;
+
+      if (gap < 350 && gap > 30) {
         e.preventDefault();
         e.stopPropagation();
-        const emoji = getDoubleTapEmoji();
-        saveReaction(msgId, emoji);
-        showHeartBurst(bubble, emoji);
+        saveReaction(msgId, getDoubleTapEmoji());
+        showHeartBurst(bubble, getDoubleTapEmoji());
       }
     },
     { passive: false },
   );
 
-  // LONG-PRESS (desktop / mouse) ───────────────────────────────────
-  bubble.addEventListener("mousedown", () => {
-    _bubbleLongPressTimer = setTimeout(() => {
-      _bubbleLongPressTimer = null;
-      _bubbleLongPressFired = true;
+  // Desktop mouse long-press (only on non-image elements)
+  let _mlp = null;
+  bubble.addEventListener("mousedown", (e) => {
+    if (e.target.classList.contains("grid-img")) return; // images handle their own mousedown
+    _mlp = setTimeout(() => {
+      _mlp = null;
       openReactionBar(msgId, row, msg);
-    }, 500);
+    }, 520);
   });
   bubble.addEventListener("mouseup", () => {
-    clearTimeout(_bubbleLongPressTimer);
-    _bubbleLongPressTimer = null;
+    clearTimeout(_mlp);
+    _mlp = null;
   });
   bubble.addEventListener("mouseleave", () => {
-    clearTimeout(_bubbleLongPressTimer);
-    _bubbleLongPressTimer = null;
+    clearTimeout(_mlp);
+    _mlp = null;
   });
 }
 
@@ -1600,17 +1638,13 @@ function showHeartBurst(bubble, emoji) {
 }
 
 // ─── REAL-TIME REACTION UPDATES ───────────────────────────────────
-// Centralized reaction registry — avoids one onSnapshot listener per message.
-// A single collection-level listener handles all reaction updates.
-const _reactionRegistry = new Map(); // msgId → wrap element
-const _lastKnownReactions = new Map(); // msgId → JSON of last known reactions
+const _reactionRegistry = new Map();
+const _lastKnownReactions = new Map();
 
 function watchReactions(msgId, wrap) {
-  // Register the wrap so the central listener can update it.
   _reactionRegistry.set(msgId, wrap);
 }
 
-// One collection-level listener for reaction updates across all messages.
 messagesRef.onSnapshot({ includeMetadataChanges: false }, (snap) => {
   snap.docChanges().forEach((change) => {
     if (change.type === "removed") {
@@ -1636,17 +1670,14 @@ function attachHoverActions(row, msg, msgId) {
   actionsWrap.className =
     "msg-hover-actions " + (isSent ? "actions-sent" : "actions-recv");
 
-  // Three-dot trigger button
   const trigger = document.createElement("button");
   trigger.className = "msg-actions-trigger";
   trigger.title = "Message actions";
   trigger.textContent = "•••";
 
-  // Dropdown menu
   const dropdown = document.createElement("div");
   dropdown.className = "msg-actions-dropdown";
 
-  // React item
   const reactItem = document.createElement("button");
   reactItem.className = "msg-action-item";
   const reactIcon = document.createElement("span");
@@ -1660,11 +1691,9 @@ function attachHoverActions(row, msg, msgId) {
     openReactionBar(msgId, row, msg);
   });
 
-  // Divider
   const divider = document.createElement("hr");
   divider.className = "msg-action-divider";
 
-  // Reply item
   const replyItem = document.createElement("button");
   replyItem.className = "msg-action-item";
   const replyIcon = document.createElement("span");
@@ -1678,25 +1707,97 @@ function attachHoverActions(row, msg, msgId) {
     startReply(msg, msgId);
   });
 
-  dropdown.appendChild(reactItem);
-  dropdown.appendChild(divider);
-  dropdown.appendChild(replyItem);
+  const imgUrls = msg.imageUrls
+    ? msg.imageUrls
+    : msg.imageUrl
+      ? [msg.imageUrl]
+      : [];
+
+  // Blur button — stable DOM nodes, no innerHTML wipe
+  let blurItem = null;
+  let blurIconEl = null;
+  let blurLabelNode = null;
+
+  if (imgUrls.length > 0) {
+    const divider2 = document.createElement("hr");
+    divider2.className = "msg-action-divider";
+
+    const saveItem = document.createElement("button");
+    saveItem.className = "msg-action-item";
+    const saveIcon = document.createElement("span");
+    saveIcon.className = "action-icon";
+    saveIcon.textContent = "💾";
+    saveItem.appendChild(saveIcon);
+    saveItem.appendChild(
+      document.createTextNode(
+        " " + (imgUrls.length > 1 ? "Save Images" : "Save Image"),
+      ),
+    );
+    saveItem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      imgUrls.forEach((url) => saveImageToDevice(url));
+    });
+
+    blurItem = document.createElement("button");
+    blurItem.className = "msg-action-item";
+
+    blurIconEl = document.createElement("span");
+    blurIconEl.className = "action-icon";
+    blurLabelNode = document.createTextNode("");
+
+    blurItem.appendChild(blurIconEl);
+    blurItem.appendChild(blurLabelNode);
+
+    // FIX: listener reads live blur state at click time — stable DOM, no innerHTML wipe
+    blurItem.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeDropdown();
+      imgUrls.forEach((url) => {
+        const el = [...row.querySelectorAll(".grid-img")].find(
+          (img) => img.dataset.imgUrl === url,
+        );
+        toggleImageBlur(url, el || null);
+      });
+    });
+
+    dropdown.appendChild(reactItem);
+    dropdown.appendChild(divider);
+    dropdown.appendChild(replyItem);
+    dropdown.appendChild(divider2);
+    dropdown.appendChild(saveItem);
+    dropdown.appendChild(blurItem);
+  } else {
+    dropdown.appendChild(reactItem);
+    dropdown.appendChild(divider);
+    dropdown.appendChild(replyItem);
+  }
+
+  // FIX: only update text node content, never innerHTML
+  function refreshBlurItem() {
+    if (!blurItem || imgUrls.length === 0) return;
+    const anyBlurred = imgUrls.some((u) => isImageBlurred(u));
+    blurIconEl.textContent = anyBlurred ? "👁️" : "🫣";
+    blurLabelNode.nodeValue = anyBlurred ? " Unblur Image" : " Blur Image";
+  }
 
   function openDropdown() {
-    // Close any other open dropdowns first
-    document.querySelectorAll(".msg-actions-dropdown.open").forEach((d) => {
-      d.classList.remove("open");
-    });
-    document.querySelectorAll(".msg-actions-trigger.open").forEach((t) => {
-      t.classList.remove("open");
-    });
+    document
+      .querySelectorAll(".msg-actions-dropdown.open")
+      .forEach((d) => d.classList.remove("open"));
+    document
+      .querySelectorAll(".msg-actions-trigger.open")
+      .forEach((t) => t.classList.remove("open"));
+    refreshBlurItem();
     trigger.classList.add("open");
     dropdown.classList.add("open");
+    actionsWrap.classList.add("pinned");
   }
 
   function closeDropdown() {
     trigger.classList.remove("open");
     dropdown.classList.remove("open");
+    actionsWrap.classList.remove("pinned");
   }
 
   function toggleDropdown(e) {
@@ -1713,12 +1814,13 @@ function attachHoverActions(row, msg, msgId) {
   actionsWrap.appendChild(trigger);
   actionsWrap.appendChild(dropdown);
 
-  // Attach to the bubble-wrap (not the row) so positioning is relative to the bubble area
   const wrap = row.querySelector(".bubble-wrap");
   wrap.appendChild(actionsWrap);
 }
 
 // ─── SWIPE-TO-REPLY ───────────────────────────────────────────────
+// FIX: Works on both text messages and image messages.
+// Image touchevents no longer stopPropagation, so swipe is detected at row level.
 const SWIPE_THRESHOLD = 55;
 
 function attachSwipeReply(row, msg, id) {
@@ -1832,7 +1934,6 @@ async function loadMoreMessages() {
   _loadingMore = true;
   showTopSpinner();
 
-  // Capture BEFORE inserting — avoids any layout-reflow jump
   const scrollTopBefore = msgContainer.scrollTop;
   const scrollHeightBefore = msgContainer.scrollHeight;
 
@@ -1851,7 +1952,6 @@ async function loadMoreMessages() {
       return;
     }
 
-    // Stash rendering state, reset for older messages, restore after
     const savedLastDate = lastDate;
     const savedLastSender = lastSender;
     lastDate = null;
@@ -1863,7 +1963,6 @@ async function loadMoreMessages() {
       els.forEach((el) => frag.appendChild(el));
     });
 
-    // Insert before the first real child (after spinner slot)
     const firstReal = (() => {
       for (const child of msgContainer.children) {
         if (child.id !== "load-more-spinner") return child;
@@ -1887,8 +1986,6 @@ async function loadMoreMessages() {
     _oldestDoc = snap.docs[0];
     if (snap.docs.length < PAGE_SIZE) _allLoaded = true;
 
-    // ── SCROLL ANCHOR: shift scrollTop by exact height added ──
-    // Runs synchronously so viewport never jumps.
     const heightAdded = msgContainer.scrollHeight - scrollHeightBefore;
     msgContainer.scrollTop = scrollTopBefore + heightAdded;
   } catch (e) {
@@ -1898,7 +1995,6 @@ async function loadMoreMessages() {
   _loadingMore = false;
 }
 
-// Trigger when user scrolls within 200px of the top
 msgContainer.addEventListener(
   "scroll",
   () => {
@@ -1931,7 +2027,6 @@ messagesRef
       firstLoad = false;
     }
 
-    // Live listener only for messages after the initial batch
     const liveQuery = snap.empty
       ? messagesRef.orderBy("timestamp", "asc")
       : messagesRef
@@ -1972,27 +2067,55 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("focus", updateMyReadTime);
 
 // ─── LIGHTBOX ────────────────────────────────────────────────────
+// FIX: prev/next arrows always visible when applicable.
+// FIX: no double-open glitch — touch uses preventDefault so no synthetic click fires.
+// FIX: click zones on image itself for navigation.
+
 function openLightbox(images, startIdx = 0) {
   lbImages = images;
   lbIndex = startIdx;
+  closeReactionBar();
   lightbox.classList.add("open");
   document.body.style.overflow = "hidden";
   showLightboxImage();
-  // Push a history entry so the phone's back-swipe closes the lightbox
-  // instead of navigating away from the page.
   history.pushState({ lightboxOpen: true }, "");
 }
 
 function showLightboxImage() {
+  lightboxImg.classList.remove("lb-fade");
+  void lightboxImg.offsetWidth; // reflow to restart animation
+  lightboxImg.classList.add("lb-fade");
   lightboxImg.src = lbImages[lbIndex];
+
+  const navEl = document.getElementById("lightbox-nav");
+
   if (lbImages.length > 1) {
     lightboxCounter.textContent = `${lbIndex + 1} / ${lbImages.length}`;
-    document.getElementById("lightbox-nav").style.display = "flex";
+    navEl.style.display = "flex";
   } else {
-    document.getElementById("lightbox-nav").style.display = "none";
+    navEl.style.display = "none";
   }
+
   lbPrev.disabled = lbIndex === 0;
   lbNext.disabled = lbIndex === lbImages.length - 1;
+
+  // FIX: Update image click-zone arrows visibility
+  const lbImgPrev = document.getElementById("lb-img-prev");
+  const lbImgNext = document.getElementById("lb-img-next");
+  if (lbImgPrev) {
+    if (lbImages.length > 1 && lbIndex > 0) {
+      lbImgPrev.classList.remove("lb-zone-hidden");
+    } else {
+      lbImgPrev.classList.add("lb-zone-hidden");
+    }
+  }
+  if (lbImgNext) {
+    if (lbImages.length > 1 && lbIndex < lbImages.length - 1) {
+      lbImgNext.classList.remove("lb-zone-hidden");
+    } else {
+      lbImgNext.classList.add("lb-zone-hidden");
+    }
+  }
 }
 
 lbPrev.addEventListener("click", () => {
@@ -2008,15 +2131,40 @@ lbNext.addEventListener("click", () => {
   }
 });
 
+// Image click-zone arrows (left/right sides of image)
+const lbImgPrevBtn = document.getElementById("lb-img-prev");
+const lbImgNextBtn = document.getElementById("lb-img-next");
+if (lbImgPrevBtn) {
+  lbImgPrevBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (lbIndex > 0) {
+      lbIndex--;
+      showLightboxImage();
+    }
+  });
+}
+if (lbImgNextBtn) {
+  lbImgNextBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (lbIndex < lbImages.length - 1) {
+      lbIndex++;
+      showLightboxImage();
+    }
+  });
+}
+
+// Touch swipe on lightbox
 let lbTouchStartX = null;
-lightboxImg.addEventListener(
+lightbox.addEventListener(
   "touchstart",
   (e) => {
+    if (e.target === lightboxClose) return;
     lbTouchStartX = e.touches[0].clientX;
   },
   { passive: true },
 );
-lightboxImg.addEventListener(
+
+lightbox.addEventListener(
   "touchend",
   (e) => {
     if (lbTouchStartX === null) return;
@@ -2035,18 +2183,145 @@ lightboxImg.addEventListener(
   { passive: true },
 );
 
+// FIX: lightboxImg click only closes (single image) — navigation handled by click zones
+lightboxImg.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (lbImages.length <= 1) {
+    closeLightbox();
+  }
+  // For multiple images, navigation is via the lb-img-prev/next click zone buttons
+});
+
 lightboxClose.addEventListener("click", closeLightbox);
 lightbox.addEventListener("click", (e) => {
   if (e.target === lightbox) closeLightbox();
 });
+
 function closeLightbox() {
   lightbox.classList.remove("open");
   document.body.style.overflow = "";
   lbImages = [];
   lbIndex = 0;
-  // If we pushed a history state on open, pop it — but only if it's still there.
-  // This keeps the history stack clean when the user closes via the X button.
   if (history.state && history.state.lightboxOpen) history.back();
+}
+
+// ─── IMAGE ACTION MENU (long-press on image) ──────────────────────
+async function saveImageToDevice(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("fetch failed");
+    const blob = await res.blob();
+    const ext = blob.type.includes("webp")
+      ? "webp"
+      : blob.type.includes("png")
+        ? "png"
+        : "jpg";
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objUrl;
+    a.download = `photo_${Date.now()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(objUrl);
+      a.remove();
+    }, 1000);
+    showMiniNotif("💾 Image saved!");
+  } catch (err) {
+    window.open(url, "_blank", "noopener");
+    showMiniNotif("📂 Opened in new tab — long-press to save");
+  }
+}
+
+function openImageActionMenu(imgUrl, imgEl, anchorEl) {
+  document.querySelectorAll(".img-action-popover").forEach((p) => p.remove());
+
+  const popover = document.createElement("div");
+  popover.className = "img-action-popover";
+
+  const isBlurred = isImageBlurred(imgUrl);
+  const items = [
+    {
+      icon: "💾",
+      label: "Save Image",
+      fn: async () => {
+        popover.remove();
+        await saveImageToDevice(imgUrl);
+      },
+    },
+    {
+      icon: isBlurred ? "👁️" : "🫣",
+      label: isBlurred ? "Unblur" : "Blur",
+      fn: () => {
+        toggleImageBlur(imgUrl, imgEl);
+        popover.remove();
+        closeReactionBar();
+      },
+    },
+  ];
+
+  items.forEach(({ icon, label, fn }) => {
+    const btn = document.createElement("button");
+    btn.className = "img-action-popover-btn";
+    const iconSpan = document.createElement("span");
+    iconSpan.textContent = icon;
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = label;
+    btn.appendChild(iconSpan);
+    btn.appendChild(labelSpan);
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      fn();
+    });
+    popover.appendChild(btn);
+  });
+
+  document.body.appendChild(popover);
+
+  requestAnimationFrame(() => {
+    const rect = anchorEl.getBoundingClientRect();
+    const pw = popover.offsetWidth;
+    const ph = popover.offsetHeight;
+    const margin = 10;
+    const screenPadding = 8;
+
+    let top = rect.top + rect.height / 2 - ph / 2;
+    let left;
+
+    if (anchorEl.closest(".msg-row.sent")) {
+      left = rect.left - pw - margin;
+    } else {
+      left = rect.right + margin;
+    }
+
+    if (left < screenPadding) left = rect.right + margin;
+    if (left + pw > window.innerWidth - screenPadding)
+      left = rect.left - pw - margin;
+
+    left = Math.max(
+      screenPadding,
+      Math.min(left, window.innerWidth - pw - screenPadding),
+    );
+    top = Math.max(
+      screenPadding,
+      Math.min(top, window.innerHeight - ph - screenPadding),
+    );
+
+    popover.style.top = top + "px";
+    popover.style.left = left + "px";
+    popover.classList.add("visible");
+  });
+
+  const closeOnOutside = (e) => {
+    if (!popover.contains(e.target)) {
+      popover.remove();
+      document.removeEventListener("click", closeOnOutside, true);
+    }
+  };
+  setTimeout(
+    () => document.addEventListener("click", closeOnOutside, true),
+    50,
+  );
 }
 
 // ─── CAMERA ──────────────────────────────────────────────────────
@@ -2116,10 +2391,7 @@ function pushCameraHistoryState() {
 }
 
 window.addEventListener("popstate", (e) => {
-  // Back gesture / back button: close lightbox or camera if open,
-  // without navigating away from the page.
   if (lightbox.classList.contains("open")) {
-    // State already popped by the browser — just close the UI without calling history.back()
     lightbox.classList.remove("open");
     document.body.style.overflow = "";
     lbImages = [];
@@ -2178,7 +2450,6 @@ async function registerFCMToken() {
 }
 
 // ─── INIT ────────────────────────────────────────────────────────
-// Load the user's private reaction capsule from Firestore (cross-device sync)
 loadCapsuleFromFirestore();
 initNotifications();
 if (typeof checkAuthentication === "function") {

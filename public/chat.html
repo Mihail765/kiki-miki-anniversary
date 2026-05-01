@@ -49,7 +49,18 @@
     <!-- LIGHTBOX -->
     <div id="lightbox">
       <button id="lightbox-close">✕</button>
-      <img id="lightbox-img" src="" alt="Full size" />
+
+      <!-- Image wrapper with click-zone arrows -->
+      <div id="lb-img-wrap">
+        <button id="lb-img-prev" class="lb-img-zone lb-zone-hidden" aria-label="Previous image">
+          <span class="lb-zone-arrow">‹</span>
+        </button>
+        <img id="lightbox-img" src="" alt="Full size" />
+        <button id="lb-img-next" class="lb-img-zone lb-zone-hidden" aria-label="Next image">
+          <span class="lb-zone-arrow">›</span>
+        </button>
+      </div>
+
       <div id="lightbox-nav">
         <button class="lb-nav-btn" id="lb-prev">‹</button>
         <span id="lightbox-counter"></span>
@@ -202,10 +213,12 @@
       </div>
     </div>
 
-    <!-- 
+        <!-- 
       Epa ko si tolku zainteresirana ova pod komentarot e canvas se koristi za crtanje so 
       javascript a vo ovaj slucaj go koristam za kameratata 
     -->
+
+
 
     <!-- Hidden canvas for camera snap -->
     <canvas id="snap-canvas" style="display: none"></canvas>
