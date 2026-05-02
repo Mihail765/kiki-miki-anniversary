@@ -74,6 +74,21 @@ function initChat(WHO) {
 
   // ─── ELEMENTS ────────────────────────────────────────────────────
   const msgContainer = document.getElementById("messages-container");
+
+  // ─── SCROLL LOCK (prevents chat scrolling while any menu is open) ───────────
+  let _scrollLocked = false;
+  function lockScroll() {
+    if (_scrollLocked) return;
+    _scrollLocked = true;
+    msgContainer.style.overflow = "hidden";
+    document.body.style.userSelect = "none";
+  }
+  function unlockScroll() {
+    if (!_scrollLocked) return;
+    _scrollLocked = false;
+    msgContainer.style.overflow = "";
+    document.body.style.userSelect = "";
+  }
   const emptyState = document.getElementById("empty-state");
   const msgInput = document.getElementById("msg-input");
   const sendBtn = document.getElementById("send-btn");
@@ -139,6 +154,21 @@ function initChat(WHO) {
 
   const msgRowMap = new Map();
 
+  // ─── GLOBAL IMAGE LIST FOR CROSS-MESSAGE LIGHTBOX NAVIGATION ─────────────
+  // Every time a message with images is rendered, we push its URLs here.
+  // openLightbox() uses this flat list so users can swipe across ALL images.
+  const _allChatImages = []; // { url, msgId }
+  function registerImagesForLightbox(urls, msgId) {
+    urls.forEach((url) => {
+      if (!_allChatImages.find((e) => e.url === url)) {
+        _allChatImages.push({ url, msgId });
+      }
+    });
+  }
+  function globalLightboxIndex(url) {
+    return _allChatImages.findIndex((e) => e.url === url);
+  }
+
   // ─── REPLY STATE ─────────────────────────────────────────────────
   let replyingTo = null;
 
@@ -170,7 +200,7 @@ function initChat(WHO) {
     } catch (e) {
       console.warn("Could not load capsule from Firestore, using defaults:", e);
       try {
-        const saved = localStorage.getItem("mk_quick_reactions");
+        const saved = localStorage.getItem(`mk_quick_reactions_${WHO}`);
         if (saved) _capsuleEmojis = JSON.parse(saved);
       } catch (_) {}
     }
@@ -180,7 +210,7 @@ function initChat(WHO) {
     _capsuleEmojis = emojis;
     _doubleTapEmoji = doubleTapEmoji;
     try {
-      localStorage.setItem("mk_quick_reactions", JSON.stringify(emojis));
+      localStorage.setItem(`mk_quick_reactions_${WHO}`, JSON.stringify(emojis));
     } catch (_) {}
     try {
       await capsuleRef.set({
@@ -565,7 +595,57 @@ function initChat(WHO) {
     fileInput.value = "";
   });
 
-  addMoreBtn.addEventListener("click", () => fileInput.click());
+  addMoreBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    showAddImageMenu(addMoreBtn);
+  });
+
+  function showAddImageMenu(anchor) {
+    document.querySelectorAll(".add-img-menu").forEach((m) => m.remove());
+
+    const menu = document.createElement("div");
+    menu.className = "add-img-menu";
+    menu.innerHTML = `
+      <button class="add-img-menu-btn" id="aim-camera">📷 Camera</button>
+      <button class="add-img-menu-btn" id="aim-media">🖼️ Media</button>
+    `;
+    document.body.appendChild(menu);
+
+    requestAnimationFrame(() => {
+      const rect = anchor.getBoundingClientRect();
+      const mw = menu.offsetWidth;
+      const mh = menu.offsetHeight;
+      let left = rect.left + rect.width / 2 - mw / 2;
+      let top = rect.top - mh - 8;
+      left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
+      top = Math.max(8, top);
+      menu.style.left = left + "px";
+      menu.style.top = top + "px";
+      menu.classList.add("visible");
+    });
+
+    menu.querySelector("#aim-camera").addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.remove();
+      openCamera();
+    });
+
+    menu.querySelector("#aim-media").addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.remove();
+      fileInput.click();
+    });
+
+    setTimeout(() => {
+      const closeMenu = (e) => {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener("click", closeMenu, true);
+        }
+      };
+      document.addEventListener("click", closeMenu, true);
+    }, 50);
+  }
 
   function addFilesToSelection(files) {
     selectedFiles = [...selectedFiles, ...files].slice(0, 10);
@@ -1003,6 +1083,7 @@ function initChat(WHO) {
         : [];
 
     if (images.length > 0) {
+      registerImagesForLightbox(images, id);
       const gridWrap = document.createElement("div");
       gridWrap.className = "img-grid-wrap";
 
@@ -1095,7 +1176,7 @@ function initChat(WHO) {
                 if (!imgMoved) {
                   imgLongPressFired = true;
                   if (navigator.vibrate) navigator.vibrate(30);
-                  openImageActionMenu(imgUrl, gridImg, gridImg);
+                  openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
                 }
               }, 600);
             },
@@ -1176,7 +1257,7 @@ function initChat(WHO) {
             imgMouseLongTimer = setTimeout(() => {
               imgMouseLongFired = true;
               imgMouseClickBlocked = true;
-              openImageActionMenu(imgUrl, gridImg, gridImg);
+              openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
             }, 500);
           });
           gridImg.addEventListener("mouseup", () => {
@@ -1324,11 +1405,13 @@ function initChat(WHO) {
       setTimeout(() => el.remove(), 200);
       activeReactionBar = null;
       reactionBarMsgId = null;
+      unlockScroll();
     }
   }
 
   function openReactionBar(msgId, row, msg) {
     closeReactionBar();
+    lockScroll();
 
     if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
 
@@ -1361,16 +1444,51 @@ function initChat(WHO) {
     });
     bar.appendChild(plusBtn);
 
-    const wrap = row.querySelector(".bubble-wrap");
-    wrap.appendChild(bar);
+    // Append to body as fixed so it is never clipped by overflow:hidden parents
+    bar.style.position = "fixed";
+    bar.style.visibility = "hidden"; // measure before showing
+    document.body.appendChild(bar);
 
     activeReactionBar = bar;
     reactionBarMsgId = msgId;
 
-    requestAnimationFrame(() => bar.classList.add("visible"));
+    // Position after a frame so we can measure bar dimensions
+    requestAnimationFrame(() => {
+      const wrap = row.querySelector(".bubble-wrap");
+      const wrapRect = wrap.getBoundingClientRect();
+      const barW = bar.offsetWidth || 260;
+      const barH = bar.offsetHeight || 52;
+      const margin = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      // Vertical: prefer above the bubble-wrap, fall back to below
+      let top;
+      const spaceAbove = wrapRect.top - margin;
+      const spaceBelow = vh - wrapRect.bottom - margin;
+      if (spaceAbove >= barH || spaceAbove >= spaceBelow) {
+        top = wrapRect.top - barH - margin;
+      } else {
+        top = wrapRect.bottom + margin;
+      }
+
+      // Horizontal: anchor to bubble edge, clamp inside viewport
+      let left = isSent
+        ? wrapRect.right - barW   // right-align to sent bubble
+        : wrapRect.left;           // left-align to received bubble
+      left = Math.max(margin, Math.min(left, vw - barW - margin));
+      top  = Math.max(margin, Math.min(top,  vh - barH - margin));
+
+      bar.style.top  = top  + "px";
+      bar.style.left = left + "px";
+      bar.style.visibility = "";
+
+      bar.classList.add("visible");
+    });
   }
 
   function openReactionPicker(msgId, row) {
+    lockScroll();
     const overlay = document.createElement("div");
     overlay.className = "reaction-picker-overlay";
 
@@ -1484,6 +1602,7 @@ function initChat(WHO) {
         if (editMode === null) {
           saveReaction(msgId, emoji);
           overlay.remove();
+          unlockScroll();
         } else if (editMode === "default") {
           workingDefault = emoji;
           renderDefaultSlot();
@@ -1509,6 +1628,7 @@ function initChat(WHO) {
     closeBtn.addEventListener("click", () => {
       saveCapsuleToFirestore(workingQuick, workingDefault);
       overlay.remove();
+      unlockScroll();
     });
     sheet.appendChild(closeBtn);
 
@@ -1517,6 +1637,7 @@ function initChat(WHO) {
       if (e.target === overlay) {
         saveCapsuleToFirestore(workingQuick, workingDefault);
         overlay.remove();
+        unlockScroll();
       }
     });
     document.body.appendChild(overlay);
@@ -1693,6 +1814,7 @@ function initChat(WHO) {
       _activeDropdown.triggerEl.classList.remove("open");
       _activeDropdown.actionsWrap.classList.remove("pinned");
       _activeDropdown = null;
+      unlockScroll();
     }
   }
 
@@ -1724,7 +1846,8 @@ function initChat(WHO) {
     trigger.title = "Message actions";
     trigger.textContent = "•••";
 
-    // ── Wrapper — lives on the ROW (not bubble-wrap) for proper centering ──
+    // ── Wrapper — attached to bubble-wrap with position:absolute ──
+    // This makes it always appear directly beside the bubble regardless of row width.
     const actionsWrap = document.createElement("div");
     actionsWrap.className =
       "msg-hover-actions " + (isSent ? "actions-sent" : "actions-recv");
@@ -1837,28 +1960,40 @@ function initChat(WHO) {
       // Append to body so it's never clipped by any parent overflow
       document.body.appendChild(dropdown);
 
-      // Position relative to the trigger button
-      const triggerRect = trigger.getBoundingClientRect();
-      const ddW = 170;
-      const ddH = imgUrls.length > 0 ? 190 : 115;
-      const margin = 8;
-      const vp = { w: window.innerWidth, h: window.innerHeight };
+      // Measure and position after render
+      requestAnimationFrame(() => {
+        const triggerRect = trigger.getBoundingClientRect();
+        const ddW = dropdown.offsetWidth || 170;
+        const ddH = dropdown.offsetHeight || (imgUrls.length > 0 ? 190 : 115);
+        const margin = 8;
+        const gap = 6; // gap between trigger bottom and dropdown top
+        const vp = { w: window.innerWidth, h: window.innerHeight };
 
-      // Show above the trigger by default; fall back to below if no room
-      let top = triggerRect.top - ddH - margin;
-      if (top < 8) top = triggerRect.bottom + margin;
+        // Vertically: open just below the trigger; flip above if not enough room below
+        let top = triggerRect.bottom + gap;
+        if (top + ddH > vp.h - margin) {
+          top = triggerRect.top - ddH - gap;
+        }
 
-      // Align to the trigger horizontally, clamped to viewport
-      let left = triggerRect.left - ddW / 2 + triggerRect.width / 2;
-      left = Math.max(8, Math.min(left, vp.w - ddW - 8));
-      top = Math.max(8, Math.min(top, vp.h - ddH - 8));
+        // Horizontally: right-align to trigger for sent, left-align for recv
+        let left;
+        if (isSent) {
+          left = triggerRect.right - ddW; // right edge of dropdown = right edge of trigger
+        } else {
+          left = triggerRect.left;        // left edge of dropdown = left edge of trigger
+        }
 
-      dropdown.style.top = top + "px";
-      dropdown.style.left = left + "px";
-      dropdown.style.width = ddW + "px";
+        // Clamp to viewport
+        left = Math.max(margin, Math.min(left, vp.w - ddW - margin));
+        top  = Math.max(margin, Math.min(top,  vp.h - ddH - margin));
 
-      // Animate open on next frame
-      requestAnimationFrame(() => dropdown.classList.add("open"));
+        dropdown.style.top  = top  + "px";
+        dropdown.style.left = left + "px";
+        dropdown.style.width = "170px";
+
+        lockScroll();
+        dropdown.classList.add("open");
+      });
 
       trigger.classList.add("open");
       actionsWrap.classList.add("pinned");
@@ -1877,9 +2012,13 @@ function initChat(WHO) {
       buildAndOpenDropdown();
     });
 
-    // Attach actionsWrap directly to the ROW so it sits beside the bubble,
-    // vertically centered on the whole row height (not just the bubble-wrap column)
-    row.appendChild(actionsWrap);
+    // Attach actionsWrap to the bubble-wrap so position:absolute is relative to it
+    const bubbleWrap = row.querySelector(".bubble-wrap");
+    if (bubbleWrap) {
+      bubbleWrap.appendChild(actionsWrap);
+    } else {
+      row.appendChild(actionsWrap); // fallback
+    }
   }
 
   // ─── SWIPE-TO-REPLY ───────────────────────────────────────────────
@@ -2112,6 +2251,16 @@ function initChat(WHO) {
               if (!document.hidden) updateMyReadTime();
             }
           }
+          // Reaction updates arrive as "modified" on the live query
+          if (change.type === "modified") {
+            const msgId = change.doc.id;
+            const reactions = change.doc.data().reactions || {};
+            const reactionsJSON = JSON.stringify(reactions);
+            if (_lastKnownReactions.get(msgId) === reactionsJSON) return;
+            _lastKnownReactions.set(msgId, reactionsJSON);
+            const wrap = _reactionRegistry.get(msgId);
+            if (wrap) renderReactions(wrap, reactions, msgId);
+          }
         });
         if (firstLoad) {
           firstLoad = false;
@@ -2136,8 +2285,12 @@ function initChat(WHO) {
   // FIX: click zones on image itself for navigation.
 
   function openLightbox(images, startIdx = 0) {
-    lbImages = images;
-    lbIndex = startIdx;
+    // Always browse ALL chat images, not just this message's images.
+    const clickedUrl = images[startIdx];
+    const globalIdx = globalLightboxIndex(clickedUrl);
+    lbImages = _allChatImages.map((e) => e.url);
+    lbIndex = globalIdx >= 0 ? globalIdx : 0;
+
     closeReactionBar();
     lightbox.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -2147,12 +2300,11 @@ function initChat(WHO) {
 
   function showLightboxImage() {
     lightboxImg.classList.remove("lb-fade");
-    void lightboxImg.offsetWidth; // reflow to restart animation
+    void lightboxImg.offsetWidth;
     lightboxImg.classList.add("lb-fade");
     lightboxImg.src = lbImages[lbIndex];
 
     const navEl = document.getElementById("lightbox-nav");
-
     if (lbImages.length > 1) {
       lightboxCounter.textContent = `${lbIndex + 1} / ${lbImages.length}`;
       navEl.style.display = "flex";
@@ -2162,24 +2314,6 @@ function initChat(WHO) {
 
     lbPrev.disabled = lbIndex === 0;
     lbNext.disabled = lbIndex === lbImages.length - 1;
-
-    // FIX: Update image click-zone arrows visibility
-    const lbImgPrev = document.getElementById("lb-img-prev");
-    const lbImgNext = document.getElementById("lb-img-next");
-    if (lbImgPrev) {
-      if (lbImages.length > 1 && lbIndex > 0) {
-        lbImgPrev.classList.remove("lb-zone-hidden");
-      } else {
-        lbImgPrev.classList.add("lb-zone-hidden");
-      }
-    }
-    if (lbImgNext) {
-      if (lbImages.length > 1 && lbIndex < lbImages.length - 1) {
-        lbImgNext.classList.remove("lb-zone-hidden");
-      } else {
-        lbImgNext.classList.add("lb-zone-hidden");
-      }
-    }
   }
 
   lbPrev.addEventListener("click", () => {
@@ -2195,35 +2329,33 @@ function initChat(WHO) {
     }
   });
 
-  // Image click-zone arrows (left/right sides of image)
-  const lbImgPrevBtn = document.getElementById("lb-img-prev");
-  const lbImgNextBtn = document.getElementById("lb-img-next");
-  if (lbImgPrevBtn) {
-    lbImgPrevBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (lbIndex > 0) {
-        lbIndex--;
-        showLightboxImage();
-      }
-    });
-  }
-  if (lbImgNextBtn) {
-    lbImgNextBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (lbIndex < lbImages.length - 1) {
-        lbIndex++;
-        showLightboxImage();
-      }
-    });
-  }
+  // Clicking left half of image = previous, right half = next, single image = close
+  lightboxImg.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (lbImages.length <= 1) {
+      closeLightbox();
+      return;
+    }
+    const rect = lightboxImg.getBoundingClientRect();
+    const clickedLeft = e.clientX < rect.left + rect.width / 2;
+    if (clickedLeft && lbIndex > 0) {
+      lbIndex--;
+      showLightboxImage();
+    } else if (!clickedLeft && lbIndex < lbImages.length - 1) {
+      lbIndex++;
+      showLightboxImage();
+    }
+  });
 
   // Touch swipe on lightbox
   let lbTouchStartX = null;
+  let lbTouchStartY = null;
   lightbox.addEventListener(
     "touchstart",
     (e) => {
       if (e.target === lightboxClose) return;
       lbTouchStartX = e.touches[0].clientX;
+      lbTouchStartY = e.touches[0].clientY;
     },
     { passive: true },
   );
@@ -2233,7 +2365,9 @@ function initChat(WHO) {
     (e) => {
       if (lbTouchStartX === null) return;
       const dx = e.changedTouches[0].clientX - lbTouchStartX;
-      if (Math.abs(dx) > 50) {
+      const dy = Math.abs(e.changedTouches[0].clientY - lbTouchStartY);
+      // Only treat as swipe if horizontal movement dominates
+      if (Math.abs(dx) > 50 && Math.abs(dx) > dy) {
         if (dx < 0 && lbIndex < lbImages.length - 1) {
           lbIndex++;
           showLightboxImage();
@@ -2243,18 +2377,10 @@ function initChat(WHO) {
         }
       }
       lbTouchStartX = null;
+      lbTouchStartY = null;
     },
     { passive: true },
   );
-
-  // FIX: lightboxImg click only closes (single image) — navigation handled by click zones
-  lightboxImg.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (lbImages.length <= 1) {
-      closeLightbox();
-    }
-    // For multiple images, navigation is via the lb-img-prev/next click zone buttons
-  });
 
   lightboxClose.addEventListener("click", closeLightbox);
   lightbox.addEventListener("click", (e) => {
@@ -2297,8 +2423,11 @@ function initChat(WHO) {
     }
   }
 
-  function openImageActionMenu(imgUrl, imgEl, anchorEl) {
+  function openImageActionMenu(imgUrl, imgEl, anchorEl, isSentMsg) {
+    // Remove any existing popover and release its scroll lock before opening a new one
     document.querySelectorAll(".img-action-popover").forEach((p) => p.remove());
+    unlockScroll();
+    lockScroll();
 
     const popover = document.createElement("div");
     popover.className = "img-action-popover";
@@ -2310,6 +2439,7 @@ function initChat(WHO) {
         label: "Save Image",
         fn: async () => {
           popover.remove();
+          unlockScroll();
           await saveImageToDevice(imgUrl);
         },
       },
@@ -2319,6 +2449,7 @@ function initChat(WHO) {
         fn: () => {
           toggleImageBlur(imgUrl, imgEl);
           popover.remove();
+          unlockScroll();
           closeReactionBar();
         },
       },
@@ -2344,34 +2475,37 @@ function initChat(WHO) {
 
     requestAnimationFrame(() => {
       const rect = anchorEl.getBoundingClientRect();
-      const pw = popover.offsetWidth;
-      const ph = popover.offsetHeight;
+      const pw = popover.offsetWidth || 150;
+      const ph = popover.offsetHeight || 96;
       const margin = 10;
-      const screenPadding = 8;
+      const pad = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
 
+      // Vertical: center on the image
       let top = rect.top + rect.height / 2 - ph / 2;
-      let left;
 
-      if (anchorEl.closest(".msg-row.sent")) {
-        left = rect.left - pw - margin;
-      } else {
+      // Horizontal:
+      // Sent messages sit on the RIGHT side of the screen →
+      //   menu appears to the RIGHT of the image (outside the bubble edge).
+      // Received messages sit on the LEFT side of the screen →
+      //   menu appears to the LEFT of the image (outside the bubble edge).
+      let left;
+      if (isSentMsg) {
+        // Prefer right side of image; flip left if off-screen
         left = rect.right + margin;
+        if (left + pw > vw - pad) left = rect.left - pw - margin;
+      } else {
+        // Prefer left side of image; flip right if off-screen
+        left = rect.left - pw - margin;
+        if (left < pad) left = rect.right + margin;
       }
 
-      if (left < screenPadding) left = rect.right + margin;
-      if (left + pw > window.innerWidth - screenPadding)
-        left = rect.left - pw - margin;
+      // Final clamp — never off any edge
+      left = Math.max(pad, Math.min(left, vw - pw - pad));
+      top  = Math.max(pad, Math.min(top,  vh - ph - pad));
 
-      left = Math.max(
-        screenPadding,
-        Math.min(left, window.innerWidth - pw - screenPadding),
-      );
-      top = Math.max(
-        screenPadding,
-        Math.min(top, window.innerHeight - ph - screenPadding),
-      );
-
-      popover.style.top = top + "px";
+      popover.style.top  = top  + "px";
       popover.style.left = left + "px";
       popover.classList.add("visible");
     });
@@ -2379,13 +2513,15 @@ function initChat(WHO) {
     const closeOnOutside = (e) => {
       if (!popover.contains(e.target)) {
         popover.remove();
+        unlockScroll();
         document.removeEventListener("click", closeOnOutside, true);
+        document.removeEventListener("touchstart", closeOnOutside, true);
       }
     };
-    setTimeout(
-      () => document.addEventListener("click", closeOnOutside, true),
-      50,
-    );
+    setTimeout(() => {
+      document.addEventListener("click", closeOnOutside, true);
+      document.addEventListener("touchstart", closeOnOutside, true);
+    }, 50);
   }
 
   // ─── CAMERA ──────────────────────────────────────────────────────
