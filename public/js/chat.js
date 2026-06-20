@@ -39,37 +39,200 @@ function initChat(WHO) {
     .doc("state");
   let _blurredImages = new Set();
 
-  blurRef.onSnapshot((snap) => {
-    if (snap.exists) {
-      _blurredImages = new Set(snap.data().urls || []);
-    } else {
-      _blurredImages = new Set();
-    }
+  function refreshBlurredImagesInDOM() {
     document.querySelectorAll(".grid-img[data-img-url]").forEach((img) => {
       img.classList.toggle(
         "img-blurred",
         _blurredImages.has(img.dataset.imgUrl),
       );
     });
+  }
+
+  blurRef.onSnapshot((snap) => {
+    _blurredImages = new Set(snap.exists ? snap.data().urls || [] : []);
+    refreshBlurredImagesInDOM();
   });
 
   function isImageBlurred(url) {
     return _blurredImages.has(url);
   }
 
-  async function toggleImageBlur(url, imgEl) {
-    if (_blurredImages.has(url)) {
-      _blurredImages.delete(url);
-      if (imgEl) imgEl.classList.remove("img-blurred");
-    } else {
-      _blurredImages.add(url);
-      if (imgEl) imgEl.classList.add("img-blurred");
-    }
+  function isMobileUI() {
+    return (
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.innerWidth <= 768
+    );
+  }
+
+  async function setImagesBlurred(urls, shouldBlur) {
+    urls.forEach((url) => {
+      if (shouldBlur) _blurredImages.add(url);
+      else _blurredImages.delete(url);
+    });
+    refreshBlurredImagesInDOM();
+
     try {
       await blurRef.set({ urls: [..._blurredImages] });
     } catch (e) {
       console.warn("Could not save blur state:", e);
+      throw e;
     }
+  }
+
+  async function toggleImageBlur(url) {
+    await setImagesBlurred([url], !isImageBlurred(url));
+  }
+
+
+  // Lets the user choose exactly which photos in one message are blurred.
+  function openBlurSelectionModal(imgUrls) {
+    document
+      .querySelectorAll(".blur-select-overlay")
+      .forEach((existing) => existing.remove());
+
+    const intendedBlurred = new Set(
+      imgUrls.filter((url) => isImageBlurred(url)),
+    );
+
+    const overlay = document.createElement("div");
+    overlay.className = "blur-select-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Choose images to blur");
+
+    const panel = document.createElement("div");
+    panel.className = "blur-select-panel";
+
+    const header = document.createElement("div");
+    header.className = "blur-select-header";
+
+    const headingWrap = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = "Choose images to blur";
+    const hint = document.createElement("p");
+    hint.textContent = "Tap each image to switch between visible and blurred.";
+    headingWrap.appendChild(title);
+    headingWrap.appendChild(hint);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "blur-select-close";
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.textContent = "✕";
+
+    header.appendChild(headingWrap);
+    header.appendChild(closeBtn);
+
+    const grid = document.createElement("div");
+    grid.className = "blur-select-grid";
+
+    imgUrls.forEach((url, index) => {
+      const item = document.createElement("button");
+      item.className = "blur-select-item";
+      item.type = "button";
+
+      const image = document.createElement("img");
+      image.src = url;
+      image.alt = `Image ${index + 1}`;
+      image.loading = "lazy";
+
+      const number = document.createElement("span");
+      number.className = "blur-select-number";
+      number.textContent = String(index + 1);
+
+      const status = document.createElement("span");
+      status.className = "blur-select-status";
+
+      const check = document.createElement("span");
+      check.className = "blur-select-check";
+      check.textContent = "✓";
+
+      const renderItemState = () => {
+        const shouldBlur = intendedBlurred.has(url);
+        item.classList.toggle("selected", shouldBlur);
+        item.setAttribute("aria-pressed", String(shouldBlur));
+        status.textContent = shouldBlur ? "Blurred" : "Visible";
+      };
+
+      item.addEventListener("click", () => {
+        if (intendedBlurred.has(url)) intendedBlurred.delete(url);
+        else intendedBlurred.add(url);
+        renderItemState();
+      });
+
+      item.appendChild(image);
+      item.appendChild(number);
+      item.appendChild(status);
+      item.appendChild(check);
+      renderItemState();
+      grid.appendChild(item);
+    });
+
+    const footer = document.createElement("div");
+    footer.className = "blur-select-footer";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "blur-select-btn secondary";
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel";
+
+    const applyBtn = document.createElement("button");
+    applyBtn.className = "blur-select-btn primary";
+    applyBtn.type = "button";
+    applyBtn.textContent = "Apply";
+
+    footer.appendChild(cancelBtn);
+    footer.appendChild(applyBtn);
+
+    panel.appendChild(header);
+    panel.appendChild(grid);
+    panel.appendChild(footer);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    lockScroll();
+
+    const closeModal = () => {
+      document.removeEventListener("keydown", onKeyDown);
+      overlay.remove();
+      unlockScroll();
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") closeModal();
+    };
+
+    closeBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeModal();
+    });
+    document.addEventListener("keydown", onKeyDown);
+
+    applyBtn.addEventListener("click", async () => {
+      applyBtn.disabled = true;
+      applyBtn.textContent = "Saving…";
+
+      const previousState = new Set(_blurredImages);
+      imgUrls.forEach((url) => {
+        if (intendedBlurred.has(url)) _blurredImages.add(url);
+        else _blurredImages.delete(url);
+      });
+      refreshBlurredImagesInDOM();
+
+      try {
+        await blurRef.set({ urls: [..._blurredImages] });
+        closeModal();
+      } catch (error) {
+        _blurredImages = previousState;
+        refreshBlurredImagesInDOM();
+        applyBtn.disabled = false;
+        applyBtn.textContent = "Apply";
+        showMiniNotif("Could not save blur setting");
+      }
+    });
+
+    requestAnimationFrame(() => overlay.classList.add("visible"));
   }
 
   // ─── ELEMENTS ────────────────────────────────────────────────────
@@ -131,7 +294,16 @@ function initChat(WHO) {
   const usePhotoBtn = document.getElementById("use-photo-btn");
 
   // ─── STATE ───────────────────────────────────────────────────────
+  const MAX_SELECTED_IMAGES = 30;
+  const DRAFT_DB_NAME = "mk-private-chat-drafts";
+  const DRAFT_DB_VERSION = 1;
+  const DRAFT_STORE = "drafts";
+  const DRAFT_KEY = `${CHAT_ID}:${WHO}:unsent-images`;
+
   let selectedFiles = [];
+  let previewObjectUrls = [];
+  let draftWriteQueue = Promise.resolve();
+  let isSending = false;
   let typingTimeout = null;
   let isTyping = false;
   let firstLoad = true;
@@ -141,8 +313,117 @@ function initChat(WHO) {
   let cameraStream = null;
   let facingMode = "environment";
   let capturedBlob = null;
+  let pendingCameraFile = null;
+  let cameraPreviewObjectUrl = null;
+  let cameraTimerSeconds = 0;
+  let cameraCountdownToken = 0;
+  let cameraIsCountingDown = false;
+  let cameraStage = null;
+  let cameraFocusIndicator = null;
+  let cameraCountdownEl = null;
+  let cameraTimerBtn = null;
+  let cameraTimerMenu = null;
+  let cameraExposureWrap = null;
+  let cameraExposureSlider = null;
+  let cameraExposureValue = null;
   let unreadInserted = false;
   let lastReadTimestamp = null;
+
+  // ─── UNSENT IMAGE DRAFTS (IndexedDB) ─────────────────────────────
+  function openDraftDB() {
+    return new Promise((resolve, reject) => {
+      if (!("indexedDB" in window)) {
+        reject(new Error("IndexedDB is not available"));
+        return;
+      }
+
+      const request = indexedDB.open(DRAFT_DB_NAME, DRAFT_DB_VERSION);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(DRAFT_STORE)) {
+          database.createObjectStore(DRAFT_STORE, { keyPath: "id" });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function writeSelectedFilesDraft() {
+    const database = await openDraftDB();
+    try {
+      await new Promise((resolve, reject) => {
+        const tx = database.transaction(DRAFT_STORE, "readwrite");
+        const store = tx.objectStore(DRAFT_STORE);
+        if (selectedFiles.length === 0 && !pendingCameraFile) {
+          store.delete(DRAFT_KEY);
+        } else {
+          store.put({
+            id: DRAFT_KEY,
+            files: selectedFiles,
+            pendingCameraFile,
+            updatedAt: Date.now(),
+          });
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error("Draft save aborted"));
+      });
+    } finally {
+      database.close();
+    }
+  }
+
+  function queueSelectedFilesDraftSave() {
+    draftWriteQueue = draftWriteQueue
+      .catch(() => {})
+      .then(writeSelectedFilesDraft)
+      .catch((error) => console.warn("Could not persist unsent images:", error));
+    return draftWriteQueue;
+  }
+
+  async function restoreSelectedFilesDraft() {
+    try {
+      const database = await openDraftDB();
+      const record = await new Promise((resolve, reject) => {
+        const tx = database.transaction(DRAFT_STORE, "readonly");
+        const request = tx.objectStore(DRAFT_STORE).get(DRAFT_KEY);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+      database.close();
+
+      const hasStoredFiles =
+        record && Array.isArray(record.files) && record.files.length > 0;
+      const hasPendingCameraFile =
+        record && record.pendingCameraFile instanceof Blob;
+      if (!hasStoredFiles && !hasPendingCameraFile) return;
+
+      const restoredFiles = Array.isArray(record.files) ? [...record.files] : [];
+      if (record.pendingCameraFile instanceof Blob) {
+        restoredFiles.push(record.pendingCameraFile);
+      }
+
+      selectedFiles = restoredFiles
+        .filter((file) => file instanceof Blob)
+        .slice(0, MAX_SELECTED_IMAGES)
+        .map((file, index) =>
+          file instanceof File
+            ? file
+            : new File([file], `restored_photo_${index + 1}.jpg`, {
+                type: file.type || "image/jpeg",
+                lastModified: record.updatedAt || Date.now(),
+              }),
+        );
+      pendingCameraFile = null;
+
+      renderPreviewBar();
+      queueSelectedFilesDraftSave();
+      showMiniNotif(`📷 Restored ${selectedFiles.length} unsent photo${selectedFiles.length === 1 ? "" : "s"}`);
+    } catch (error) {
+      console.warn("Could not restore unsent images:", error);
+    }
+  }
 
   // ─── BOTTOM-LOCK ─────────────────────────────────────────────────
   let isAtBottom = true;
@@ -648,39 +929,70 @@ function initChat(WHO) {
   }
 
   function addFilesToSelection(files) {
-    selectedFiles = [...selectedFiles, ...files].slice(0, 10);
+    if (isSending) {
+      showMiniNotif("Please wait until the current photos finish sending");
+      return;
+    }
+
+    const validImages = files.filter((file) => file && file.type.startsWith("image/"));
+    const freeSlots = MAX_SELECTED_IMAGES - selectedFiles.length;
+    const accepted = validImages.slice(0, Math.max(0, freeSlots));
+    selectedFiles = [...selectedFiles, ...accepted];
+
+    if (accepted.length < validImages.length) {
+      showMiniNotif(`Maximum ${MAX_SELECTED_IMAGES} photos per message`);
+    }
+
     renderPreviewBar();
+    queueSelectedFilesDraftSave();
+  }
+
+  function revokePreviewObjectUrls() {
+    previewObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    previewObjectUrls = [];
   }
 
   function renderPreviewBar() {
+    revokePreviewObjectUrls();
     previewScroll
       .querySelectorAll(".preview-item")
       .forEach((el) => el.remove());
+
     const frag = document.createDocumentFragment();
     selectedFiles.forEach((file, idx) => {
       const item = document.createElement("div");
       item.className = "preview-item";
       const img = document.createElement("img");
-      img.src = URL.createObjectURL(file);
+      const objectUrl = URL.createObjectURL(file);
+      previewObjectUrls.push(objectUrl);
+      img.src = objectUrl;
+      img.alt = `Selected image ${idx + 1}`;
+
       const removeBtn = document.createElement("button");
       removeBtn.className = "preview-remove";
       removeBtn.textContent = "✕";
       removeBtn.addEventListener("click", () => {
+        if (isSending) return;
         selectedFiles.splice(idx, 1);
         renderPreviewBar();
+        queueSelectedFilesDraftSave();
       });
+
       item.appendChild(img);
       item.appendChild(removeBtn);
       frag.appendChild(item);
     });
+
     previewScroll.insertBefore(frag, addMoreBtn);
     previewCountLabel.textContent = `${selectedFiles.length} image${selectedFiles.length !== 1 ? "s" : ""} selected`;
     imgPreviewBar.classList.toggle("visible", selectedFiles.length > 0);
   }
 
   clearAllBtn.addEventListener("click", () => {
+    if (isSending) return;
     selectedFiles = [];
     renderPreviewBar();
+    queueSelectedFilesDraftSave();
   });
 
   // ─── TYPING INDICATOR ─────────────────────────────────────────────
@@ -774,29 +1086,30 @@ function initChat(WHO) {
 
   async function sendMessage() {
     const text = msgInput.value.trim();
-    if (!text && selectedFiles.length === 0) return;
+    if (isSending || (!text && selectedFiles.length === 0)) return;
 
+    isSending = true;
     sendBtn.disabled = true;
-    msgInput.value = "";
-    msgInput.style.height = "";
+    fileInput.disabled = true;
+    cameraBtn.disabled = true;
+    addMoreBtn.disabled = true;
+
+    const filesToSend = [...selectedFiles];
+    const textToSend = text;
+    const currentReply = replyingTo;
+
     isTyping = false;
     typingRef.doc(WHO).set({ typing: false });
 
-    const filesToSend = [...selectedFiles];
-    const currentReply = replyingTo;
-    selectedFiles = [];
-    renderPreviewBar();
-    cancelReply();
-
     try {
-      let imageUrls = [];
-      if (filesToSend.length > 0) {
-        imageUrls = await uploadImagesWithProgress(filesToSend);
-      }
+      const imageUrls =
+        filesToSend.length > 0
+          ? await uploadImagesWithProgress(filesToSend)
+          : [];
 
       const msgData = {
         sender: WHO,
-        text: text || null,
+        text: textToSend || null,
         imageUrls: imageUrls.length > 0 ? imageUrls : null,
         imageUrl: imageUrls.length === 1 ? imageUrls[0] : null,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -813,12 +1126,31 @@ function initChat(WHO) {
       }
 
       await messagesRef.add(msgData);
+
+      selectedFiles = [];
+      renderPreviewBar();
+      await queueSelectedFilesDraftSave();
+
+      if (msgInput.value.trim() === textToSend) {
+        msgInput.value = "";
+        msgInput.style.height = "";
+      }
+      cancelReply();
       updateMyReadTime();
     } catch (err) {
       console.error("Send error:", err);
-      alert("Couldn't send message: " + err.message);
+      renderPreviewBar();
+      await queueSelectedFilesDraftSave();
+      alert(
+        "Couldn't send the message. Your selected photos are still saved on this device.\n\n" +
+          err.message,
+      );
     } finally {
+      isSending = false;
       sendBtn.disabled = false;
+      fileInput.disabled = false;
+      cameraBtn.disabled = false;
+      addMoreBtn.disabled = false;
       msgInput.focus();
     }
   }
@@ -826,28 +1158,29 @@ function initChat(WHO) {
   // ─── UPLOAD IMAGES ────────────────────────────────────────────────
   async function uploadImagesWithProgress(files) {
     uploadProgress.style.display = "block";
+    uploadProgressBar.style.width = "0%";
     const urls = [];
-    for (let i = 0; i < files.length; i++) {
-      const progressBase = (i / files.length) * 100;
-      const progressChunk = (1 / files.length) * 100;
-      uploadProgressBar.style.width = progressBase + "%";
-      try {
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const progressBase = (i / files.length) * 100;
+        const progressChunk = (1 / files.length) * 100;
+        uploadProgressBar.style.width = progressBase + "%";
         const url = await uploadSingleImage(
           files[i],
           progressBase,
           progressChunk,
         );
         urls.push(url);
-      } catch (e) {
-        console.error("Upload failed for one image:", e);
       }
+      uploadProgressBar.style.width = "100%";
+      return urls;
+    } finally {
+      setTimeout(() => {
+        uploadProgress.style.display = "none";
+        uploadProgressBar.style.width = "0%";
+      }, 400);
     }
-    uploadProgressBar.style.width = "100%";
-    setTimeout(() => {
-      uploadProgress.style.display = "none";
-      uploadProgressBar.style.width = "0%";
-    }, 400);
-    return urls;
   }
 
   async function uploadSingleImage(file, progressBase, progressChunk) {
@@ -1087,8 +1420,10 @@ function initChat(WHO) {
       const gridWrap = document.createElement("div");
       gridWrap.className = "img-grid-wrap";
 
-      const MAX_SHOWN = 6;
-      const showCount = Math.min(images.length, MAX_SHOWN);
+      // Render every image. This avoids photos being hidden behind a +N tile
+      // and lets every individual photo have its own blur action.
+      const MAX_SHOWN = images.length;
+      const showCount = images.length;
       const countClass =
         images.length === 1
           ? "count-1"
@@ -1161,6 +1496,7 @@ function initChat(WHO) {
           gridImg.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             e.stopPropagation();
+            openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
           });
 
           gridImg.addEventListener(
@@ -1251,6 +1587,7 @@ function initChat(WHO) {
 
           // Desktop: long press → image action menu
           gridImg.addEventListener("mousedown", (e) => {
+            if (e.button !== 0) return;
             e.stopPropagation(); // prevent bubble long-press on desktop for images
             imgMouseLongFired = false;
             imgMouseClickBlocked = false;
@@ -1925,36 +2262,74 @@ function initChat(WHO) {
           imgUrls.forEach((url) => saveImageToDevice(url));
         });
 
-        // ── Blur — reads live state at open time ──
+        dropdown.appendChild(divider2);
+        dropdown.appendChild(saveItem);
+
+        // Blur controls:
+        // Desktop/Chrome: Blur All first, then Blur Separately.
+        // Mobile: Blur (individual selector) first, then Blur All.
+        // Per-image long-press/right-click remains available as before.
         const divider3 = document.createElement("hr");
         divider3.className = "msg-action-divider";
 
-        const blurItem = document.createElement("button");
-        blurItem.className = "msg-action-item";
-        const blurIconEl = document.createElement("span");
-        blurIconEl.className = "action-icon";
-        const anyBlurred = imgUrls.some((u) => isImageBlurred(u));
-        blurIconEl.textContent = anyBlurred ? "👁️" : "🫣";
-        blurItem.appendChild(blurIconEl);
-        blurItem.appendChild(
-          document.createTextNode(anyBlurred ? " Unblur Image" : " Blur Image"),
+        const allBlurred = imgUrls.every((url) => isImageBlurred(url));
+
+        const blurAllItem = document.createElement("button");
+        blurAllItem.className = "msg-action-item";
+        const blurAllIcon = document.createElement("span");
+        blurAllIcon.className = "action-icon";
+        blurAllIcon.textContent = allBlurred ? "👁️" : "🫣";
+        blurAllItem.appendChild(blurAllIcon);
+        blurAllItem.appendChild(
+          document.createTextNode(
+            isMobileUI()
+              ? allBlurred
+                ? " Unblur All"
+                : " Blur All"
+              : allBlurred
+                ? " Unblur All Images"
+                : " Blur All Images",
+          ),
         );
-        blurItem.addEventListener("mousedown", (e) => e.stopPropagation());
-        blurItem.addEventListener("click", (e) => {
+        blurAllItem.addEventListener("mousedown", (e) => e.stopPropagation());
+        blurAllItem.addEventListener("click", async (e) => {
           e.stopPropagation();
           closeAllDropdowns();
-          imgUrls.forEach((url) => {
-            const el = [...row.querySelectorAll(".grid-img")].find(
-              (img) => img.dataset.imgUrl === url,
-            );
-            toggleImageBlur(url, el || null);
-          });
+          try {
+            await setImagesBlurred(imgUrls, !allBlurred);
+          } catch (_) {
+            showMiniNotif("Could not save blur setting");
+          }
         });
 
-        dropdown.appendChild(divider2);
-        dropdown.appendChild(saveItem);
+        const blurSeparateItem = document.createElement("button");
+        blurSeparateItem.className = "msg-action-item";
+        const blurSeparateIcon = document.createElement("span");
+        blurSeparateIcon.className = "action-icon";
+        blurSeparateIcon.textContent = "☑️";
+        blurSeparateItem.appendChild(blurSeparateIcon);
+        blurSeparateItem.appendChild(
+          document.createTextNode(
+            isMobileUI() ? " Blur" : " Blur Separately",
+          ),
+        );
+        blurSeparateItem.addEventListener("mousedown", (e) =>
+          e.stopPropagation(),
+        );
+        blurSeparateItem.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeAllDropdowns();
+          openBlurSelectionModal(imgUrls);
+        });
+
         dropdown.appendChild(divider3);
-        dropdown.appendChild(blurItem);
+        if (isMobileUI()) {
+          dropdown.appendChild(blurSeparateItem);
+          dropdown.appendChild(blurAllItem);
+        } else {
+          dropdown.appendChild(blurAllItem);
+          dropdown.appendChild(blurSeparateItem);
+        }
       }
 
       // Append to body so it's never clipped by any parent overflow
@@ -1964,7 +2339,7 @@ function initChat(WHO) {
       requestAnimationFrame(() => {
         const triggerRect = trigger.getBoundingClientRect();
         const ddW = dropdown.offsetWidth || 170;
-        const ddH = dropdown.offsetHeight || (imgUrls.length > 0 ? 190 : 115);
+        const ddH = dropdown.offsetHeight || (imgUrls.length > 0 ? 235 : 115);
         const margin = 8;
         const gap = 6; // gap between trigger bottom and dropdown top
         const vp = { w: window.innerWidth, h: window.innerHeight };
@@ -2527,64 +2902,376 @@ function initChat(WHO) {
   // ─── CAMERA ──────────────────────────────────────────────────────
   cameraBtn.addEventListener("click", openCamera);
 
+  function ensureCameraEnhancementUI() {
+    if (cameraStage) return;
+
+    cameraStage = document.createElement("div");
+    cameraStage.id = "camera-stage";
+    cameraFeed.parentNode.insertBefore(cameraStage, cameraFeed);
+    cameraStage.appendChild(cameraFeed);
+
+    cameraFocusIndicator = document.createElement("div");
+    cameraFocusIndicator.id = "camera-focus-indicator";
+    cameraStage.appendChild(cameraFocusIndicator);
+
+    cameraCountdownEl = document.createElement("div");
+    cameraCountdownEl.id = "camera-countdown";
+    cameraStage.appendChild(cameraCountdownEl);
+
+    const optionsRow = document.createElement("div");
+    optionsRow.id = "camera-options-row";
+
+    const timerWrap = document.createElement("div");
+    timerWrap.id = "camera-timer-wrap";
+
+    cameraTimerBtn = document.createElement("button");
+    cameraTimerBtn.type = "button";
+    cameraTimerBtn.id = "camera-timer-btn";
+    cameraTimerBtn.className = "cam-option-btn";
+    cameraTimerBtn.textContent = "⏱ Off";
+
+    cameraTimerMenu = document.createElement("div");
+    cameraTimerMenu.id = "camera-timer-menu";
+    cameraTimerMenu.innerHTML = `
+      <button type="button" class="camera-timer-choice active" data-seconds="0">Off</button>
+      <button type="button" class="camera-timer-choice" data-seconds="5">5s</button>
+      <button type="button" class="camera-timer-choice" data-seconds="10">10s</button>
+      <button type="button" class="camera-timer-choice" data-seconds="15">15s</button>
+      <div class="camera-custom-timer">
+        <input id="camera-custom-seconds" type="number" min="1" max="60" inputmode="numeric" placeholder="Custom" />
+        <button id="camera-custom-set" type="button">Set</button>
+      </div>
+    `;
+
+    timerWrap.appendChild(cameraTimerBtn);
+    timerWrap.appendChild(cameraTimerMenu);
+
+    cameraExposureWrap = document.createElement("label");
+    cameraExposureWrap.id = "camera-exposure-wrap";
+    cameraExposureWrap.innerHTML = `
+      <span>☀️</span>
+      <input id="camera-exposure-slider" type="range" />
+      <span id="camera-exposure-value">0</span>
+    `;
+    cameraExposureSlider = cameraExposureWrap.querySelector(
+      "#camera-exposure-slider",
+    );
+    cameraExposureValue = cameraExposureWrap.querySelector(
+      "#camera-exposure-value",
+    );
+
+    optionsRow.appendChild(timerWrap);
+    optionsRow.appendChild(cameraExposureWrap);
+    cameraLiveWrap.insertBefore(optionsRow, document.getElementById("camera-controls"));
+
+    cameraTimerBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      cameraTimerMenu.classList.toggle("visible");
+    });
+
+    cameraTimerMenu.querySelectorAll(".camera-timer-choice").forEach((button) => {
+      button.addEventListener("click", () => {
+        setCameraTimer(Number(button.dataset.seconds));
+        cameraTimerMenu.classList.remove("visible");
+      });
+    });
+
+    cameraTimerMenu
+      .querySelector("#camera-custom-set")
+      .addEventListener("click", () => {
+        const input = cameraTimerMenu.querySelector("#camera-custom-seconds");
+        const requestedSeconds = Number(input.value);
+        if (!Number.isFinite(requestedSeconds) || requestedSeconds < 1) return;
+        const seconds = Math.round(Math.min(60, requestedSeconds));
+        input.value = String(seconds);
+        setCameraTimer(seconds);
+        cameraTimerMenu.classList.remove("visible");
+      });
+
+    cameraStage.addEventListener("pointerup", focusCameraAtPointer);
+    cameraExposureSlider.addEventListener("input", applyExposureCompensation);
+
+    document.addEventListener("click", (event) => {
+      if (cameraTimerMenu && !timerWrap.contains(event.target)) {
+        cameraTimerMenu.classList.remove("visible");
+      }
+    });
+  }
+
+  function setCameraTimer(seconds) {
+    cameraTimerSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+    cameraTimerBtn.textContent =
+      cameraTimerSeconds > 0 ? `⏱ ${cameraTimerSeconds}s` : "⏱ Off";
+    cameraTimerMenu
+      .querySelectorAll(".camera-timer-choice")
+      .forEach((button) => {
+        button.classList.toggle(
+          "active",
+          Number(button.dataset.seconds) === cameraTimerSeconds,
+        );
+      });
+  }
+
+  function waitForVideoMetadata() {
+    if (cameraFeed.readyState >= 1 && cameraFeed.videoWidth > 0) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      cameraFeed.addEventListener("loadedmetadata", resolve, { once: true });
+    });
+  }
+
+  async function applyAutomaticCameraControls(track) {
+    if (!track || typeof track.getCapabilities !== "function") return;
+    const capabilities = track.getCapabilities();
+    const advanced = {};
+
+    if (capabilities.focusMode?.includes("continuous")) {
+      advanced.focusMode = "continuous";
+    }
+    if (capabilities.exposureMode?.includes("continuous")) {
+      advanced.exposureMode = "continuous";
+    }
+    if (capabilities.whiteBalanceMode?.includes("continuous")) {
+      advanced.whiteBalanceMode = "continuous";
+    }
+
+    if (Object.keys(advanced).length > 0) {
+      try {
+        await track.applyConstraints({ advanced: [advanced] });
+      } catch (error) {
+        console.warn("Automatic camera controls were not accepted:", error);
+      }
+    }
+
+    const exposure = capabilities.exposureCompensation;
+    if (
+      exposure &&
+      Number.isFinite(exposure.min) &&
+      Number.isFinite(exposure.max) &&
+      exposure.max > exposure.min
+    ) {
+      const settings = track.getSettings ? track.getSettings() : {};
+      const value = Number.isFinite(settings.exposureCompensation)
+        ? settings.exposureCompensation
+        : Math.min(exposure.max, Math.max(exposure.min, 0));
+      cameraExposureSlider.min = String(exposure.min);
+      cameraExposureSlider.max = String(exposure.max);
+      cameraExposureSlider.step = String(exposure.step || 0.1);
+      cameraExposureSlider.value = String(value);
+      cameraExposureValue.textContent = Number(value).toFixed(1);
+      cameraExposureWrap.classList.add("supported");
+    } else {
+      cameraExposureWrap.classList.remove("supported");
+    }
+  }
+
   async function startCameraStream() {
-    if (cameraStream) cameraStream.getTracks().forEach((t) => t.stop());
+    cancelCameraCountdown();
+    if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+
     try {
       cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 960 } },
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
         audio: false,
       });
       cameraFeed.srcObject = cameraStream;
       cameraFeed.classList.toggle("mirrored", facingMode === "user");
+      await cameraFeed.play();
+      await waitForVideoMetadata();
+      await applyAutomaticCameraControls(cameraStream.getVideoTracks()[0]);
     } catch (err) {
       alert("Camera not available: " + err.message);
       closeCamera();
     }
   }
 
-  flipCameraBtn.addEventListener("click", async () => {
-    facingMode = facingMode === "environment" ? "user" : "environment";
-    await startCameraStream();
-  });
+  async function focusCameraAtPointer(event) {
+    if (!cameraStream || cameraIsCountingDown) return;
+    const track = cameraStream.getVideoTracks()[0];
+    if (!track) return;
 
-  snapBtn.addEventListener("click", () => {
+    const rect = cameraStage.getBoundingClientRect();
+    let x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    if (facingMode === "user") x = 1 - x;
+
+    cameraFocusIndicator.style.left = `${(event.clientX - rect.left) / rect.width * 100}%`;
+    cameraFocusIndicator.style.top = `${(event.clientY - rect.top) / rect.height * 100}%`;
+    cameraFocusIndicator.classList.remove("show");
+    void cameraFocusIndicator.offsetWidth;
+    cameraFocusIndicator.classList.add("show");
+
+    if (typeof track.getCapabilities !== "function") return;
+    const capabilities = track.getCapabilities();
+    const advanced = {};
+
+    if (capabilities.pointsOfInterest) {
+      advanced.pointsOfInterest = [{ x, y }];
+    }
+    if (capabilities.focusMode?.includes("single-shot")) {
+      advanced.focusMode = "single-shot";
+    } else if (capabilities.focusMode?.includes("continuous")) {
+      advanced.focusMode = "continuous";
+    }
+    if (capabilities.exposureMode?.includes("continuous")) {
+      advanced.exposureMode = "continuous";
+    }
+
+    if (Object.keys(advanced).length === 0) return;
+    try {
+      await track.applyConstraints({ advanced: [advanced] });
+      if (advanced.focusMode === "single-shot") {
+        setTimeout(async () => {
+          try {
+            const latestTrack = cameraStream?.getVideoTracks()[0];
+            const latestCaps = latestTrack?.getCapabilities?.();
+            if (latestCaps?.focusMode?.includes("continuous")) {
+              await latestTrack.applyConstraints({
+                advanced: [{ focusMode: "continuous" }],
+              });
+            }
+          } catch (_) {}
+        }, 900);
+      }
+    } catch (error) {
+      console.warn("Tap-to-focus is not supported by this camera/browser:", error);
+    }
+  }
+
+  async function applyExposureCompensation() {
+    if (!cameraStream) return;
+    const track = cameraStream.getVideoTracks()[0];
+    const value = Number(cameraExposureSlider.value);
+    cameraExposureValue.textContent = value.toFixed(1);
+    try {
+      await track.applyConstraints({
+        advanced: [{ exposureCompensation: value }],
+      });
+    } catch (error) {
+      console.warn("Exposure adjustment is not supported:", error);
+    }
+  }
+
+  function cancelCameraCountdown() {
+    cameraCountdownToken += 1;
+    cameraIsCountingDown = false;
+    snapBtn.disabled = false;
+    snapBtn.classList.remove("counting");
+    if (cameraCountdownEl) {
+      cameraCountdownEl.textContent = "";
+      cameraCountdownEl.classList.remove("visible");
+    }
+  }
+
+  async function beginCameraCapture() {
+    if (cameraIsCountingDown) {
+      cancelCameraCountdown();
+      return;
+    }
+
+    if (cameraTimerSeconds <= 0) {
+      captureCurrentFrame();
+      return;
+    }
+
+    cameraIsCountingDown = true;
+    snapBtn.disabled = true;
+    snapBtn.classList.add("counting");
+    const token = ++cameraCountdownToken;
+
+    for (let remaining = cameraTimerSeconds; remaining > 0; remaining--) {
+      if (token !== cameraCountdownToken) return;
+      cameraCountdownEl.textContent = String(remaining);
+      cameraCountdownEl.classList.add("visible");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    if (token !== cameraCountdownToken) return;
+    cameraCountdownEl.textContent = "";
+    cameraCountdownEl.classList.remove("visible");
+    cameraIsCountingDown = false;
+    snapBtn.disabled = false;
+    snapBtn.classList.remove("counting");
+    captureCurrentFrame();
+  }
+
+  function captureCurrentFrame() {
     const video = cameraFeed;
+    if (!video.videoWidth || !video.videoHeight) return;
+
     snapCanvas.width = video.videoWidth;
     snapCanvas.height = video.videoHeight;
     const ctx = snapCanvas.getContext("2d");
+    ctx.save();
     if (facingMode === "user") {
       ctx.translate(snapCanvas.width, 0);
       ctx.scale(-1, 1);
     }
     ctx.drawImage(video, 0, 0);
+    ctx.restore();
+
     snapCanvas.toBlob(
       (blob) => {
+        if (!blob) return;
         capturedBlob = blob;
-        cameraPreviewImg.src = URL.createObjectURL(blob);
+        pendingCameraFile = new File([blob], `photo_${Date.now()}.jpg`, {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        });
+        queueSelectedFilesDraftSave();
+        if (cameraPreviewObjectUrl) {
+          URL.revokeObjectURL(cameraPreviewObjectUrl);
+        }
+        cameraPreviewObjectUrl = URL.createObjectURL(blob);
+        cameraPreviewImg.src = cameraPreviewObjectUrl;
         cameraLiveWrap.style.display = "none";
         cameraPreviewWrap.classList.add("visible");
       },
       "image/jpeg",
-      0.9,
+      0.92,
     );
+  }
+
+  snapBtn.addEventListener("click", beginCameraCapture);
+
+  flipCameraBtn.addEventListener("click", async () => {
+    cancelCameraCountdown();
+    facingMode = facingMode === "environment" ? "user" : "environment";
+    await startCameraStream();
   });
 
   retakeBtn.addEventListener("click", () => {
     capturedBlob = null;
+    pendingCameraFile = null;
+    queueSelectedFilesDraftSave();
+    if (cameraPreviewObjectUrl) {
+      URL.revokeObjectURL(cameraPreviewObjectUrl);
+      cameraPreviewObjectUrl = null;
+    }
+    cameraPreviewImg.removeAttribute("src");
     cameraPreviewWrap.classList.remove("visible");
     cameraLiveWrap.style.display = "flex";
   });
 
   usePhotoBtn.addEventListener("click", () => {
     if (!capturedBlob) return;
-    const file = new File([capturedBlob], `photo_${Date.now()}.jpg`, {
-      type: "image/jpeg",
-    });
+    const file =
+      pendingCameraFile ||
+      new File([capturedBlob], `photo_${Date.now()}.jpg`, {
+        type: "image/jpeg",
+        lastModified: Date.now(),
+      });
+    pendingCameraFile = null;
     addFilesToSelection([file]);
-    closeCamera();
+    closeCamera(true, false);
   });
 
-  closeCameraBtn.addEventListener("click", closeCamera);
+  closeCameraBtn.addEventListener("click", () => closeCamera());
 
   function pushCameraHistoryState() {
     history.pushState({ cameraOpen: true }, "");
@@ -2600,11 +3287,12 @@ function initChat(WHO) {
     }
     if (cameraModal.classList.contains("open")) {
       e.preventDefault();
-      closeCamera();
+      closeCamera(false, true);
     }
   });
 
   async function openCamera() {
+    ensureCameraEnhancementUI();
     cameraModal.classList.add("open");
     cameraLiveWrap.style.display = "flex";
     cameraPreviewWrap.classList.remove("visible");
@@ -2613,14 +3301,31 @@ function initChat(WHO) {
     await startCameraStream();
   }
 
-  function closeCamera() {
+  function closeCamera(useHistoryBack = true, discardPending = true) {
+    cancelCameraCountdown();
     if (cameraStream) {
-      cameraStream.getTracks().forEach((t) => t.stop());
+      cameraStream.getTracks().forEach((track) => track.stop());
       cameraStream = null;
     }
+    if (cameraPreviewObjectUrl) {
+      URL.revokeObjectURL(cameraPreviewObjectUrl);
+      cameraPreviewObjectUrl = null;
+    }
+    capturedBlob = null;
+    if (discardPending) {
+      pendingCameraFile = null;
+      queueSelectedFilesDraftSave();
+    }
+    cameraPreviewImg.removeAttribute("src");
     cameraModal.classList.remove("open");
     document.body.style.overflow = "";
-    if (history.state && history.state.cameraOpen) history.back();
+    if (
+      useHistoryBack &&
+      history.state &&
+      history.state.cameraOpen
+    ) {
+      history.back();
+    }
   }
 
   async function registerFCMToken() {
@@ -2652,9 +3357,23 @@ function initChat(WHO) {
   // ─── INIT ────────────────────────────────────────────────────────
   loadCapsuleFromFirestore();
   initNotifications();
+  restoreSelectedFilesDraft();
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().catch(() => {});
+  }
   if (typeof checkAuthentication === "function") {
     setTimeout(() => {
       loader.style.display = "none";
     }, 4000);
   }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      queueSelectedFilesDraftSave();
+    }
+  });
+
+  window.addEventListener("pagehide", () => {
+    queueSelectedFilesDraftSave();
+  });
 } // end initChat
