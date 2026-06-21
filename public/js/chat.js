@@ -30,6 +30,33 @@ function initChat(WHO) {
     .collection("messages");
   const typingRef = db.collection("chats").doc(CHAT_ID).collection("typing");
   const readRef = db.collection("chats").doc(CHAT_ID).collection("readStatus");
+  const presenceCollectionRef = db
+    .collection("chats")
+    .doc(CHAT_ID)
+    .collection("presence");
+  const myPresenceRef = presenceCollectionRef.doc(WHO);
+
+  // ─── LIFECYCLE / CLEANUP ─────────────────────────────────────────
+  const _cleanupCallbacks = new Set();
+  let _cleanupStarted = false;
+
+  function trackCleanup(callback) {
+    if (typeof callback === "function") _cleanupCallbacks.add(callback);
+    return callback;
+  }
+
+  function cleanupChatResources() {
+    if (_cleanupStarted) return;
+    _cleanupStarted = true;
+    _cleanupCallbacks.forEach((callback) => {
+      try {
+        callback();
+      } catch (error) {
+        console.warn("Chat cleanup failed:", error);
+      }
+    });
+    _cleanupCallbacks.clear();
+  }
 
   // ─── BLURRED IMAGES STATE ─────────────────────────────────────────
   const blurRef = db
@@ -48,25 +75,36 @@ function initChat(WHO) {
     });
   }
 
-  blurRef.onSnapshot((snap) => {
-    _blurredImages = new Set(snap.exists ? snap.data().urls || [] : []);
-    refreshBlurredImagesInDOM();
-  });
+  trackCleanup(
+    blurRef.onSnapshot(
+      (snap) => {
+        _blurredImages = new Set(snap.exists ? snap.data().urls || [] : []);
+        refreshBlurredImagesInDOM();
+      },
+      (error) => console.warn("Blur-state listener failed:", error),
+    ),
+  );
 
   function isImageBlurred(url) {
     return _blurredImages.has(url);
   }
 
+  // Cache MediaQueryList objects once. Their .matches values update
+  // automatically when the viewport or active input devices change.
+  const MOBILE_UI_QUERY = window.matchMedia(
+    "(hover: none) and (pointer: coarse) and (max-width: 768px)",
+  );
+  const TOUCH_ONLY_UI_QUERY = window.matchMedia(
+    "(hover: none) and (pointer: coarse) and (max-width: 1024px)",
+  );
+  const FINE_POINTER_QUERY = window.matchMedia("(any-pointer: fine)");
+
   function isMobileUI() {
-    return (
-      window.matchMedia("(pointer: coarse)").matches || window.innerWidth <= 768
-    );
+    return MOBILE_UI_QUERY.matches && !FINE_POINTER_QUERY.matches;
   }
 
   function isTouchOnlyUI() {
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const hasFinePointer = window.matchMedia("(any-pointer: fine)").matches;
-    return coarse && !hasFinePointer && window.innerWidth <= 1024;
+    return TOUCH_ONLY_UI_QUERY.matches && !FINE_POINTER_QUERY.matches;
   }
 
   async function setImagesBlurred(urls, shouldBlur) {
@@ -262,6 +300,31 @@ function initChat(WHO) {
   const notifDismissBtn = document.getElementById("notif-dismiss-btn");
   const scrollToBottomBtn = document.getElementById("scroll-to-bottom");
   const replyBar = document.getElementById("reply-bar");
+  const chatHeader = document.getElementById("chat-header");
+  const headerStatusText = document.getElementById("status-text");
+  const headerStatusDot = document.querySelector(".status-dot");
+
+  const headerActions = document.createElement("div");
+  headerActions.className = "header-actions";
+
+  function createHeaderActionButton(id, label, icon) {
+    const button = document.createElement("button");
+    button.id = id;
+    button.className = "header-action-btn";
+    button.type = "button";
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    button.textContent = icon;
+    return button;
+  }
+
+  const sharedMediaBtn = createHeaderActionButton(
+    "shared-media-btn",
+    "Shared media",
+    "🖼️",
+  );
+  headerActions.appendChild(sharedMediaBtn);
+  chatHeader?.appendChild(headerActions);
 
   // Camera
   const cameraBtn = document.getElementById("camera-btn");
@@ -280,7 +343,7 @@ function initChat(WHO) {
   // ─── STATE ───────────────────────────────────────────────────────
   const MAX_SELECTED_IMAGES = 30;
   const DRAFT_DB_NAME = "mk-private-chat-drafts";
-  const DRAFT_DB_VERSION = 1;
+  const DRAFT_DB_VERSION = 2;
   const DRAFT_STORE = "drafts";
   const DRAFT_KEY = `${CHAT_ID}:${WHO}:unsent-images`;
 
@@ -288,19 +351,28 @@ function initChat(WHO) {
   let previewObjectUrls = [];
   let draftWriteQueue = Promise.resolve();
   let isSending = false;
+  // Successfully uploaded files are cached individually until the Firestore
+  // message write succeeds. This also survives a failure halfway through a
+  // multi-image batch, so retrying resumes instead of re-uploading earlier files.
+  let pendingUploadCache = null;
+  // Shape: { signature, entries: Array<{ fileSignature, url } | null>, uploadedAt }
   let typingTimeout = null;
   let isTyping = false;
-  let firstLoad = true;
   let partnerReadTime = null;
   let lbImages = [];
   let lbIndex = 0;
   let cameraStream = null;
+  // Every stream/capture action gets a generation number. Results from an
+  // older async request are discarded and their tracks are stopped.
+  let cameraStreamRequestId = 0;
+  let cameraCaptureRequestId = 0;
   let facingMode = "environment";
   let capturedBlob = null;
   let pendingCameraFile = null;
   let cameraPreviewObjectUrl = null;
   let cameraTimerSeconds = 0;
   let cameraCountdownToken = 0;
+  let cameraIsCapturing = false;
   let cameraIsCountingDown = false;
   let cameraStage = null;
   let cameraFocusIndicator = null;
@@ -312,10 +384,64 @@ function initChat(WHO) {
   let cameraExposureValue = null;
   let cameraFocusUnsupportedNotified = false;
   let cameraFocusResetTimer = null;
-  let unreadInserted = false;
-  let lastReadTimestamp = null;
 
   // ─── UNSENT IMAGE DRAFTS (IndexedDB) ─────────────────────────────
+  function getFileSignature(file) {
+    return [
+      file.name || "blob",
+      file.size,
+      file.type || "",
+      file.lastModified || 0,
+    ].join(":");
+  }
+
+  function getFilesSignature(files) {
+    return files.map(getFileSignature).join("|");
+  }
+
+  function normalizePendingUploadCache(cache, files) {
+    if (!cache || cache.signature !== getFilesSignature(files)) return null;
+
+    const fileSignatures = files.map(getFileSignature);
+    let entries = null;
+
+    if (Array.isArray(cache.entries) && cache.entries.length === files.length) {
+      entries = cache.entries.map((entry, index) => {
+        if (
+          entry &&
+          entry.fileSignature === fileSignatures[index] &&
+          typeof entry.url === "string" &&
+          entry.url
+        ) {
+          return { fileSignature: entry.fileSignature, url: entry.url };
+        }
+        return null;
+      });
+    } else if (
+      // Backward compatibility with drafts made by the previous full-batch cache.
+      Array.isArray(cache.urls) &&
+      cache.urls.length === files.length
+    ) {
+      entries = cache.urls.map((url, index) =>
+        typeof url === "string" && url
+          ? { fileSignature: fileSignatures[index], url }
+          : null,
+      );
+    }
+
+    if (!entries) return null;
+
+    return {
+      signature: cache.signature,
+      entries,
+      uploadedAt: Number(cache.uploadedAt) || Date.now(),
+    };
+  }
+
+  function invalidatePendingUploadCache() {
+    pendingUploadCache = null;
+  }
+
   function openDraftDB() {
     return new Promise((resolve, reject) => {
       if (!("indexedDB" in window)) {
@@ -332,6 +458,8 @@ function initChat(WHO) {
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
+      request.onblocked = () =>
+        reject(new Error("IndexedDB upgrade is blocked by another open tab"));
     });
   }
 
@@ -341,13 +469,18 @@ function initChat(WHO) {
       await new Promise((resolve, reject) => {
         const tx = database.transaction(DRAFT_STORE, "readwrite");
         const store = tx.objectStore(DRAFT_STORE);
-        if (selectedFiles.length === 0 && !pendingCameraFile) {
+        if (
+          selectedFiles.length === 0 &&
+          !pendingCameraFile &&
+          !pendingUploadCache
+        ) {
           store.delete(DRAFT_KEY);
         } else {
           store.put({
             id: DRAFT_KEY,
             files: selectedFiles,
             pendingCameraFile,
+            pendingUploadCache,
             updatedAt: Date.now(),
           });
         }
@@ -407,6 +540,16 @@ function initChat(WHO) {
         );
       pendingCameraFile = null;
 
+      const storedCache = record?.pendingUploadCache;
+      const normalizedCache = normalizePendingUploadCache(
+        storedCache,
+        selectedFiles,
+      );
+      pendingUploadCache =
+        normalizedCache && normalizedCache.entries.some((entry) => entry)
+          ? normalizedCache
+          : null;
+
       renderPreviewBar();
       queueSelectedFilesDraftSave();
       showMiniNotif(
@@ -431,11 +574,12 @@ function initChat(WHO) {
   // Every time a message with images is rendered, we push its URLs here.
   // openLightbox() uses this flat list so users can swipe across ALL images.
   const _allChatImages = []; // { url, msgId }
+  const _allChatImageUrls = new Set();
   function registerImagesForLightbox(urls, msgId) {
     urls.forEach((url) => {
-      if (!_allChatImages.find((e) => e.url === url)) {
-        _allChatImages.push({ url, msgId });
-      }
+      if (!url || _allChatImageUrls.has(url)) return;
+      _allChatImageUrls.add(url);
+      _allChatImages.push({ url, msgId });
     });
   }
   function globalLightboxIndex(url) {
@@ -565,7 +709,6 @@ function initChat(WHO) {
 
   let activeReactionBar = null;
   let reactionBarMsgId = null;
-  let longPressTimer = null;
 
   // ─── SCROLL RESTORATION ──────────────────────────────────────────
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -581,10 +724,18 @@ function initChat(WHO) {
     });
   }
 
-  window.addEventListener("load", fixChatViewport);
-  window.addEventListener("pageshow", () => {
+  let _viewportFixTimer = null;
+  const handleViewportPageShow = () => {
     fixChatViewport();
-    setTimeout(fixChatViewport, 100);
+    clearTimeout(_viewportFixTimer);
+    _viewportFixTimer = setTimeout(fixChatViewport, 100);
+  };
+  window.addEventListener("load", fixChatViewport);
+  window.addEventListener("pageshow", handleViewportPageShow);
+  trackCleanup(() => {
+    window.removeEventListener("load", fixChatViewport);
+    window.removeEventListener("pageshow", handleViewportPageShow);
+    clearTimeout(_viewportFixTimer);
   });
 
   // ─── BOTTOM-LOCK SCROLL TRACKING ─────────────────────────────────
@@ -603,6 +754,7 @@ function initChat(WHO) {
       scrollToBottomBtn.textContent = "↓";
       const badge = scrollToBottomBtn.querySelector(".unread-badge");
       if (badge) badge.remove();
+      updateMyReadTime();
     } else {
       scrollToBottomBtn.classList.add("visible");
       if (unreadWhileScrolled > 0) {
@@ -620,8 +772,23 @@ function initChat(WHO) {
     }
   }
 
-  msgContainer.addEventListener("scroll", checkScrollPosition, {
+  let _messageScrollFrame = null;
+  const handleMessageScroll = () => {
+    if (_messageScrollFrame !== null) return;
+    _messageScrollFrame = requestAnimationFrame(() => {
+      _messageScrollFrame = null;
+      checkScrollPosition();
+      if (msgContainer.scrollTop < 200 && !_loadingMore && !_allLoaded) {
+        loadMoreMessages();
+      }
+    });
+  };
+  msgContainer.addEventListener("scroll", handleMessageScroll, {
     passive: true,
+  });
+  trackCleanup(() => {
+    msgContainer.removeEventListener("scroll", handleMessageScroll);
+    if (_messageScrollFrame !== null) cancelAnimationFrame(_messageScrollFrame);
   });
 
   scrollToBottomBtn.addEventListener("click", () => {
@@ -759,20 +926,226 @@ function initChat(WHO) {
   }
 
   // ─── READ STATUS ─────────────────────────────────────────────────
+  const READ_RECEIPT_MIN_INTERVAL_MS = 5_000;
+  const READ_RECEIPT_STORAGE_KEY = `mk_last_read_${CHAT_ID}_${WHO}`;
+  let _lastReadReceiptWriteAt = 0;
+  let _readReceiptTimer = null;
+  let _latestIncomingMessageTsMs = 0;
+  let _lastReadReceiptMessageTsMs =
+    Number(localStorage.getItem(READ_RECEIPT_STORAGE_KEY)) || 0;
+
+  function timestampToMillis(value) {
+    if (!value) return 0;
+    if (typeof value.toMillis === "function") return value.toMillis();
+    if (typeof value.toDate === "function") return value.toDate().getTime();
+    if (value instanceof Date) return value.getTime();
+    return Number(value) || 0;
+  }
+
+  function noteIncomingMessage(message) {
+    if (!message || message.sender === WHO) return;
+    const timestampMs = timestampToMillis(message.timestamp);
+    if (timestampMs > _latestIncomingMessageTsMs) {
+      _latestIncomingMessageTsMs = timestampMs;
+    }
+  }
+
+  async function commitReadReceipt(messageTimestampMs) {
+    if (
+      document.hidden ||
+      !isAtBottom ||
+      messageTimestampMs <= _lastReadReceiptMessageTsMs
+    ) {
+      return;
+    }
+
+    _lastReadReceiptWriteAt = Date.now();
+    try {
+      await readRef.doc(WHO).set(
+        {
+          lastRead: firebase.firestore.FieldValue.serverTimestamp(),
+          lastReadMessageTimestamp:
+            firebase.firestore.Timestamp.fromMillis(messageTimestampMs),
+          user: WHO,
+        },
+        { merge: true },
+      );
+      _lastReadReceiptMessageTsMs = messageTimestampMs;
+      localStorage.setItem(
+        READ_RECEIPT_STORAGE_KEY,
+        String(messageTimestampMs),
+      );
+    } catch (error) {
+      console.warn("Read receipt update failed:", error);
+    }
+  }
+
   function updateMyReadTime() {
-    readRef.doc(WHO).set({
-      lastRead: firebase.firestore.FieldValue.serverTimestamp(),
-      user: WHO,
-    });
+    if (
+      document.hidden ||
+      !isAtBottom ||
+      _latestIncomingMessageTsMs <= _lastReadReceiptMessageTsMs
+    ) {
+      return;
+    }
+
+    const targetTimestampMs = _latestIncomingMessageTsMs;
+    const elapsed = Date.now() - _lastReadReceiptWriteAt;
+    const delay = Math.max(0, READ_RECEIPT_MIN_INTERVAL_MS - elapsed);
+
+    clearTimeout(_readReceiptTimer);
+    _readReceiptTimer = setTimeout(() => {
+      _readReceiptTimer = null;
+      commitReadReceipt(targetTimestampMs);
+    }, delay);
   }
 
   const partner = WHO === "mikica" ? "kikica" : "mikica";
-  readRef.doc(partner).onSnapshot((snap) => {
-    if (snap.exists) {
-      const data = snap.data();
-      partnerReadTime = data.lastRead ? data.lastRead.toDate() : null;
-      updateAllTicks();
+  trackCleanup(
+    readRef.doc(partner).onSnapshot(
+      (snap) => {
+        if (!snap.exists) return;
+        const data = snap.data();
+        partnerReadTime = data.lastRead ? data.lastRead.toDate() : null;
+        updateAllTicks();
+      },
+      (error) => console.warn("Read-status listener failed:", error),
+    ),
+  );
+
+  // ─── ONLINE / LAST-SEEN PRESENCE ────────────────────────────────
+  const partnerPresenceRef = presenceCollectionRef.doc(partner);
+  const presenceSessionId =
+    crypto.randomUUID?.() ||
+    `presence_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  // Firestore presence is intentionally low-frequency. This cuts the old
+  // 45-second heartbeat by more than half while stale timestamps still stop
+  // a disconnected tab from appearing online forever.
+  const PRESENCE_HEARTBEAT_MS = 120_000;
+  const PRESENCE_ONLINE_WINDOW_MS = 270_000;
+  let partnerPresenceData = null;
+  let presenceHeartbeat = null;
+  let presenceRenderTimer = null;
+  let _myPresenceState = null;
+
+  async function updateMyPresence(online, { heartbeat = false } = {}) {
+    if (!heartbeat && _myPresenceState === online) return;
+
+    try {
+      if (online) {
+        await myPresenceRef.set(
+          {
+            user: WHO,
+            online: true,
+            sessionId: presenceSessionId,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+        _myPresenceState = true;
+        return;
+      }
+
+      // An older tab may not mark a newer active session offline.
+      await db.runTransaction(async (transaction) => {
+        const snap = await transaction.get(myPresenceRef);
+        if (!snap.exists || snap.data().sessionId !== presenceSessionId) return;
+        transaction.set(
+          myPresenceRef,
+          {
+            online: false,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      });
+      _myPresenceState = false;
+    } catch (error) {
+      console.warn("Presence update failed:", error);
     }
+  }
+
+  function formatPresenceTime(date) {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      return "Just the two of us ❤️";
+    }
+    const diff = Math.max(0, Date.now() - date.getTime());
+    if (diff < 60_000) return "Last seen just now";
+    if (diff < 60 * 60_000) {
+      return `Last seen ${Math.floor(diff / 60_000)}m ago`;
+    }
+    if (diff < 24 * 60 * 60_000) {
+      return `Last seen ${Math.floor(diff / (60 * 60_000))}h ago`;
+    }
+    return `Last seen ${date.toLocaleDateString("mk-MK", {
+      day: "numeric",
+      month: "short",
+    })}`;
+  }
+
+  function renderPartnerPresence() {
+    if (!headerStatusText || !headerStatusDot) return;
+    const lastSeen = partnerPresenceData?.lastSeen?.toDate?.() || null;
+    const isFresh =
+      lastSeen && Date.now() - lastSeen.getTime() < PRESENCE_ONLINE_WINDOW_MS;
+    const online = Boolean(partnerPresenceData?.online && isFresh);
+
+    headerStatusText.textContent = online
+      ? "Online"
+      : formatPresenceTime(lastSeen);
+    headerStatusDot.classList.toggle("offline", !online);
+  }
+
+  trackCleanup(
+    partnerPresenceRef.onSnapshot(
+      (snap) => {
+        partnerPresenceData = snap.exists ? snap.data() : null;
+        renderPartnerPresence();
+      },
+      (error) => console.warn("Presence listener failed:", error),
+    ),
+  );
+
+  function startPresenceHeartbeat() {
+    clearInterval(presenceHeartbeat);
+    updateMyPresence(true);
+    presenceHeartbeat = setInterval(() => {
+      if (!document.hidden) updateMyPresence(true, { heartbeat: true });
+    }, PRESENCE_HEARTBEAT_MS);
+  }
+
+  startPresenceHeartbeat();
+  presenceRenderTimer = setInterval(renderPartnerPresence, 30_000);
+  trackCleanup(() => clearInterval(presenceHeartbeat));
+  trackCleanup(() => clearInterval(presenceRenderTimer));
+  trackCleanup(() => clearTimeout(_readReceiptTimer));
+
+  const handlePresenceVisibility = () => {
+    if (document.hidden) {
+      clearInterval(presenceHeartbeat);
+      updateMyPresence(false);
+    } else {
+      startPresenceHeartbeat();
+      updateMyReadTime();
+    }
+  };
+  document.addEventListener("visibilitychange", handlePresenceVisibility);
+  trackCleanup(() =>
+    document.removeEventListener("visibilitychange", handlePresenceVisibility),
+  );
+
+  const handlePresencePageHide = () => {
+    clearInterval(presenceHeartbeat);
+    updateMyPresence(false);
+  };
+  const handlePresencePageShow = (event) => {
+    if (event.persisted && !document.hidden) startPresenceHeartbeat();
+  };
+  window.addEventListener("pagehide", handlePresencePageHide);
+  window.addEventListener("pageshow", handlePresencePageShow);
+  trackCleanup(() => {
+    window.removeEventListener("pagehide", handlePresencePageHide);
+    window.removeEventListener("pageshow", handlePresencePageShow);
   });
 
   function updateAllTicks() {
@@ -931,6 +1304,7 @@ function initChat(WHO) {
     );
     const freeSlots = MAX_SELECTED_IMAGES - selectedFiles.length;
     const accepted = validImages.slice(0, Math.max(0, freeSlots));
+    if (accepted.length > 0) invalidatePendingUploadCache();
     selectedFiles = [...selectedFiles, ...accepted];
 
     if (accepted.length < validImages.length) {
@@ -967,6 +1341,7 @@ function initChat(WHO) {
       removeBtn.textContent = "✕";
       removeBtn.addEventListener("click", () => {
         if (isSending) return;
+        invalidatePendingUploadCache();
         selectedFiles.splice(idx, 1);
         renderPreviewBar();
         queueSelectedFilesDraftSave();
@@ -984,42 +1359,63 @@ function initChat(WHO) {
 
   clearAllBtn.addEventListener("click", () => {
     if (isSending) return;
+    invalidatePendingUploadCache();
     selectedFiles = [];
     renderPreviewBar();
     queueSelectedFilesDraftSave();
   });
 
   // ─── TYPING INDICATOR ─────────────────────────────────────────────
+  function stopTyping() {
+    clearTimeout(typingTimeout);
+    typingTimeout = null;
+    if (!isTyping) return;
+    isTyping = false;
+    typingRef
+      .doc(WHO)
+      .set({ typing: false }, { merge: true })
+      .catch((error) => console.warn("Could not clear typing state:", error));
+  }
+
   function handleTyping() {
     if (!isTyping) {
       isTyping = true;
-      typingRef.doc(WHO).set({
-        typing: true,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      });
+      typingRef
+        .doc(WHO)
+        .set(
+          {
+            typing: true,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        )
+        .catch((error) => console.warn("Typing update failed:", error));
     }
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      isTyping = false;
-      typingRef.doc(WHO).set({ typing: false });
-    }, 2000);
+    typingTimeout = setTimeout(stopTyping, 2_500);
   }
 
-  typingRef.doc(partner).onSnapshot((snap) => {
-    if (snap.exists && snap.data().typing) {
-      typingIndicator.innerHTML = `
+  trackCleanup(
+    typingRef.doc(partner).onSnapshot(
+      (snap) => {
+        if (snap.exists && snap.data().typing) {
+          typingIndicator.innerHTML = `
       <div class="typing-bubble-row">
         <div class="typing-bubble-avatar">${AVATARS[partner] || "💗"}</div>
         <div class="typing-bubble-pill">
           <span class="typing-dots"><span></span><span></span><span></span></span>
         </div>
       </div>`;
-      typingIndicator.classList.add("visible");
-    } else {
-      typingIndicator.classList.remove("visible");
-      typingIndicator.innerHTML = "";
-    }
-  });
+          typingIndicator.classList.add("visible");
+        } else {
+          typingIndicator.classList.remove("visible");
+          typingIndicator.innerHTML = "";
+        }
+      },
+      (error) => console.warn("Typing listener failed:", error),
+    ),
+  );
+  trackCleanup(() => clearTimeout(typingTimeout));
 
   // ─── REPLY SYSTEM ─────────────────────────────────────────────────
   function startReply(msg, id) {
@@ -1069,6 +1465,429 @@ function initChat(WHO) {
     scrollToBottomBtn.classList.remove("reply-open");
   }
 
+  // ─── SHARED MEDIA — PAGINATED / LOADS ON SCROLL ──────────────────
+  // New image messages are queried through hasMedia == true, so Firestore
+  // reads only image-message documents. Older messages created before the
+  // hasMedia field existed are discovered through a bounded fallback scan,
+  // one page at a time and only when the user scrolls for more.
+  let _activeFeatureOverlay = null;
+  let _activeFeatureCleanup = null;
+
+  const MEDIA_PAGE_SIZE = 24;
+  const LEGACY_MEDIA_SCAN_PAGE_SIZE = 50;
+  const MEDIA_SCROLL_THRESHOLD_PX = 320;
+
+  let _sharedMediaState = null;
+
+  function closeFeatureOverlay() {
+    if (_activeFeatureCleanup) {
+      try {
+        _activeFeatureCleanup();
+      } catch (error) {
+        console.warn("Feature overlay cleanup failed:", error);
+      }
+      _activeFeatureCleanup = null;
+    }
+
+    if (!_activeFeatureOverlay) return;
+    _activeFeatureOverlay.remove();
+    _activeFeatureOverlay = null;
+    unlockScroll();
+  }
+
+  function createFeatureOverlay(titleText) {
+    closeFeatureOverlay();
+    closeReactionBar();
+    closeAllDropdowns();
+    lockScroll();
+
+    const overlay = document.createElement("div");
+    overlay.className = "chat-feature-overlay";
+
+    const panel = document.createElement("section");
+    panel.className = "chat-feature-panel";
+
+    const header = document.createElement("div");
+    header.className = "chat-feature-header";
+
+    const title = document.createElement("h2");
+    title.textContent = titleText;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "chat-feature-close";
+    closeBtn.textContent = "✕";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.addEventListener("click", closeFeatureOverlay);
+
+    header.append(title, closeBtn);
+
+    const body = document.createElement("div");
+    body.className = "chat-feature-body";
+
+    panel.append(header, body);
+    overlay.appendChild(panel);
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeFeatureOverlay();
+    });
+
+    document.body.appendChild(overlay);
+    _activeFeatureOverlay = overlay;
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    return { overlay, panel, body };
+  }
+
+  function extractImageUrls(message) {
+    const urls = Array.isArray(message?.imageUrls)
+      ? message.imageUrls
+      : message?.imageUrl
+        ? [message.imageUrl]
+        : [];
+
+    return [...new Set(urls.filter((url) => typeof url === "string" && url))];
+  }
+
+  function getMediaThumbnailUrl(url) {
+    if (!url || !url.includes("res.cloudinary.com")) return url;
+    if (!url.includes("/upload/")) return url;
+
+    return url.replace(
+      "/upload/",
+      "/upload/f_auto,q_auto:eco,c_fill,w_360,h_360/",
+    );
+  }
+
+  function createSharedMediaState() {
+    return {
+      items: [],
+      keys: new Set(),
+      indexedCursor: null,
+      indexedDone: false,
+      indexedQueryUnavailable: false,
+      legacyCursor: null,
+      legacyDone: false,
+      loading: false,
+      grid: null,
+      count: null,
+      status: null,
+      body: null,
+      scrollHandler: null,
+    };
+  }
+
+  function mediaItemsFromDocument(doc) {
+    const message = doc.data();
+    const timestampMs =
+      timestampToMillis(message.timestamp) ||
+      Number(message.clientCreatedAt) ||
+      0;
+
+    return extractImageUrls(message).map((url, imageIndex) => ({
+      key: `${doc.id}:${imageIndex}:${url}`,
+      url,
+      msgId: doc.id,
+      sender: message.sender || null,
+      timestampMs,
+    }));
+  }
+
+  function addSharedMediaItems(items, { prepend = false } = {}) {
+    if (!_sharedMediaState || !Array.isArray(items) || items.length === 0) {
+      return [];
+    }
+
+    const fresh = [];
+    items.forEach((item) => {
+      if (!item?.url || _sharedMediaState.keys.has(item.key)) return;
+      _sharedMediaState.keys.add(item.key);
+      fresh.push(item);
+    });
+
+    if (fresh.length === 0) return [];
+
+    if (prepend) {
+      _sharedMediaState.items = [...fresh, ..._sharedMediaState.items].sort(
+        (a, b) => b.timestampMs - a.timestampMs,
+      );
+    } else {
+      _sharedMediaState.items.push(...fresh);
+    }
+
+    return fresh;
+  }
+
+  function updateSharedMediaStatus() {
+    const state = _sharedMediaState;
+    if (!state) return;
+
+    if (state.count) {
+      const count = state.items.length;
+      state.count.textContent = `${count} photo${count === 1 ? "" : "s"} loaded`;
+    }
+
+    if (!state.status) return;
+
+    if (state.loading) {
+      state.status.textContent = "Loading more photos…";
+      state.status.classList.add("loading");
+      state.status.disabled = true;
+      return;
+    }
+
+    state.status.classList.remove("loading");
+    if (state.indexedDone && state.legacyDone) {
+      state.status.textContent = "All photos loaded";
+      state.status.disabled = true;
+    } else {
+      state.status.textContent = "Scroll or tap for older photos";
+      state.status.disabled = false;
+    }
+  }
+
+  function createSharedMediaButton(item) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "shared-media-item";
+    button.dataset.mediaKey = item.key;
+
+    const img = document.createElement("img");
+    img.src = getMediaThumbnailUrl(item.url);
+    img.alt = "Shared photo";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.dataset.fullUrl = item.url;
+
+    button.appendChild(img);
+    button.addEventListener("click", () => {
+      const state = _sharedMediaState;
+      if (!state) return;
+
+      const urls = state.items.map((mediaItem) => mediaItem.url);
+      const selectedIndex = state.items.findIndex(
+        (mediaItem) => mediaItem.key === item.key,
+      );
+
+      closeFeatureOverlay();
+      openLightbox(urls, Math.max(0, selectedIndex), true);
+    });
+
+    return button;
+  }
+
+  function renderSharedMediaItems(items, { prepend = false } = {}) {
+    const state = _sharedMediaState;
+    if (!state?.grid || !Array.isArray(items) || items.length === 0) return;
+
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) =>
+      fragment.appendChild(createSharedMediaButton(item)),
+    );
+
+    if (prepend) state.grid.prepend(fragment);
+    else state.grid.appendChild(fragment);
+  }
+
+  function rebuildSharedMediaGrid() {
+    const state = _sharedMediaState;
+    if (!state?.grid) return;
+    state.grid.innerHTML = "";
+    renderSharedMediaItems(state.items);
+    updateSharedMediaStatus();
+  }
+
+  function upsertSharedMediaItems(messageId, message) {
+    if (!_sharedMediaState) return;
+
+    const urls = extractImageUrls(message);
+    if (urls.length === 0) return;
+
+    const timestampMs =
+      timestampToMillis(message.timestamp) ||
+      Number(message.clientCreatedAt) ||
+      Date.now();
+
+    const incoming = urls.map((url, imageIndex) => ({
+      key: `${messageId}:${imageIndex}:${url}`,
+      url,
+      msgId: messageId,
+      sender: message.sender || null,
+      timestampMs,
+    }));
+
+    const fresh = addSharedMediaItems(incoming, { prepend: true });
+    if (fresh.length > 0 && _sharedMediaState.grid) {
+      // Rebuilding is rare (only when a new photo arrives) and guarantees the
+      // lightbox/grid order stays chronological without duplicate DOM nodes.
+      rebuildSharedMediaGrid();
+    }
+  }
+
+  async function loadIndexedMediaPage(state) {
+    let query = messagesRef
+      .where("hasMedia", "==", true)
+      .orderBy("timestamp", "desc")
+      .limit(MEDIA_PAGE_SIZE);
+
+    if (state.indexedCursor) query = query.startAfter(state.indexedCursor);
+
+    const snap = await query.get();
+    if (snap.empty) {
+      state.indexedDone = true;
+      return [];
+    }
+
+    state.indexedCursor = snap.docs[snap.docs.length - 1];
+    if (snap.docs.length < MEDIA_PAGE_SIZE) state.indexedDone = true;
+
+    return snap.docs.flatMap(mediaItemsFromDocument);
+  }
+
+  async function loadLegacyMediaPage(state) {
+    let query = messagesRef
+      .orderBy("timestamp", "desc")
+      .limit(LEGACY_MEDIA_SCAN_PAGE_SIZE);
+
+    if (state.legacyCursor) query = query.startAfter(state.legacyCursor);
+
+    const snap = await query.get();
+    if (snap.empty) {
+      state.legacyDone = true;
+      return [];
+    }
+
+    state.legacyCursor = snap.docs[snap.docs.length - 1];
+    if (snap.docs.length < LEGACY_MEDIA_SCAN_PAGE_SIZE) state.legacyDone = true;
+
+    return snap.docs.flatMap((doc) => {
+      const data = doc.data();
+      // If the optimized media query worked, its documents are already loaded.
+      // The fallback then looks only for old image messages missing hasMedia.
+      if (!state.indexedQueryUnavailable && data.hasMedia === true) return [];
+      return mediaItemsFromDocument(doc);
+    });
+  }
+
+  async function loadNextSharedMediaPage() {
+    const state = _sharedMediaState;
+    if (!state || state.loading || (state.indexedDone && state.legacyDone)) {
+      return;
+    }
+
+    state.loading = true;
+    updateSharedMediaStatus();
+
+    try {
+      let pageItems = [];
+
+      if (!state.indexedDone) {
+        try {
+          pageItems = await loadIndexedMediaPage(state);
+        } catch (error) {
+          // This can happen until Firestore creates the suggested composite
+          // index. The bounded fallback still keeps the gallery usable.
+          console.warn(
+            "Indexed media query unavailable; using bounded message pages:",
+            error,
+          );
+          state.indexedQueryUnavailable = true;
+          state.indexedDone = true;
+        }
+      }
+
+      // Once indexed pages are exhausted—or unavailable—scan one bounded page
+      // of older message history per scroll request. Never loop through the
+      // complete collection in one action.
+      if (state.indexedDone && pageItems.length === 0 && !state.legacyDone) {
+        pageItems = await loadLegacyMediaPage(state);
+      }
+
+      const fresh = addSharedMediaItems(pageItems);
+      renderSharedMediaItems(fresh);
+
+      if (state.items.length === 0 && state.indexedDone && state.legacyDone) {
+        state.status.textContent = "No shared photos yet.";
+      }
+    } catch (error) {
+      console.error("Shared media page failed:", error);
+      if (state.status) {
+        state.status.textContent =
+          "Photos could not be loaded. Scroll to retry.";
+      }
+    } finally {
+      state.loading = false;
+      updateSharedMediaStatus();
+    }
+  }
+
+  function attachSharedMediaInfiniteScroll(body) {
+    const state = _sharedMediaState;
+    if (!state) return () => {};
+
+    let scrollFrame = null;
+    const onScroll = () => {
+      if (scrollFrame !== null) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = null;
+        const distanceFromBottom =
+          body.scrollHeight - body.scrollTop - body.clientHeight;
+        if (distanceFromBottom <= MEDIA_SCROLL_THRESHOLD_PX) {
+          loadNextSharedMediaPage();
+        }
+      });
+    };
+
+    body.addEventListener("scroll", onScroll, { passive: true });
+    state.scrollHandler = onScroll;
+
+    return () => {
+      body.removeEventListener("scroll", onScroll);
+      if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
+      if (_sharedMediaState) {
+        _sharedMediaState.grid = null;
+        _sharedMediaState.count = null;
+        _sharedMediaState.status = null;
+        _sharedMediaState.body = null;
+        _sharedMediaState.scrollHandler = null;
+      }
+    };
+  }
+
+  async function openSharedMedia() {
+    const { body } = createFeatureOverlay("Shared media");
+    if (!_sharedMediaState) _sharedMediaState = createSharedMediaState();
+
+    const state = _sharedMediaState;
+    state.body = body;
+    body.innerHTML = "";
+
+    const count = document.createElement("div");
+    count.className = "shared-media-count";
+
+    const grid = document.createElement("div");
+    grid.className = "shared-media-grid";
+
+    const status = document.createElement("button");
+    status.type = "button";
+    status.className = "shared-media-status";
+    status.addEventListener("click", () => loadNextSharedMediaPage());
+
+    state.count = count;
+    state.grid = grid;
+    state.status = status;
+
+    body.append(count, grid, status);
+    renderSharedMediaItems(state.items);
+    updateSharedMediaStatus();
+
+    _activeFeatureCleanup = attachSharedMediaInfiniteScroll(body);
+
+    if (state.items.length === 0) {
+      await loadNextSharedMediaPage();
+    }
+  }
+
+  sharedMediaBtn.addEventListener("click", openSharedMedia);
+
   // ─── SEND MESSAGE ─────────────────────────────────────────────────
   sendBtn.addEventListener("click", sendMessage);
   msgInput.addEventListener("keydown", (e) => {
@@ -1092,22 +1911,43 @@ function initChat(WHO) {
     const textToSend = text;
     const currentReply = replyingTo;
 
-    isTyping = false;
-    typingRef.doc(WHO).set({ typing: false });
+    stopTyping();
 
     try {
-      const imageUrls =
-        filesToSend.length > 0
-          ? await uploadImagesWithProgress(filesToSend)
-          : [];
+      let imageUrls = [];
+      if (filesToSend.length > 0) {
+        const normalizedCache = normalizePendingUploadCache(
+          pendingUploadCache,
+          filesToSend,
+        );
+        const reusableCount = normalizedCache
+          ? normalizedCache.entries.filter(Boolean).length
+          : 0;
 
+        if (reusableCount === filesToSend.length) {
+          showMiniNotif("Reusing already uploaded photos…");
+        } else if (reusableCount > 0) {
+          showMiniNotif(
+            `Resuming upload — ${reusableCount} photo${reusableCount === 1 ? "" : "s"} already uploaded`,
+          );
+        }
+
+        imageUrls = await uploadImagesWithProgress(filesToSend);
+        // Persist the complete cache before writing the message. If Firestore
+        // fails or the page closes, retrying will reuse every uploaded file.
+        await queueSelectedFilesDraftSave();
+      }
+
+      const clientCreatedAt = Date.now();
       const msgData = {
         sender: WHO,
         text: textToSend || null,
         imageUrls: imageUrls.length > 0 ? imageUrls : null,
         imageUrl: imageUrls.length === 1 ? imageUrls[0] : null,
+        hasMedia: imageUrls.length > 0,
+        imageCount: imageUrls.length,
+        clientCreatedAt,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        readBy: [WHO],
       };
 
       if (currentReply) {
@@ -1119,9 +1959,17 @@ function initChat(WHO) {
         };
       }
 
-      await messagesRef.add(msgData);
+      const messageRef = messagesRef.doc();
+      await messageRef.set(msgData);
+      if (imageUrls.length > 0) {
+        upsertSharedMediaItems(messageRef.id, {
+          ...msgData,
+          timestamp: firebase.firestore.Timestamp.fromMillis(clientCreatedAt),
+        });
+      }
 
       selectedFiles = [];
+      pendingUploadCache = null;
       renderPreviewBar();
       await queueSelectedFilesDraftSave();
 
@@ -1129,8 +1977,12 @@ function initChat(WHO) {
         msgInput.value = "";
         msgInput.style.height = "";
       }
-      cancelReply();
-      updateMyReadTime();
+      if (
+        (!currentReply && !replyingTo) ||
+        (currentReply && replyingTo?.id === currentReply.id)
+      ) {
+        cancelReply();
+      }
     } catch (err) {
       console.error("Send error:", err);
       renderPreviewBar();
@@ -1153,20 +2005,109 @@ function initChat(WHO) {
   async function uploadImagesWithProgress(files) {
     uploadProgress.style.display = "block";
     uploadProgressBar.style.width = "0%";
-    const urls = [];
+
+    const signature = getFilesSignature(files);
+    const fileSignatures = files.map(getFileSignature);
+    const normalizedCache = normalizePendingUploadCache(
+      pendingUploadCache,
+      files,
+    );
+
+    pendingUploadCache = normalizedCache || {
+      signature,
+      entries: Array(files.length).fill(null),
+      uploadedAt: Date.now(),
+    };
+
+    const urls = Array(files.length).fill(null);
+    const perFileProgress = Array(files.length).fill(0);
+    const MAX_CONCURRENT_UPLOADS = 4;
+    const DRAFT_SAVE_BATCH_SIZE = 3;
+    let dirtySuccessfulUploads = 0;
+    let nextIndex = 0;
+    let firstError = null;
+    let stopScheduling = false;
+    let draftFlushQueue = Promise.resolve();
+
+    const updateOverallProgress = () => {
+      if (files.length === 0) return;
+      const completedFraction =
+        perFileProgress.reduce((sum, value) => sum + value, 0) / files.length;
+      uploadProgressBar.style.width = `${Math.min(100, completedFraction * 100)}%`;
+    };
+
+    const flushUploadCacheDraft = async (force = false) => {
+      if (dirtySuccessfulUploads === 0) return;
+      if (!force && dirtySuccessfulUploads < DRAFT_SAVE_BATCH_SIZE) return;
+      dirtySuccessfulUploads = 0;
+      draftFlushQueue = draftFlushQueue
+        .catch(() => {})
+        .then(() => queueSelectedFilesDraftSave());
+      await draftFlushQueue;
+    };
+
+    const uploadIndex = async (index) => {
+      const cachedEntry = pendingUploadCache.entries[index];
+      if (
+        cachedEntry &&
+        cachedEntry.fileSignature === fileSignatures[index] &&
+        cachedEntry.url
+      ) {
+        urls[index] = cachedEntry.url;
+        perFileProgress[index] = 1;
+        updateOverallProgress();
+        return;
+      }
+
+      const url = await uploadSingleImage(files[index], (fraction) => {
+        perFileProgress[index] = Math.max(
+          perFileProgress[index],
+          Math.min(1, fraction),
+        );
+        updateOverallProgress();
+      });
+
+      urls[index] = url;
+      perFileProgress[index] = 1;
+      pendingUploadCache.entries[index] = {
+        fileSignature: fileSignatures[index],
+        url,
+      };
+      pendingUploadCache.uploadedAt = Date.now();
+      dirtySuccessfulUploads += 1;
+      updateOverallProgress();
+      await flushUploadCacheDraft(false);
+    };
+
+    const worker = async () => {
+      while (!stopScheduling) {
+        const index = nextIndex;
+        nextIndex += 1;
+        if (index >= files.length) return;
+
+        try {
+          await uploadIndex(index);
+        } catch (error) {
+          if (!firstError) firstError = error;
+          stopScheduling = true;
+          return;
+        }
+      }
+    };
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const progressBase = (i / files.length) * 100;
-        const progressChunk = (1 / files.length) * 100;
-        uploadProgressBar.style.width = progressBase + "%";
-        const url = await uploadSingleImage(
-          files[i],
-          progressBase,
-          progressChunk,
-        );
-        urls.push(url);
+      const workerCount = Math.min(MAX_CONCURRENT_UPLOADS, files.length);
+      await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+      // Persist every URL that completed, including uploads that finished while
+      // another concurrent worker was reporting a failure.
+      await flushUploadCacheDraft(true);
+
+      if (firstError) throw firstError;
+      if (urls.some((url) => !url)) {
+        throw new Error("One or more images did not finish uploading");
       }
+
       uploadProgressBar.style.width = "100%";
       return urls;
     } finally {
@@ -1177,35 +2118,62 @@ function initChat(WHO) {
     }
   }
 
-  async function uploadSingleImage(file, progressBase, progressChunk) {
+  async function uploadSingleImage(file, onProgress = () => {}) {
+    let uploadPayload = file;
     try {
-      const compressed = await compressImage(file);
+      uploadPayload = await compressImage(file);
+    } catch (compressionError) {
+      console.warn(
+        "Image compression failed; uploading original:",
+        compressionError,
+      );
+    }
+
+    try {
       const formData = new FormData();
-      formData.append("file", compressed);
+      formData.append("file", uploadPayload);
       formData.append("upload_preset", CLOUDINARY_CONFIG.uploadPreset);
       formData.append("folder", "chat");
       const res = await fetch(
         `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
         { method: "POST", body: formData },
       );
-      if (!res.ok) throw new Error("Cloudinary upload failed");
+      if (!res.ok) throw new Error(`Cloudinary upload failed (${res.status})`);
       const data = await res.json();
-      uploadProgressBar.style.width = progressBase + progressChunk + "%";
+      onProgress(1);
       return data.secure_url;
-    } catch (err) {
-      const ref = storage.ref(`chat/${Date.now()}_${file.name}`);
-      const task = ref.put(file);
+    } catch (cloudinaryError) {
+      console.warn(
+        "Cloudinary failed; using Firebase Storage fallback:",
+        cloudinaryError,
+      );
+      const safeName = (file.name || "photo.jpg").replace(
+        /[^a-zA-Z0-9._-]/g,
+        "_",
+      );
+      const uniqueId =
+        crypto.randomUUID?.() ||
+        `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const ref = storage.ref(`chat/${uniqueId}_${safeName}`);
+      const task = ref.put(uploadPayload);
       return new Promise((resolve, reject) => {
         task.on(
           "state_changed",
           (snap) => {
-            const pct =
-              progressBase +
-              (snap.bytesTransferred / snap.totalBytes) * progressChunk;
-            uploadProgressBar.style.width = pct + "%";
+            if (snap.totalBytes > 0) {
+              onProgress(snap.bytesTransferred / snap.totalBytes);
+            }
           },
           reject,
-          async () => resolve(await task.snapshot.ref.getDownloadURL()),
+          async () => {
+            try {
+              const url = await task.snapshot.ref.getDownloadURL();
+              onProgress(1);
+              resolve(url);
+            } catch (error) {
+              reject(error);
+            }
+          },
         );
       });
     }
@@ -1241,6 +2209,7 @@ function initChat(WHO) {
   // ─── RENDER MESSAGE ───────────────────────────────────────────────
   let _pendingFirstBatch = [];
   let _firstBatchTimer = null;
+  trackCleanup(() => clearTimeout(_firstBatchTimer));
 
   // ─── IntersectionObserver for lazy image loading ──────────────────
   const _imgObserver = new IntersectionObserver(
@@ -1258,6 +2227,13 @@ function initChat(WHO) {
     },
     { rootMargin: "200px" },
   );
+  trackCleanup(() => _imgObserver.disconnect());
+
+  function observeLazyImages(root) {
+    root
+      .querySelectorAll("img[data-lazy-src]")
+      .forEach((img) => _imgObserver.observe(img));
+  }
 
   function flushFirstBatch() {
     if (!_pendingFirstBatch.length) return;
@@ -1273,11 +2249,8 @@ function initChat(WHO) {
       els.forEach((el) => frag.appendChild(el));
       msgRowMap.set(id, frag.lastElementChild);
     });
+    observeLazyImages(frag);
     msgContainer.appendChild(frag);
-
-    msgContainer
-      .querySelectorAll("img[data-lazy-src]")
-      .forEach((img) => _imgObserver.observe(img));
 
     _pendingFirstBatch = [];
     _firstBatchTimer = null;
@@ -1294,6 +2267,7 @@ function initChat(WHO) {
   }
 
   function renderMessage(msg, id, animate = true) {
+    noteIncomingMessage(msg);
     if (!animate) {
       _pendingFirstBatch.push({ msg, id });
       clearTimeout(_firstBatchTimer);
@@ -1306,17 +2280,17 @@ function initChat(WHO) {
     const els = buildMessageElements(msg, id, true);
     const frag = document.createDocumentFragment();
     els.forEach((el) => frag.appendChild(el));
+    observeLazyImages(frag);
     msgContainer.appendChild(frag);
-
-    msgContainer
-      .querySelectorAll("img[data-lazy-src]")
-      .forEach((img) => _imgObserver.observe(img));
 
     const row = msgContainer.lastElementChild;
     if (id) msgRowMap.set(id, row);
 
     if (isAtBottom) {
-      requestAnimationFrame(() => scrollToBottom(true));
+      requestAnimationFrame(() => {
+        scrollToBottom(true);
+        updateMyReadTime();
+      });
     } else {
       if (msg.sender !== WHO) {
         unreadWhileScrolled++;
@@ -1414,9 +2388,7 @@ function initChat(WHO) {
       const gridWrap = document.createElement("div");
       gridWrap.className = "img-grid-wrap";
 
-      // Render every image. This avoids photos being hidden behind a +N tile
-      // and lets every individual photo have its own blur action.
-      const MAX_SHOWN = images.length;
+      // Render every image; there is no hidden +N tile.
       const showCount = images.length;
       const countClass =
         images.length === 1
@@ -1449,123 +2421,150 @@ function initChat(WHO) {
         gridImg.dataset.lazySrc = images[i];
         gridImg.dataset.imgUrl = images[i];
 
-        if (i === MAX_SHOWN - 1 && images.length > MAX_SHOWN) {
-          const cellWrap = document.createElement("div");
-          cellWrap.style.position = "relative";
-          cellWrap.appendChild(gridImg);
-          const overlay = document.createElement("div");
-          overlay.className = "more-overlay";
-          overlay.textContent = `+${images.length - MAX_SHOWN + 1}`;
-          overlay.addEventListener("click", () =>
-            openLightbox(images, MAX_SHOWN - 1),
-          );
-          cellWrap.appendChild(overlay);
-          grid.appendChild(cellWrap);
-        } else {
-          const idx = i;
-          const imgUrl = images[i];
+        const idx = i;
+        const imgUrl = images[i];
 
-          if (isImageBlurred(imgUrl)) gridImg.classList.add("img-blurred");
+        if (isImageBlurred(imgUrl)) gridImg.classList.add("img-blurred");
 
-          // ── IMAGE TOUCH INTERACTIONS ────────────────────────────────
-          // A long-press is handled only by attachReactions() on the bubble,
-          // exactly like the older version. This prevents the image actions menu
-          // and reaction capsule from competing with each other.
-          let imgTapTimer = null;
-          let imgLastTap = 0;
-          let imgTouchStartX = 0;
-          let imgTouchStartY = 0;
-          let imgMoved = false;
+        // ── IMAGE TOUCH INTERACTIONS ────────────────────────────────
+        // Mobile behavior:
+        //   hold image   -> image actions menu + reaction capsule
+        //   single tap   -> lightbox
+        //   double tap   -> default reaction
+        let imgTapTimer = null;
+        let imgLastTap = 0;
+        let imgLongPressTimer = null;
+        let imgLongPressFired = false;
+        let imgTouchStartX = 0;
+        let imgTouchStartY = 0;
+        let imgMoved = false;
 
-          gridImg.addEventListener("contextmenu", (e) => {
-            // Suppress the browser's native image menu on touch devices.
-            if (isTouchOnlyUI()) e.preventDefault();
-          });
+        gridImg.addEventListener("contextmenu", (e) => {
+          // Prevent Android Chrome's native/synthetic image context menu.
+          // Desktop keeps its normal behavior and uses the message 3-dot menu.
+          if (isTouchOnlyUI()) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        });
 
-          gridImg.addEventListener(
-            "touchstart",
-            (e) => {
-              if (!isTouchOnlyUI()) return;
-              imgTouchStartX = e.touches[0].clientX;
-              imgTouchStartY = e.touches[0].clientY;
-              imgMoved = false;
-              // attachReactions() receives this same event through bubbling and
-              // starts the one reaction long-press timer for the whole message.
-            },
-            { passive: true },
-          );
+        gridImg.addEventListener(
+          "touchstart",
+          (e) => {
+            if (!isTouchOnlyUI()) return;
 
-          gridImg.addEventListener(
-            "touchmove",
-            (e) => {
-              if (!isTouchOnlyUI()) return;
-              const dy = Math.abs(e.touches[0].clientY - imgTouchStartY);
-              const dx = Math.abs(e.touches[0].clientX - imgTouchStartX);
-              if (dy > 10 || dx > 10) {
-                imgMoved = true;
-                clearTimeout(imgTapTimer);
-                imgTapTimer = null;
-              }
-            },
-            { passive: true },
-          );
+            imgTouchStartX = e.touches[0].clientX;
+            imgTouchStartY = e.touches[0].clientY;
+            imgMoved = false;
+            imgLongPressFired = false;
+            row.__imageActionHoldFired = false;
 
-          gridImg.addEventListener(
-            "touchcancel",
-            () => {
-              clearTimeout(imgTapTimer);
-              imgTapTimer = null;
-              imgMoved = false;
-            },
-            { passive: true },
-          );
-
-          gridImg.addEventListener(
-            "touchend",
-            (e) => {
-              if (!isTouchOnlyUI()) return;
-
-              // Do not interfere with row-level swipe-to-reply.
+            clearTimeout(imgLongPressTimer);
+            imgLongPressTimer = setTimeout(() => {
+              imgLongPressTimer = null;
               if (imgMoved) return;
 
-              // A reaction long-press just fired. Do not also open the lightbox.
-              if (row.__reactionHoldFired) {
-                e.preventDefault();
-                return;
-              }
+              imgLongPressFired = true;
+              row.__imageActionHoldFired = true;
+              clearTimeout(imgTapTimer);
+              imgTapTimer = null;
 
+              if (navigator.vibrate) navigator.vibrate(30);
+              openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
+            }, 600);
+          },
+          { passive: true },
+        );
+
+        gridImg.addEventListener(
+          "touchmove",
+          (e) => {
+            if (!isTouchOnlyUI()) return;
+
+            const dy = Math.abs(e.touches[0].clientY - imgTouchStartY);
+            const dx = Math.abs(e.touches[0].clientX - imgTouchStartX);
+            if (dy > 10 || dx > 10) {
+              imgMoved = true;
+              clearTimeout(imgLongPressTimer);
+              imgLongPressTimer = null;
+              clearTimeout(imgTapTimer);
+              imgTapTimer = null;
+            }
+          },
+          { passive: true },
+        );
+
+        gridImg.addEventListener(
+          "touchcancel",
+          () => {
+            clearTimeout(imgLongPressTimer);
+            imgLongPressTimer = null;
+            clearTimeout(imgTapTimer);
+            imgTapTimer = null;
+            imgLongPressFired = false;
+            imgMoved = false;
+            row.__imageActionHoldFired = false;
+          },
+          { passive: true },
+        );
+
+        gridImg.addEventListener(
+          "touchend",
+          (e) => {
+            if (!isTouchOnlyUI()) return;
+
+            clearTimeout(imgLongPressTimer);
+            imgLongPressTimer = null;
+
+            // Preserve row-level swipe-to-reply: moving cancels the hold and tap.
+            if (imgMoved) {
+              row.__imageActionHoldFired = false;
+              return;
+            }
+
+            // The hold menu already opened. Do not also open the lightbox or
+            // let a synthetic click/contextmenu trigger another action.
+            if (imgLongPressFired || row.__imageActionHoldFired) {
               e.preventDefault();
-              const now = Date.now();
-              const gap = now - imgLastTap;
-              imgLastTap = now;
+              e.stopPropagation();
+              imgLongPressFired = false;
+              setTimeout(() => {
+                row.__imageActionHoldFired = false;
+              }, 0);
+              return;
+            }
 
-              if (gap < 350 && gap > 30) {
-                clearTimeout(imgTapTimer);
-                imgTapTimer = null;
-                if (id) {
-                  saveReaction(id, getDoubleTapEmoji());
-                  showHeartBurst(gridImg, getDoubleTapEmoji());
-                }
-              } else {
-                clearTimeout(imgTapTimer);
-                imgTapTimer = setTimeout(() => {
-                  imgTapTimer = null;
-                  if (!row.__reactionHoldFired) openLightbox(images, idx);
-                }, 270);
+            e.preventDefault();
+            const now = Date.now();
+            const gap = now - imgLastTap;
+            imgLastTap = now;
+
+            if (gap < 350 && gap > 30) {
+              clearTimeout(imgTapTimer);
+              imgTapTimer = null;
+              if (id) {
+                saveReaction(id, getDoubleTapEmoji());
+                showHeartBurst(gridImg, getDoubleTapEmoji());
               }
-            },
-            { passive: false },
-          );
+            } else {
+              clearTimeout(imgTapTimer);
+              imgTapTimer = setTimeout(() => {
+                imgTapTimer = null;
+                if (!row.__imageActionHoldFired) openLightbox(images, idx);
+              }, 270);
+            }
+          },
+          { passive: false },
+        );
 
-          // Desktop uses click-to-open. All other actions stay in the 3-dot menu.
-          gridImg.addEventListener("click", (e) => {
-            if (isTouchOnlyUI()) return;
-            e.stopPropagation();
-            openLightbox(images, idx);
-          });
+        // Desktop uses click-to-open. All other actions stay in the 3-dot menu.
+        gridImg.addEventListener("click", (e) => {
+          if (isTouchOnlyUI()) return;
+          e.stopPropagation();
+          openLightbox(images, idx);
+        });
 
-          grid.appendChild(gridImg);
-        }
+        grid.appendChild(gridImg);
       }
 
       gridWrap.appendChild(grid);
@@ -1608,12 +2607,16 @@ function initChat(WHO) {
     attachSwipeReply(row, msg, id || "");
 
     if (id) {
+      const reactions = rememberReactions(id, msg.reactions || {});
+      _reactionRegistry.set(id, wrap);
       attachReactions(row, msg, id);
-      if (msg.reactions && Object.keys(msg.reactions).length > 0) {
-        renderReactions(wrap, msg.reactions, id);
+      if (Object.keys(reactions).length > 0) {
+        renderReactions(wrap, reactions, id);
       }
-      watchReactions(id, wrap);
+      // Only the bounded latest-message query is realtime. Older messages keep
+      // their loaded reaction state until they are fetched again.
       attachHoverActions(row, msg, id);
+      upsertSharedMediaItems(id, msg);
     }
 
     elements.push(row);
@@ -1622,18 +2625,59 @@ function initChat(WHO) {
 
   // ─── REACTIONS ────────────────────────────────────────────────────
 
-  async function saveReaction(msgId, emoji) {
-    const ref = messagesRef.doc(msgId);
-    const snap = await ref.get();
-    if (!snap.exists) return;
-    const reactions = snap.data().reactions || {};
-    if (reactions[WHO] === emoji) {
-      await ref.update({
-        [`reactions.${WHO}`]: firebase.firestore.FieldValue.delete(),
+  const _reactionMutationQueues = new Map();
+  const _reactionRegistry = new Map();
+  const _lastKnownReactions = new Map();
+  const _reactionStateByMessage = new Map();
+
+  function rememberReactions(msgId, reactions) {
+    const normalized = { ...(reactions || {}) };
+    _reactionStateByMessage.set(msgId, normalized);
+    _lastKnownReactions.set(msgId, JSON.stringify(normalized));
+    return normalized;
+  }
+
+  function saveReaction(msgId, emoji) {
+    const mutationKey = `${msgId}:${WHO}`;
+    const previous =
+      _reactionMutationQueues.get(mutationKey) || Promise.resolve();
+
+    const mutation = previous
+      .catch(() => {})
+      .then(async () => {
+        const before = { ...(_reactionStateByMessage.get(msgId) || {}) };
+        const after = { ...before };
+        const shouldRemove = after[WHO] === emoji;
+
+        if (shouldRemove) delete after[WHO];
+        else after[WHO] = emoji;
+
+        rememberReactions(msgId, after);
+        const wrap = _reactionRegistry.get(msgId);
+        if (wrap) renderReactions(wrap, after, msgId);
+
+        try {
+          await messagesRef.doc(msgId).update({
+            [`reactions.${WHO}`]: shouldRemove
+              ? firebase.firestore.FieldValue.delete()
+              : emoji,
+          });
+        } catch (error) {
+          rememberReactions(msgId, before);
+          if (wrap) renderReactions(wrap, before, msgId);
+          console.warn("Reaction update failed:", error);
+          showMiniNotif("Could not save reaction");
+        }
       });
-    } else {
-      await ref.update({ [`reactions.${WHO}`]: emoji });
-    }
+
+    _reactionMutationQueues.set(mutationKey, mutation);
+    const clearMutation = () => {
+      if (_reactionMutationQueues.get(mutationKey) === mutation) {
+        _reactionMutationQueues.delete(mutationKey);
+      }
+    };
+    mutation.then(clearMutation, clearMutation);
+    return mutation;
   }
 
   function renderReactions(wrap, reactions, msgId) {
@@ -1698,7 +2742,7 @@ function initChat(WHO) {
     }
   }
 
-  function openReactionBar(msgId, row, msg) {
+  function openReactionBar(msgId, row) {
     closeReactionBar();
     lockScroll();
 
@@ -1960,11 +3004,12 @@ function initChat(WHO) {
     bubble.addEventListener(
       "touchstart",
       (e) => {
-        // Old behavior restored: holding anywhere in the message, including
-        // directly on an image, opens the reaction capsule.
+        // On mobile, holding any part of the message — text or image —
+        // should open the reaction capsule. Image holds may also open the
+        // image-actions menu from the image-specific handler.
+
         _moved = false;
         _lpFired = false;
-        row.__reactionHoldFired = false;
         _startX = e.touches[0].clientX;
         _startY = e.touches[0].clientY;
         const sinceLastTap = Date.now() - _lastTap;
@@ -1974,8 +3019,7 @@ function initChat(WHO) {
           _lp = null;
           if (_moved) return;
           _lpFired = true;
-          row.__reactionHoldFired = true;
-          openReactionBar(msgId, row, msg);
+          openReactionBar(msgId, row);
         }, 650);
       },
       { passive: true },
@@ -2015,15 +3059,9 @@ function initChat(WHO) {
         if (_moved) return;
         if (_lpFired) {
           _lpFired = false;
-          // Keep the flag through the target's touchend and clear it after
-          // the current event finishes, preventing a delayed lightbox open.
-          setTimeout(() => {
-            row.__reactionHoldFired = false;
-          }, 350);
+          // The image-specific handler suppresses a delayed lightbox open.
           return;
         }
-
-        row.__reactionHoldFired = false;
 
         // Only handle double-tap-to-react on non-image parts of the bubble
         // (images handle their own double-tap)
@@ -2043,14 +3081,13 @@ function initChat(WHO) {
       { passive: false },
     );
 
-    // Desktop mouse long-press (only on non-image elements)
+    // Desktop should not open reactions on long-press; the desktop UI uses
+    // the explicit React button/menu instead.
     let _mlp = null;
     bubble.addEventListener("mousedown", (e) => {
-      if (e.target.classList.contains("grid-img")) return; // images handle their own mousedown
-      _mlp = setTimeout(() => {
-        _mlp = null;
-        openReactionBar(msgId, row, msg);
-      }, 520);
+      if (isTouchOnlyUI()) return;
+      clearTimeout(_mlp);
+      _mlp = null;
     });
     bubble.addEventListener("mouseup", () => {
       clearTimeout(_mlp);
@@ -2075,31 +3112,6 @@ function initChat(WHO) {
     setTimeout(() => heart.remove(), 750);
   }
 
-  // ─── REAL-TIME REACTION UPDATES ───────────────────────────────────
-  const _reactionRegistry = new Map();
-  const _lastKnownReactions = new Map();
-
-  function watchReactions(msgId, wrap) {
-    _reactionRegistry.set(msgId, wrap);
-  }
-
-  messagesRef.onSnapshot({ includeMetadataChanges: false }, (snap) => {
-    snap.docChanges().forEach((change) => {
-      if (change.type === "removed") {
-        _reactionRegistry.delete(change.doc.id);
-        _lastKnownReactions.delete(change.doc.id);
-        return;
-      }
-      const msgId = change.doc.id;
-      const reactions = change.doc.data().reactions || {};
-      const reactionsJSON = JSON.stringify(reactions);
-      if (_lastKnownReactions.get(msgId) === reactionsJSON) return;
-      _lastKnownReactions.set(msgId, reactionsJSON);
-      const wrap = _reactionRegistry.get(msgId);
-      if (wrap) renderReactions(wrap, reactions, msgId);
-    });
-  });
-
   // ─── DESKTOP HOVER ACTIONS (3-dot menu) ──────────────────────────
   // Dropdown is appended to document.body with position:fixed so it always
   // renders above every message and is never clipped by overflow:hidden parents.
@@ -2111,7 +3123,7 @@ function initChat(WHO) {
     if (_activeDropdown) {
       _activeDropdown.dropdownEl.remove();
       _activeDropdown.triggerEl.classList.remove("open");
-      _activeDropdown.actionsWrap.classList.remove("pinned");
+      _activeDropdown.actionsWrap.classList.remove("menu-open");
       _activeDropdown = null;
       unlockScroll();
     }
@@ -2131,6 +3143,10 @@ function initChat(WHO) {
   });
 
   function attachHoverActions(row, msg, msgId) {
+    // Mobile uses hold-on-image for image actions. The three-dot
+    // message menu is reserved for larger/fine-pointer devices.
+    if (isMobileUI()) return;
+
     const isSent = row.classList.contains("sent");
 
     const imgUrls = msg.imageUrls
@@ -2176,7 +3192,7 @@ function initChat(WHO) {
       reactItem.addEventListener("click", (e) => {
         e.stopPropagation();
         closeAllDropdowns();
-        openReactionBar(msgId, row, msg);
+        openReactionBar(msgId, row);
       });
 
       // ── Reply ──
@@ -2197,12 +3213,9 @@ function initChat(WHO) {
         startReply(msg, msgId);
       });
 
-      // On phones/tablets, long-press is the reaction gesture, so the
-      // small-device menu intentionally has no separate React item.
-      if (!isMobileUI()) {
-        dropdown.appendChild(reactItem);
-        dropdown.appendChild(divider1);
-      }
+      // attachHoverActions already exits on mobile, so this is desktop-only.
+      dropdown.appendChild(reactItem);
+      dropdown.appendChild(divider1);
       dropdown.appendChild(replyItem);
 
       if (imgUrls.length > 0) {
@@ -2230,25 +3243,6 @@ function initChat(WHO) {
 
         dropdown.appendChild(divider2);
         dropdown.appendChild(saveItem);
-
-        // Small-device individual selection. Holding the image is reserved
-        // for reactions; image visibility actions live in this menu.
-        if (isMobileUI() && imgUrls.length > 1) {
-          const blurItem = document.createElement("button");
-          blurItem.className = "msg-action-item";
-          const blurIcon = document.createElement("span");
-          blurIcon.className = "action-icon";
-          blurIcon.textContent = "🖼️";
-          blurItem.appendChild(blurIcon);
-          blurItem.appendChild(document.createTextNode(" Blur"));
-          blurItem.addEventListener("mousedown", (e) => e.stopPropagation());
-          blurItem.addEventListener("click", (e) => {
-            e.stopPropagation();
-            closeAllDropdowns();
-            openSeparateBlurPicker(imgUrls);
-          });
-          dropdown.appendChild(blurItem);
-        }
 
         const divider3 = document.createElement("hr");
         divider3.className = "msg-action-divider";
@@ -2279,9 +3273,7 @@ function initChat(WHO) {
         dropdown.appendChild(divider3);
         dropdown.appendChild(blurAllItem);
 
-        // On larger devices restore the original separate-selection workflow.
-        // Mobile keeps its simpler Blur All entry; individual Blur remains on long-press.
-        if (!isMobileUI() && imgUrls.length > 1) {
+        if (imgUrls.length > 1) {
           const blurSeparateItem = document.createElement("button");
           blurSeparateItem.className = "msg-action-item";
           const blurSeparateIcon = document.createElement("span");
@@ -2341,7 +3333,7 @@ function initChat(WHO) {
       });
 
       trigger.classList.add("open");
-      actionsWrap.classList.add("pinned");
+      actionsWrap.classList.add("menu-open");
       _activeDropdown = {
         dropdownEl: dropdown,
         triggerEl: trigger,
@@ -2401,8 +3393,6 @@ function initChat(WHO) {
         if (!swiping && Math.abs(dx) > 8 && dy < Math.abs(dx)) {
           swiping = true;
           row.classList.add("swiping");
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
         }
         if (!swiping) return;
 
@@ -2492,11 +3482,8 @@ function initChat(WHO) {
         .limitToLast(PAGE_SIZE)
         .get();
 
-      hideTopSpinner();
-
       if (snap.empty) {
         _allLoaded = true;
-        _loadingMore = false;
         return;
       }
 
@@ -2506,10 +3493,16 @@ function initChat(WHO) {
       lastSender = null;
 
       const frag = document.createDocumentFragment();
+      const rowsToRegister = [];
       snap.docs.forEach((doc) => {
         const els = buildMessageElements(doc.data(), doc.id, false);
         els.forEach((el) => frag.appendChild(el));
+        const row = els[els.length - 1];
+        if (row?.classList?.contains("msg-row")) {
+          rowsToRegister.push([doc.id, row]);
+        }
       });
+      observeLazyImages(frag);
 
       const firstReal = (() => {
         for (const child of msgContainer.children) {
@@ -2520,14 +3513,9 @@ function initChat(WHO) {
       if (firstReal) msgContainer.insertBefore(frag, firstReal);
       else msgContainer.appendChild(frag);
 
-      msgContainer
-        .querySelectorAll("img[data-lazy-src]")
-        .forEach((img) => _imgObserver.observe(img));
-
-      snap.docs.forEach((doc) => {
-        const row = msgContainer.querySelector(`.msg-row[data-id="${doc.id}"]`);
-        if (row) msgRowMap.set(doc.id, row);
-      });
+      rowsToRegister.forEach(([messageId, row]) =>
+        msgRowMap.set(messageId, row),
+      );
 
       lastDate = savedLastDate;
       lastSender = savedLastSender;
@@ -2536,105 +3524,107 @@ function initChat(WHO) {
 
       const heightAdded = msgContainer.scrollHeight - scrollHeightBefore;
       msgContainer.scrollTop = scrollTopBefore + heightAdded;
-    } catch (e) {
-      console.error("Load more failed:", e);
+    } catch (error) {
+      console.error("Load more failed:", error);
+      showMiniNotif("Older messages could not be loaded");
+    } finally {
       hideTopSpinner();
+      _loadingMore = false;
     }
-    _loadingMore = false;
   }
 
-  msgContainer.addEventListener(
-    "scroll",
-    () => {
-      if (msgContainer.scrollTop < 200 && !_loadingMore && !_allLoaded) {
-        loadMoreMessages();
-      }
-    },
-    { passive: true },
-  );
-
-  // ─── REAL-TIME LISTENER ───────────────────────────────────────────
-  messagesRef
+  // ─── BOUNDED REAL-TIME LISTENER ───────────────────────────────────
+  // One last-page query handles new messages and recent reactions. It never
+  // listens to the entire collection, so realtime read cost stays bounded.
+  const recentMessagesQuery = messagesRef
     .orderBy("timestamp", "asc")
-    .limitToLast(PAGE_SIZE)
-    .get()
-    .then((snap) => {
-      if (!snap.empty) {
-        _oldestDoc = snap.docs[0];
-        lastDate = null;
-        lastSender = null;
-        _pendingFirstBatch = snap.docs.map((doc) => ({
-          msg: doc.data(),
-          id: doc.id,
-        }));
-        clearTimeout(_firstBatchTimer);
-        _firstBatchTimer = setTimeout(flushFirstBatch, 60);
-        if (snap.docs.length < PAGE_SIZE) _allLoaded = true;
-      } else {
-        loader.style.display = "none";
-        firstLoad = false;
+    .limitToLast(PAGE_SIZE);
+
+  let recentMessagesInitialised = false;
+  const unsubscribeRecentMessages = recentMessagesQuery.onSnapshot(
+    { includeMetadataChanges: false },
+    (snap) => {
+      if (!recentMessagesInitialised) {
+        if (!snap.empty) {
+          _oldestDoc = snap.docs[0];
+          lastDate = null;
+          lastSender = null;
+          _pendingFirstBatch = snap.docs.map((doc) => {
+            const msg = doc.data();
+            noteIncomingMessage(msg);
+            return { msg, id: doc.id };
+          });
+          clearTimeout(_firstBatchTimer);
+          _firstBatchTimer = setTimeout(flushFirstBatch, 60);
+          if (snap.docs.length < PAGE_SIZE) _allLoaded = true;
+        } else {
+          loader.style.display = "none";
+        }
+
+        recentMessagesInitialised = true;
+        return;
       }
 
-      const liveQuery = snap.empty
-        ? messagesRef.orderBy("timestamp", "asc")
-        : messagesRef
-            .orderBy("timestamp", "asc")
-            .startAfter(snap.docs[snap.docs.length - 1]);
+      snap.docChanges().forEach((change) => {
+        const msgId = change.doc.id;
+        const msg = change.doc.data();
 
-      liveQuery.onSnapshot((liveSnap) => {
-        liveSnap.docChanges().forEach((change) => {
-          if (change.type === "added") {
-            const msg = change.doc.data();
-            const isNew = !firstLoad;
-            renderMessage(msg, change.doc.id, isNew);
-            if (isNew && msg.sender !== WHO) {
-              sendBrowserNotif(
-                SENDER_DISPLAY[msg.sender] || msg.sender,
-                msg.text,
-                msg.imageUrls ? msg.imageUrls[0] : msg.imageUrl,
-              );
-              if (!document.hidden) updateMyReadTime();
-            }
+        if (change.type === "added") {
+          noteIncomingMessage(msg);
+          upsertSharedMediaItems(msgId, msg);
+          renderMessage(msg, msgId, true);
+
+          if (msg.sender !== WHO) {
+            sendBrowserNotif(
+              SENDER_DISPLAY[msg.sender] || msg.sender,
+              msg.text,
+              msg.imageUrls ? msg.imageUrls[0] : msg.imageUrl,
+            );
           }
-          // Reaction updates arrive as "modified" on the live query
-          if (change.type === "modified") {
-            const msgId = change.doc.id;
-            const reactions = change.doc.data().reactions || {};
-            const reactionsJSON = JSON.stringify(reactions);
-            if (_lastKnownReactions.get(msgId) === reactionsJSON) return;
-            _lastKnownReactions.set(msgId, reactionsJSON);
-            const wrap = _reactionRegistry.get(msgId);
-            if (wrap) renderReactions(wrap, reactions, msgId);
-          }
-        });
-        if (firstLoad) {
-          firstLoad = false;
-          if (_pendingFirstBatch.length === 0) loader.style.display = "none";
+          return;
         }
-      });
-    })
-    .catch((err) => {
-      console.error("Initial load failed:", err);
-      loader.style.display = "none";
-      firstLoad = false;
-    });
 
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) updateMyReadTime();
-  });
-  window.addEventListener("focus", updateMyReadTime);
+        if (change.type === "modified") {
+          upsertSharedMediaItems(msgId, msg);
+          const reactions = msg.reactions || {};
+          const reactionsJSON = JSON.stringify(reactions);
+          if (_lastKnownReactions.get(msgId) !== reactionsJSON) {
+            const normalized = rememberReactions(msgId, reactions);
+            const wrap = _reactionRegistry.get(msgId);
+            if (wrap) renderReactions(wrap, normalized, msgId);
+          }
+        }
+        // When a document leaves limitToLast because a newer message arrived,
+        // its already-rendered DOM row remains available in the loaded history.
+      });
+    },
+    (error) => {
+      console.error("Live message listener failed:", error);
+      loader.style.display = "none";
+    },
+  );
+  trackCleanup(unsubscribeRecentMessages);
+
+  const handleChatFocus = () => updateMyReadTime();
+  window.addEventListener("focus", handleChatFocus);
+  trackCleanup(() => window.removeEventListener("focus", handleChatFocus));
 
   // ─── LIGHTBOX ────────────────────────────────────────────────────
   // FIX: prev/next arrows always visible when applicable.
   // FIX: no double-open glitch — touch uses preventDefault so no synthetic click fires.
   // FIX: click zones on image itself for navigation.
 
-  function openLightbox(images, startIdx = 0) {
-    // Always browse ALL chat images, not just this message's images.
+  function openLightbox(images, startIdx = 0, useExactList = false) {
     const clickedUrl = images[startIdx];
-    const globalIdx = globalLightboxIndex(clickedUrl);
-    lbImages = _allChatImages.map((e) => e.url);
-    lbIndex = globalIdx >= 0 ? globalIdx : 0;
+    if (useExactList) {
+      lbImages = [...images];
+      lbIndex = Math.max(0, Math.min(startIdx, lbImages.length - 1));
+    } else {
+      // Normal message lightbox browses every image currently registered.
+      const globalIdx = globalLightboxIndex(clickedUrl);
+      lbImages = _allChatImages.map((e) => e.url);
+      lbIndex = globalIdx >= 0 ? globalIdx : 0;
+    }
 
     closeReactionBar();
     lightbox.classList.add("open");
@@ -2733,6 +3723,7 @@ function initChat(WHO) {
   });
 
   function closeLightbox() {
+    if (_activeImageActionPopoverClose) _activeImageActionPopoverClose();
     lightbox.classList.remove("open");
     document.body.style.overflow = "";
     lbImages = [];
@@ -2769,8 +3760,7 @@ function initChat(WHO) {
     }
   }
 
-  let _lastImageActionOpenAt = 0;
-  let _lastImageActionUrl = "";
+  let _activeImageActionPopoverClose = null;
 
   function openImageActionMenu(
     imgUrl,
@@ -2778,21 +3768,9 @@ function initChat(WHO) {
     anchorEl,
     isSentMsg,
     allImageUrls = [imgUrl],
-    msgId = null,
-    msgRow = null,
-    msgData = null,
   ) {
     // This app menu is deliberately mobile/touch-only. Desktop uses 3 dots.
     if (!isTouchOnlyUI()) return;
-
-    // Android may create a synthetic contextmenu after our hold timer.
-    // Ignore that second event so the menu does not flash twice.
-    const now = Date.now();
-    if (_lastImageActionUrl === imgUrl && now - _lastImageActionOpenAt < 900) {
-      return;
-    }
-    _lastImageActionUrl = imgUrl;
-    _lastImageActionOpenAt = now;
 
     const messageUrls = [
       ...new Set(
@@ -2800,18 +3778,31 @@ function initChat(WHO) {
       ),
     ];
 
-    document.querySelectorAll(".img-action-popover").forEach((p) => p.remove());
-    closeReactionBar();
+    if (_activeImageActionPopoverClose) {
+      _activeImageActionPopoverClose();
+    }
     unlockScroll();
     lockScroll();
 
     const popover = document.createElement("div");
     popover.className = "img-action-popover";
+    let closeOnOutside = null;
+
+    let collisionRecheckTimers = [];
 
     const closePopover = () => {
+      collisionRecheckTimers.forEach((timer) => clearTimeout(timer));
+      collisionRecheckTimers = [];
       popover.remove();
+      if (closeOnOutside) {
+        document.removeEventListener("pointerdown", closeOnOutside, true);
+      }
+      if (_activeImageActionPopoverClose === closePopover) {
+        _activeImageActionPopoverClose = null;
+      }
       unlockScroll();
     };
+    _activeImageActionPopoverClose = closePopover;
 
     const isBlurred = isImageBlurred(imgUrl);
     const allBlurred =
@@ -2904,38 +3895,145 @@ function initChat(WHO) {
 
     document.body.appendChild(popover);
 
-    requestAnimationFrame(() => {
+    const positionImagePopover = () => {
+      if (!popover.isConnected) return;
+
       const rect = anchorEl.getBoundingClientRect();
       const pw = popover.offsetWidth || 170;
       const ph = popover.offsetHeight || 210;
       const margin = 10;
       const pad = 8;
+      const collisionGap = 8;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      let top = rect.top + rect.height / 2 - ph / 2;
-      let left;
+      let originalTop = rect.top + rect.height / 2 - ph / 2;
+      let originalLeft;
 
       if (isSentMsg) {
-        left = rect.right + margin;
-        if (left + pw > vw - pad) left = rect.left - pw - margin;
+        originalLeft = rect.right + margin;
+        if (originalLeft + pw > vw - pad) {
+          originalLeft = rect.left - pw - margin;
+        }
       } else {
-        left = rect.left - pw - margin;
-        if (left < pad) left = rect.right + margin;
+        originalLeft = rect.left - pw - margin;
+        if (originalLeft < pad) {
+          originalLeft = rect.right + margin;
+        }
       }
 
-      left = Math.max(pad, Math.min(left, vw - pw - pad));
-      top = Math.max(pad, Math.min(top, vh - ph - pad));
+      const clampLeft = (value) =>
+        Math.max(pad, Math.min(value, vw - pw - pad));
+      const clampTop = (value) => Math.max(pad, Math.min(value, vh - ph - pad));
 
-      popover.style.top = `${top}px`;
-      popover.style.left = `${left}px`;
+      originalLeft = clampLeft(originalLeft);
+      originalTop = clampTop(originalTop);
+
+      let chosenLeft = originalLeft;
+      let chosenTop = originalTop;
+
+      const reaction =
+        activeReactionBar &&
+        activeReactionBar.isConnected &&
+        activeReactionBar.classList.contains("visible")
+          ? activeReactionBar
+          : null;
+
+      if (reaction) {
+        const reactionRect = reaction.getBoundingClientRect();
+
+        const overlapsReaction = (left, top) =>
+          left < reactionRect.right + collisionGap &&
+          left + pw > reactionRect.left - collisionGap &&
+          top < reactionRect.bottom + collisionGap &&
+          top + ph > reactionRect.top - collisionGap;
+
+        const overlapArea = (left, top) => {
+          const overlapW = Math.max(
+            0,
+            Math.min(left + pw, reactionRect.right + collisionGap) -
+              Math.max(left, reactionRect.left - collisionGap),
+          );
+          const overlapH = Math.max(
+            0,
+            Math.min(top + ph, reactionRect.bottom + collisionGap) -
+              Math.max(top, reactionRect.top - collisionGap),
+          );
+          return overlapW * overlapH;
+        };
+
+        if (overlapsReaction(chosenLeft, chosenTop)) {
+          // Keep the normal anchored position whenever possible. Only when it
+          // collides with the reaction capsule do we test nearby alternatives.
+          const candidateValues = [
+            [originalLeft, reactionRect.bottom + collisionGap],
+            [originalLeft, reactionRect.top - ph - collisionGap],
+            [reactionRect.right + collisionGap, originalTop],
+            [reactionRect.left - pw - collisionGap, originalTop],
+            [
+              reactionRect.right + collisionGap,
+              reactionRect.bottom + collisionGap,
+            ],
+            [
+              reactionRect.left - pw - collisionGap,
+              reactionRect.bottom + collisionGap,
+            ],
+            [
+              reactionRect.right + collisionGap,
+              reactionRect.top - ph - collisionGap,
+            ],
+            [
+              reactionRect.left - pw - collisionGap,
+              reactionRect.top - ph - collisionGap,
+            ],
+          ];
+
+          const candidates = candidateValues.map(([left, top]) => {
+            const clampedLeft = clampLeft(left);
+            const clampedTop = clampTop(top);
+            const displacement =
+              Math.abs(clampedLeft - originalLeft) +
+              Math.abs(clampedTop - originalTop);
+            return {
+              left: clampedLeft,
+              top: clampedTop,
+              overlaps: overlapsReaction(clampedLeft, clampedTop),
+              area: overlapArea(clampedLeft, clampedTop),
+              displacement,
+            };
+          });
+
+          candidates.sort((a, b) => {
+            if (a.overlaps !== b.overlaps) return a.overlaps ? 1 : -1;
+            if (a.area !== b.area) return a.area - b.area;
+            return a.displacement - b.displacement;
+          });
+
+          if (candidates.length) {
+            chosenLeft = candidates[0].left;
+            chosenTop = candidates[0].top;
+          }
+        }
+      }
+
+      popover.style.top = `${chosenTop}px`;
+      popover.style.left = `${chosenLeft}px`;
       popover.classList.add("visible");
-    });
+    };
 
-    const closeOnOutside = (event) => {
+    requestAnimationFrame(positionImagePopover);
+
+    // The image menu opens about 50 ms before the reaction capsule on a hold.
+    // Recheck after the capsule is positioned. If there is no collision, these
+    // calls leave the image menu exactly where it originally opened.
+    collisionRecheckTimers = [
+      setTimeout(positionImagePopover, 90),
+      setTimeout(positionImagePopover, 180),
+    ];
+
+    closeOnOutside = (event) => {
       if (!popover.contains(event.target)) {
         closePopover();
-        document.removeEventListener("pointerdown", closeOnOutside, true);
       }
     };
     setTimeout(() => {
@@ -3061,12 +4159,48 @@ function initChat(WHO) {
       });
   }
 
-  function waitForVideoMetadata() {
+  function waitForVideoMetadata(requestId) {
     if (cameraFeed.readyState >= 1 && cameraFeed.videoWidth > 0) {
       return Promise.resolve();
     }
-    return new Promise((resolve) => {
-      cameraFeed.addEventListener("loadedmetadata", resolve, { once: true });
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const cleanup = () => {
+        cameraFeed.removeEventListener("loadedmetadata", onLoaded);
+        cameraFeed.removeEventListener("error", onError);
+        clearTimeout(timeoutId);
+      };
+      const finish = (callback) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        callback();
+      };
+      const onLoaded = () =>
+        finish(() => {
+          if (requestId !== cameraStreamRequestId) {
+            reject(
+              new DOMException("Camera request was replaced", "AbortError"),
+            );
+          } else {
+            resolve();
+          }
+        });
+      const onError = () =>
+        finish(() =>
+          reject(
+            cameraFeed.error || new Error("Could not load camera preview"),
+          ),
+        );
+      const timeoutId = setTimeout(() => {
+        finish(() =>
+          reject(new DOMException("Camera preview timed out", "TimeoutError")),
+        );
+      }, 4000);
+
+      cameraFeed.addEventListener("loadedmetadata", onLoaded, { once: true });
+      cameraFeed.addEventListener("error", onError, { once: true });
     });
   }
 
@@ -3115,29 +4249,91 @@ function initChat(WHO) {
     }
   }
 
+  function stopMediaStream(stream) {
+    if (!stream) return;
+    stream.getTracks().forEach((track) => {
+      try {
+        track.stop();
+      } catch (_) {}
+    });
+    if (cameraFeed.srcObject === stream) cameraFeed.srcObject = null;
+    if (cameraStream === stream) cameraStream = null;
+  }
+
+  function isExpectedCameraInterruption(error) {
+    return ["AbortError", "InvalidStateError"].includes(error?.name);
+  }
+
   async function startCameraStream() {
+    const requestId = ++cameraStreamRequestId;
     cancelCameraCountdown();
     cameraFocusUnsupportedNotified = false;
     clearTimeout(cameraFocusResetTimer);
-    if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
 
+    const previousStream = cameraStream;
+    cameraStream = null;
+    stopMediaStream(previousStream);
+
+    let requestedStream = null;
     try {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
+      requestedStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: facingMode },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          // Keep the original 4:3 camera shape. The browser may choose the
+          // closest supported size, but it is no longer forced to widescreen.
+          width: { ideal: 1280 },
+          height: { ideal: 960 },
+          aspectRatio: { ideal: 4 / 3 },
         },
         audio: false,
       });
-      cameraFeed.srcObject = cameraStream;
+
+      if (
+        requestId !== cameraStreamRequestId ||
+        !cameraModal.classList.contains("open")
+      ) {
+        stopMediaStream(requestedStream);
+        return false;
+      }
+
+      cameraStream = requestedStream;
+      cameraFeed.srcObject = requestedStream;
       cameraFeed.classList.toggle("mirrored", facingMode === "user");
-      await cameraFeed.play();
-      await waitForVideoMetadata();
-      await applyAutomaticCameraControls(cameraStream.getVideoTracks()[0]);
-    } catch (err) {
-      alert("Camera not available: " + err.message);
+
+      try {
+        await cameraFeed.play();
+        await waitForVideoMetadata(requestId);
+      } catch (playError) {
+        if (requestId !== cameraStreamRequestId) {
+          stopMediaStream(requestedStream);
+          return false;
+        }
+        throw playError;
+      }
+
+      if (requestId !== cameraStreamRequestId) {
+        stopMediaStream(requestedStream);
+        return false;
+      }
+
+      const track = requestedStream.getVideoTracks()[0];
+      if (track) await applyAutomaticCameraControls(track);
+      return true;
+    } catch (error) {
+      if (requestedStream) stopMediaStream(requestedStream);
+
+      const staleRequest =
+        requestId !== cameraStreamRequestId ||
+        !cameraModal.classList.contains("open");
+      if (staleRequest || isExpectedCameraInterruption(error)) {
+        console.debug("Camera request superseded or interrupted:", error);
+        return false;
+      }
+
+      console.error("Camera start failed:", error);
+      alert("Camera not available: " + (error?.message || "Unknown error"));
       closeCamera();
+      return false;
     }
   }
 
@@ -3146,34 +4342,15 @@ function initChat(WHO) {
     const localX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
     const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
 
-    const sourceW = cameraFeed.videoWidth || rect.width;
-    const sourceH = cameraFeed.videoHeight || rect.height;
-    const sourceAspect = sourceW / sourceH;
-    const boxAspect = rect.width / rect.height;
-
-    let x;
-    let y;
-
-    // Correct the tap for object-fit: cover cropping.
-    if (sourceAspect > boxAspect) {
-      const renderedW = rect.height * sourceAspect;
-      const croppedX = (renderedW - rect.width) / 2;
-      x = (localX + croppedX) / renderedW;
-      y = localY / rect.height;
-    } else {
-      const renderedH = rect.width / sourceAspect;
-      const croppedY = (renderedH - rect.height) / 2;
-      x = localX / rect.width;
-      y = (localY + croppedY) / renderedH;
-    }
-
-    x = Math.max(0, Math.min(1, x));
-    y = Math.max(0, Math.min(1, y));
+    // The preview now shows the complete frame without object-fit cropping,
+    // so the tapped point maps directly to normalized camera coordinates.
+    let x = rect.width > 0 ? localX / rect.width : 0.5;
+    const y = rect.height > 0 ? localY / rect.height : 0.5;
     if (facingMode === "user") x = 1 - x;
 
     return {
-      x,
-      y,
+      x: Math.max(0, Math.min(1, x)),
+      y: Math.max(0, Math.min(1, y)),
       displayX: Math.max(0, Math.min(100, (localX / rect.width) * 100)),
       displayY: Math.max(0, Math.min(100, (localY / rect.height) * 100)),
     };
@@ -3265,6 +4442,7 @@ function initChat(WHO) {
   async function applyExposureCompensation() {
     if (!cameraStream) return;
     const track = cameraStream.getVideoTracks()[0];
+    if (!track || track.readyState !== "live") return;
     const value = Number(cameraExposureSlider.value);
     cameraExposureValue.textContent = value.toFixed(1);
     try {
@@ -3280,6 +4458,8 @@ function initChat(WHO) {
     cameraCountdownToken += 1;
     cameraIsCountingDown = false;
     snapBtn.disabled = false;
+    snapBtn.setAttribute("aria-label", "Take photo");
+    snapBtn.title = "Take photo";
     snapBtn.classList.remove("counting");
     if (cameraCountdownEl) {
       cameraCountdownEl.textContent = "";
@@ -3288,6 +4468,7 @@ function initChat(WHO) {
   }
 
   async function beginCameraCapture() {
+    if (cameraIsCapturing) return;
     if (cameraIsCountingDown) {
       cancelCameraCountdown();
       return;
@@ -3299,7 +4480,10 @@ function initChat(WHO) {
     }
 
     cameraIsCountingDown = true;
-    snapBtn.disabled = true;
+    // Keep the shutter clickable so a second tap can cancel the countdown.
+    snapBtn.disabled = false;
+    snapBtn.setAttribute("aria-label", "Cancel timer");
+    snapBtn.title = "Cancel timer";
     snapBtn.classList.add("counting");
     const token = ++cameraCountdownToken;
 
@@ -3315,17 +4499,37 @@ function initChat(WHO) {
     cameraCountdownEl.classList.remove("visible");
     cameraIsCountingDown = false;
     snapBtn.disabled = false;
+    snapBtn.setAttribute("aria-label", "Take photo");
+    snapBtn.title = "Take photo";
     snapBtn.classList.remove("counting");
     captureCurrentFrame();
   }
 
   function captureCurrentFrame() {
     const video = cameraFeed;
-    if (!video.videoWidth || !video.videoHeight) return;
+    const liveTrack = cameraStream?.getVideoTracks()[0];
+    if (
+      cameraIsCapturing ||
+      !liveTrack ||
+      liveTrack.readyState !== "live" ||
+      !video.videoWidth ||
+      !video.videoHeight
+    ) {
+      return;
+    }
 
+    cameraIsCapturing = true;
+    snapBtn.disabled = true;
+    const captureId = ++cameraCaptureRequestId;
     snapCanvas.width = video.videoWidth;
     snapCanvas.height = video.videoHeight;
     const ctx = snapCanvas.getContext("2d");
+    if (!ctx) {
+      cameraIsCapturing = false;
+      snapBtn.disabled = false;
+      return;
+    }
+
     ctx.save();
     if (facingMode === "user") {
       ctx.translate(snapCanvas.width, 0);
@@ -3334,9 +4538,27 @@ function initChat(WHO) {
     ctx.drawImage(video, 0, 0);
     ctx.restore();
 
+    // The frame is now in the canvas, so the camera can be released while the
+    // JPEG is encoded and while the user reviews the photo.
+    stopMediaStream(cameraStream);
+
     snapCanvas.toBlob(
       (blob) => {
-        if (!blob) return;
+        if (
+          captureId !== cameraCaptureRequestId ||
+          !cameraModal.classList.contains("open")
+        ) {
+          return;
+        }
+        cameraIsCapturing = false;
+        if (!blob) {
+          snapBtn.disabled = false;
+          showMiniNotif("Could not capture the photo");
+          cameraLiveWrap.style.display = "flex";
+          startCameraStream();
+          return;
+        }
+
         capturedBlob = blob;
         pendingCameraFile = new File([blob], `photo_${Date.now()}.jpg`, {
           type: "image/jpeg",
@@ -3364,7 +4586,9 @@ function initChat(WHO) {
     await startCameraStream();
   });
 
-  retakeBtn.addEventListener("click", () => {
+  retakeBtn.addEventListener("click", async () => {
+    cameraCaptureRequestId += 1;
+    cameraIsCapturing = false;
     capturedBlob = null;
     pendingCameraFile = null;
     queueSelectedFilesDraftSave();
@@ -3375,6 +4599,14 @@ function initChat(WHO) {
     cameraPreviewImg.removeAttribute("src");
     cameraPreviewWrap.classList.remove("visible");
     cameraLiveWrap.style.display = "flex";
+
+    retakeBtn.disabled = true;
+    try {
+      await startCameraStream();
+    } finally {
+      snapBtn.disabled = false;
+      retakeBtn.disabled = false;
+    }
   });
 
   usePhotoBtn.addEventListener("click", () => {
@@ -3398,6 +4630,7 @@ function initChat(WHO) {
 
   window.addEventListener("popstate", (e) => {
     if (lightbox.classList.contains("open")) {
+      if (_activeImageActionPopoverClose) _activeImageActionPopoverClose();
       lightbox.classList.remove("open");
       document.body.style.overflow = "";
       lbImages = [];
@@ -3411,6 +4644,10 @@ function initChat(WHO) {
   });
 
   async function openCamera() {
+    if (cameraModal.classList.contains("open")) return;
+    cameraCaptureRequestId += 1;
+    cameraIsCapturing = false;
+    snapBtn.disabled = false;
     ensureCameraEnhancementUI();
     cameraModal.classList.add("open");
     cameraLiveWrap.style.display = "flex";
@@ -3421,12 +4658,13 @@ function initChat(WHO) {
   }
 
   function closeCamera(useHistoryBack = true, discardPending = true) {
+    cameraStreamRequestId += 1;
+    cameraCaptureRequestId += 1;
+    cameraIsCapturing = false;
+    snapBtn.disabled = false;
     cancelCameraCountdown();
     clearTimeout(cameraFocusResetTimer);
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-      cameraStream = null;
-    }
+    stopMediaStream(cameraStream);
     if (cameraPreviewObjectUrl) {
       URL.revokeObjectURL(cameraPreviewObjectUrl);
       cameraPreviewObjectUrl = null;
@@ -3444,6 +4682,23 @@ function initChat(WHO) {
     }
   }
 
+  const FCM_TOKEN_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+  const FCM_TOKEN_LIMIT = 10;
+  const FCM_REGISTRATION_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+  const FCM_REGISTRATION_CACHE_KEY = `mk_fcm_registration_${WHO}`;
+
+  function getFCMDeviceId() {
+    const storageKey = "mk_fcm_device_id";
+    let deviceId = localStorage.getItem(storageKey);
+    if (!deviceId) {
+      deviceId =
+        crypto.randomUUID?.() ||
+        `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(storageKey, deviceId);
+    }
+    return deviceId;
+  }
+
   async function registerFCMToken() {
     try {
       const messaging = firebase.messaging();
@@ -3452,19 +4707,87 @@ function initChat(WHO) {
           "BO_WZsr9NOpYF9IprbZRUZvZD-wTGpctb3J9qDEXlskx0h8QzXpvzl58P_gr4L-psIZe5sm_wuOOgWk0vOMGKcE",
         serviceWorkerRegistration: swRegistration,
       });
-      if (token) {
-        const docRef = db.collection("fcmTokens").doc(WHO);
-        const doc = await docRef.get();
-        const existingTokens =
-          doc.exists && doc.data().tokens ? doc.data().tokens : [];
-        if (!existingTokens.includes(token)) {
-          await docRef.set({
-            tokens: [...existingTokens, token],
-            user: WHO,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          });
+      if (!token) return;
+
+      const now = Date.now();
+      const cutoff = now - FCM_TOKEN_MAX_AGE_MS;
+      const deviceId = getFCMDeviceId();
+      const previousRegistration = (() => {
+        try {
+          return JSON.parse(
+            localStorage.getItem(FCM_REGISTRATION_CACHE_KEY) || "null",
+          );
+        } catch (_) {
+          return null;
         }
+      })();
+      if (
+        previousRegistration?.token === token &&
+        previousRegistration?.deviceId === deviceId &&
+        now - Number(previousRegistration?.registeredAt || 0) <
+          FCM_REGISTRATION_REFRESH_MS
+      ) {
+        return;
       }
+
+      const docRef = db.collection("fcmTokens").doc(WHO);
+
+      await db.runTransaction(async (transaction) => {
+        const doc = await transaction.get(docRef);
+        const data = doc.exists ? doc.data() : {};
+        const existingRecords = Array.isArray(data.tokenRecords)
+          ? data.tokenRecords
+          : [];
+        const representedTokens = new Set(
+          existingRecords.map((record) => record?.token).filter(Boolean),
+        );
+
+        // Migrate legacy tokens once. They receive a fresh timestamp and will
+        // age out naturally unless that browser registers again.
+        const legacyRecords = (Array.isArray(data.tokens) ? data.tokens : [])
+          .filter((legacyToken) => !representedTokens.has(legacyToken))
+          .map((legacyToken, index) => ({
+            token: legacyToken,
+            deviceId: `legacy_${index}`,
+            lastSeen: now,
+          }));
+
+        let records = [...existingRecords, ...legacyRecords].filter(
+          (record) => {
+            if (!record || typeof record.token !== "string" || !record.token) {
+              return false;
+            }
+            const lastSeen =
+              typeof record.lastSeen === "number"
+                ? record.lastSeen
+                : record.lastSeen?.toMillis?.() || 0;
+            record.lastSeen = lastSeen;
+            return lastSeen >= cutoff;
+          },
+        );
+
+        records = records.filter(
+          (record) => record.deviceId !== deviceId && record.token !== token,
+        );
+        records.unshift({ token, deviceId, lastSeen: now });
+        records = records.slice(0, FCM_TOKEN_LIMIT);
+
+        transaction.set(
+          docRef,
+          {
+            user: WHO,
+            tokens: records.map((record) => record.token),
+            tokenRecords: records,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      });
+
+      localStorage.setItem(
+        FCM_REGISTRATION_CACHE_KEY,
+        JSON.stringify({ token, deviceId, registeredAt: now }),
+      );
     } catch (err) {
       console.warn("FCM token registration failed:", err);
     }
@@ -3483,13 +4806,29 @@ function initChat(WHO) {
     }, 4000);
   }
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
-      queueSelectedFilesDraftSave();
-    }
-  });
-
-  window.addEventListener("pagehide", () => {
+  const persistLocalChatState = () => {
     queueSelectedFilesDraftSave();
+  };
+
+  const handleLocalStateVisibility = () => {
+    if (document.visibilityState === "hidden") {
+      persistLocalChatState();
+      stopTyping();
+    }
+  };
+  const handleFinalPageHide = (event) => {
+    persistLocalChatState();
+    stopTyping();
+    if (!event.persisted) cleanupChatResources();
+  };
+
+  document.addEventListener("visibilitychange", handleLocalStateVisibility);
+  window.addEventListener("pagehide", handleFinalPageHide);
+  trackCleanup(() => {
+    document.removeEventListener(
+      "visibilitychange",
+      handleLocalStateVisibility,
+    );
+    window.removeEventListener("pagehide", handleFinalPageHide);
   });
 } // end initChat
