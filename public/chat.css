@@ -2077,19 +2077,20 @@ img[data-lazy-src] {
 
 #camera-timer-menu {
   display: none;
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-  z-index: 3;
-  width: min(300px, calc(100vw - 32px));
+  position: fixed;
+  z-index: 9105;
+  width: min(300px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
   padding: 10px;
   border-radius: 16px;
   background: rgba(20, 20, 20, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 #camera-timer-menu.visible {
@@ -2806,6 +2807,77 @@ img[data-lazy-src] {
     max-height: min(62dvh, calc(100dvh - 135px)) !important;
     aspect-ratio: auto !important;
     object-fit: contain !important;
+  }
+}
+
+/* Custom romantic Shared Media icon */
+.shared-media-heart-icon {
+  width: 26px;
+  height: 26px;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(111, 35, 76, 0.2));
+  transition:
+    transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    filter 0.22s ease;
+}
+
+.shared-media-heart-icon__frame,
+.shared-media-heart-icon__landscape {
+  fill: none;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shared-media-heart-icon__frame {
+  stroke: #fff7fb;
+}
+
+.shared-media-heart-icon__landscape {
+  stroke: #86d7ff;
+}
+
+.shared-media-heart-icon__sun {
+  fill: #ffd166;
+}
+
+.shared-media-heart-icon__heart {
+  fill: #ff4f87;
+  stroke: #fff7fb;
+  stroke-width: 0.55;
+  stroke-linejoin: round;
+  transform-origin: 16.75px 8.65px;
+}
+
+#shared-media-btn:hover .shared-media-heart-icon {
+  transform: translateY(-1px) scale(1.06);
+  filter: drop-shadow(0 3px 5px rgba(122, 19, 62, 0.2));
+}
+
+#shared-media-btn:hover .shared-media-heart-icon__heart {
+  animation: sharedMediaHeartBeat 0.7s ease;
+}
+
+@keyframes sharedMediaHeartBeat {
+  0%, 100% { transform: scale(1); }
+  35% { transform: scale(1.18); }
+  60% { transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shared-media-heart-icon,
+  .shared-media-heart-icon__heart {
+    transition: none;
+    animation: none !important;
+  }
+}
+/* Mobile gallery icon size */
+@media (hover: none) and (pointer: coarse) and (max-width: 768px) {
+  .shared-media-heart-icon {
+    width: 18px;
+    height: 18px;
   }
 }
 
