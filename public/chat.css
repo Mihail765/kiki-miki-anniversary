@@ -419,7 +419,7 @@ body {
   flex-direction: column;
   gap: 3px;
   position: relative; /* actionsWrap anchors to this */
-  overflow: visible;  /* never clip the trigger button */
+  overflow: visible; /* never clip the trigger button */
 }
 .msg-row.sent .bubble-wrap {
   align-items: flex-end;
@@ -1952,7 +1952,9 @@ img[data-lazy-src] {
   gap: 2px;
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity 0.18s, transform 0.18s;
+  transition:
+    opacity 0.18s,
+    transform 0.18s;
   pointer-events: none;
 }
 .add-img-menu.visible {
@@ -2217,8 +2219,6 @@ img[data-lazy-src] {
     margin-top: 4px;
   }
 }
-
-
 
 /* ─── CHOOSE IMAGES TO BLUR ─── */
 .blur-select-overlay {
