@@ -63,6 +63,12 @@ function initChat(WHO) {
     );
   }
 
+  function isTouchOnlyUI() {
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const hasFinePointer = window.matchMedia("(any-pointer: fine)").matches;
+    return coarse && !hasFinePointer && window.innerWidth <= 1024;
+  }
+
   async function setImagesBlurred(urls, shouldBlur) {
     urls.forEach((url) => {
       if (shouldBlur) _blurredImages.add(url);
@@ -304,6 +310,8 @@ function initChat(WHO) {
   let cameraExposureWrap = null;
   let cameraExposureSlider = null;
   let cameraExposureValue = null;
+  let cameraFocusUnsupportedNotified = false;
+  let cameraFocusResetTimer = null;
   let unreadInserted = false;
   let lastReadTimestamp = null;
 
@@ -1479,16 +1487,28 @@ function initChat(WHO) {
           let imgMouseLongTimer = null;
           let imgMouseClickBlocked = false;
 
+          // Mobile/touch-only: hold an image for React, Save and Blur actions.
+          // Desktop: image holds/right-clicks never open the mobile menu; use the 3 dots.
           gridImg.addEventListener("contextmenu", (e) => {
+            if (!isTouchOnlyUI()) return;
             e.preventDefault();
             e.stopPropagation();
-            openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
+            openImageActionMenu(
+              imgUrl,
+              gridImg,
+              gridImg,
+              isSent,
+              images,
+              id,
+              row,
+              msg,
+            );
           });
 
           gridImg.addEventListener(
             "touchstart",
             (e) => {
-              // Do NOT stopPropagation — let swipe-to-reply on row work
+              if (!isTouchOnlyUI()) return;
               imgTouchStartX = e.touches[0].clientX;
               imgTouchStartY = e.touches[0].clientY;
               imgMoved = false;
@@ -1498,7 +1518,16 @@ function initChat(WHO) {
                 if (!imgMoved) {
                   imgLongPressFired = true;
                   if (navigator.vibrate) navigator.vibrate(30);
-                  openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
+                  openImageActionMenu(
+                    imgUrl,
+                    gridImg,
+                    gridImg,
+                    isSent,
+                    images,
+                    id,
+                    row,
+                    msg,
+                  );
                 }
               }, 600);
             },
@@ -1508,7 +1537,7 @@ function initChat(WHO) {
           gridImg.addEventListener(
             "touchmove",
             (e) => {
-              // Do NOT stopPropagation — let swipe-to-reply work
+              if (!isTouchOnlyUI()) return;
               const dy = Math.abs(e.touches[0].clientY - imgTouchStartY);
               const dx = Math.abs(e.touches[0].clientX - imgTouchStartX);
               if (dy > 10 || dx > 10) {
@@ -1536,23 +1565,22 @@ function initChat(WHO) {
           gridImg.addEventListener(
             "touchend",
             (e) => {
+              if (!isTouchOnlyUI()) return;
               clearTimeout(imgLongPressTimer);
 
-              // If moved (scrolling/swiping) or long-press fired → do nothing
               if (imgMoved || imgLongPressFired) {
                 imgLongPressFired = false;
+                e.preventDefault();
+                e.stopPropagation();
                 return;
               }
 
-              // Prevent the default click from also firing (avoids double-open)
               e.preventDefault();
-
               const now = Date.now();
               const gap = now - imgLastTap;
               imgLastTap = now;
 
               if (gap < 350 && gap > 30) {
-                // Double tap → react
                 clearTimeout(imgTapTimer);
                 imgTapTimer = null;
                 if (id) {
@@ -1560,7 +1588,6 @@ function initChat(WHO) {
                   showHeartBurst(gridImg, getDoubleTapEmoji());
                 }
               } else {
-                // Single tap → open lightbox after delay to catch double-tap
                 clearTimeout(imgTapTimer);
                 imgTapTimer = setTimeout(() => {
                   imgTapTimer = null;
@@ -1571,30 +1598,10 @@ function initChat(WHO) {
             { passive: false },
           );
 
-          // Desktop: long press → image action menu
-          gridImg.addEventListener("mousedown", (e) => {
-            if (e.button !== 0) return;
-            e.stopPropagation(); // prevent bubble long-press on desktop for images
-            imgMouseLongFired = false;
-            imgMouseClickBlocked = false;
-            imgMouseLongTimer = setTimeout(() => {
-              imgMouseLongFired = true;
-              imgMouseClickBlocked = true;
-              openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
-            }, 500);
-          });
-          gridImg.addEventListener("mouseup", () => {
-            clearTimeout(imgMouseLongTimer);
-          });
-          gridImg.addEventListener("mouseleave", () => {
-            clearTimeout(imgMouseLongTimer);
-          });
+          // Desktop uses normal click-to-open only. No hold/right-click app menu.
           gridImg.addEventListener("click", (e) => {
+            if (isTouchOnlyUI()) return;
             e.stopPropagation();
-            if (imgMouseClickBlocked) {
-              imgMouseClickBlocked = false;
-              return;
-            }
             openLightbox(images, idx);
           });
 
@@ -1994,11 +2001,12 @@ function initChat(WHO) {
     bubble.addEventListener(
       "touchstart",
       (e) => {
-        // Images have their own long-press menu. Do not also start the
-        // message reaction long-press, otherwise two menus flash open.
+        // Keep the reaction capsule on message bubbles, but do not start it
+        // when the hold begins on an image (the image has its own mobile menu).
         if (e.target instanceof Element && e.target.closest(".grid-img")) {
           clearTimeout(_lp);
           _lp = null;
+          _lpFired = false;
           return;
         }
 
@@ -2777,8 +2785,8 @@ function initChat(WHO) {
     }
   }
 
-  let _lastImageActionMenuAt = 0;
-  let _lastImageActionMenuUrl = "";
+  let _lastImageActionOpenAt = 0;
+  let _lastImageActionUrl = "";
 
   function openImageActionMenu(
     imgUrl,
@@ -2786,19 +2794,21 @@ function initChat(WHO) {
     anchorEl,
     isSentMsg,
     allImageUrls = [imgUrl],
+    msgId = null,
+    msgRow = null,
+    msgData = null,
   ) {
-    // Android Chrome can emit a synthetic contextmenu immediately after
-    // our touch long-press timer. Ignore that second event so the popup
-    // does not disappear and reappear.
-    const openedAt = Date.now();
-    if (
-      _lastImageActionMenuUrl === imgUrl &&
-      openedAt - _lastImageActionMenuAt < 900
-    ) {
+    // This app menu is deliberately mobile/touch-only. Desktop uses 3 dots.
+    if (!isTouchOnlyUI()) return;
+
+    // Android may create a synthetic contextmenu after our hold timer.
+    // Ignore that second event so the menu does not flash twice.
+    const now = Date.now();
+    if (_lastImageActionUrl === imgUrl && now - _lastImageActionOpenAt < 900) {
       return;
     }
-    _lastImageActionMenuAt = openedAt;
-    _lastImageActionMenuUrl = imgUrl;
+    _lastImageActionUrl = imgUrl;
+    _lastImageActionOpenAt = now;
 
     const messageUrls = [
       ...new Set(
@@ -2823,16 +2833,28 @@ function initChat(WHO) {
     const allBlurred =
       messageUrls.length > 0 && messageUrls.every((url) => isImageBlurred(url));
 
-    const items = [
-      {
-        icon: "💾",
-        label: "Save Image",
-        fn: async () => {
+    const items = [];
+
+    // Restore access to the reaction capsule for image-only messages.
+    if (msgId && msgRow && msgData) {
+      items.push({
+        icon: "😊",
+        label: "React",
+        fn: () => {
           closePopover();
-          await saveImageToDevice(imgUrl);
+          openReactionBar(msgId, msgRow, msgData);
         },
+      });
+    }
+
+    items.push({
+      icon: "💾",
+      label: "Save Image",
+      fn: async () => {
+        closePopover();
+        await saveImageToDevice(imgUrl);
       },
-    ];
+    });
 
     if (messageUrls.length > 1) {
       items.push({
@@ -2845,7 +2867,7 @@ function initChat(WHO) {
             try {
               await saveImageToDevice(url, false);
               saved += 1;
-              await new Promise((resolve) => setTimeout(resolve, 120));
+              await new Promise((resolve) => setTimeout(resolve, 140));
             } catch (_) {}
           }
           showMiniNotif(
@@ -2867,7 +2889,6 @@ function initChat(WHO) {
           showMiniNotif("Could not save blur setting");
         } finally {
           closePopover();
-          closeReactionBar();
         }
       },
     });
@@ -2883,7 +2904,6 @@ function initChat(WHO) {
             showMiniNotif("Could not save blur setting");
           } finally {
             closePopover();
-            closeReactionBar();
           }
         },
       });
@@ -2891,11 +2911,11 @@ function initChat(WHO) {
 
     items.forEach(({ icon, label, fn }) => {
       const btn = document.createElement("button");
+      btn.type = "button";
       btn.className = "img-action-popover-btn";
 
       const iconSpan = document.createElement("span");
       iconSpan.textContent = icon;
-
       const labelSpan = document.createElement("span");
       labelSpan.textContent = label;
 
@@ -2914,8 +2934,8 @@ function initChat(WHO) {
 
     requestAnimationFrame(() => {
       const rect = anchorEl.getBoundingClientRect();
-      const pw = popover.offsetWidth || 160;
-      const ph = popover.offsetHeight || 188;
+      const pw = popover.offsetWidth || 170;
+      const ph = popover.offsetHeight || 210;
       const margin = 10;
       const pad = 8;
       const vw = window.innerWidth;
@@ -2940,13 +2960,12 @@ function initChat(WHO) {
       popover.classList.add("visible");
     });
 
-    const closeOnOutside = (e) => {
-      if (!popover.contains(e.target)) {
+    const closeOnOutside = (event) => {
+      if (!popover.contains(event.target)) {
         closePopover();
         document.removeEventListener("pointerdown", closeOnOutside, true);
       }
     };
-
     setTimeout(() => {
       document.addEventListener("pointerdown", closeOnOutside, true);
     }, 80);
@@ -3126,6 +3145,8 @@ function initChat(WHO) {
 
   async function startCameraStream() {
     cancelCameraCountdown();
+    cameraFocusUnsupportedNotified = false;
+    clearTimeout(cameraFocusResetTimer);
     if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
 
     try {
@@ -3148,62 +3169,124 @@ function initChat(WHO) {
     }
   }
 
-  async function focusCameraAtPointer(event) {
-    if (!cameraStream || cameraIsCountingDown) return;
-    const track = cameraStream.getVideoTracks()[0];
-    if (!track) return;
+  function getVideoFocusPoint(event) {
+    const rect = cameraFeed.getBoundingClientRect();
+    const localX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+    const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
 
-    const rect = cameraStage.getBoundingClientRect();
-    let x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const y = Math.max(
-      0,
-      Math.min(1, (event.clientY - rect.top) / rect.height),
-    );
+    const sourceW = cameraFeed.videoWidth || rect.width;
+    const sourceH = cameraFeed.videoHeight || rect.height;
+    const sourceAspect = sourceW / sourceH;
+    const boxAspect = rect.width / rect.height;
+
+    let x;
+    let y;
+
+    // Correct the tap for object-fit: cover cropping.
+    if (sourceAspect > boxAspect) {
+      const renderedW = rect.height * sourceAspect;
+      const croppedX = (renderedW - rect.width) / 2;
+      x = (localX + croppedX) / renderedW;
+      y = localY / rect.height;
+    } else {
+      const renderedH = rect.width / sourceAspect;
+      const croppedY = (renderedH - rect.height) / 2;
+      x = localX / rect.width;
+      y = (localY + croppedY) / renderedH;
+    }
+
+    x = Math.max(0, Math.min(1, x));
+    y = Math.max(0, Math.min(1, y));
     if (facingMode === "user") x = 1 - x;
 
-    cameraFocusIndicator.style.left = `${((event.clientX - rect.left) / rect.width) * 100}%`;
-    cameraFocusIndicator.style.top = `${((event.clientY - rect.top) / rect.height) * 100}%`;
-    cameraFocusIndicator.classList.remove("show");
+    return {
+      x,
+      y,
+      displayX: Math.max(0, Math.min(100, (localX / rect.width) * 100)),
+      displayY: Math.max(0, Math.min(100, (localY / rect.height) * 100)),
+    };
+  }
+
+  async function tryCameraConstraint(track, constraint) {
+    try {
+      await track.applyConstraints({ advanced: [constraint] });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function focusCameraAtPointer(event) {
+    if (!cameraStream || cameraIsCountingDown || !event.isPrimary) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    const track = cameraStream.getVideoTracks()[0];
+    if (!track || track.readyState !== "live") return;
+
+    const point = getVideoFocusPoint(event);
+    cameraFocusIndicator.style.left = `${point.displayX}%`;
+    cameraFocusIndicator.style.top = `${point.displayY}%`;
+    cameraFocusIndicator.classList.remove(
+      "show",
+      "focus-success",
+      "focus-limited",
+    );
     void cameraFocusIndicator.offsetWidth;
     cameraFocusIndicator.classList.add("show");
 
-    if (typeof track.getCapabilities !== "function") return;
+    if (typeof track.getCapabilities !== "function") {
+      cameraFocusIndicator.classList.add("focus-limited");
+      return;
+    }
+
     const capabilities = track.getCapabilities();
-    const advanced = {};
+    const supported = navigator.mediaDevices.getSupportedConstraints
+      ? navigator.mediaDevices.getSupportedConstraints()
+      : {};
+    const focusModes = Array.isArray(capabilities.focusMode)
+      ? capabilities.focusMode
+      : [];
 
-    if (capabilities.pointsOfInterest) {
-      advanced.pointsOfInterest = [{ x, y }];
-    }
-    if (capabilities.focusMode?.includes("single-shot")) {
-      advanced.focusMode = "single-shot";
-    } else if (capabilities.focusMode?.includes("continuous")) {
-      advanced.focusMode = "continuous";
-    }
-    if (capabilities.exposureMode?.includes("continuous")) {
-      advanced.exposureMode = "continuous";
+    let pointAccepted = false;
+    let focusTriggered = false;
+
+    // Apply one setting at a time. Combining optional camera constraints in
+    // one object makes several Android devices reject the entire request.
+    if (supported.pointsOfInterest || "pointsOfInterest" in capabilities) {
+      pointAccepted = await tryCameraConstraint(track, {
+        pointsOfInterest: [{ x: point.x, y: point.y }],
+      });
     }
 
-    if (Object.keys(advanced).length === 0) return;
-    try {
-      await track.applyConstraints({ advanced: [advanced] });
-      if (advanced.focusMode === "single-shot") {
-        setTimeout(async () => {
-          try {
-            const latestTrack = cameraStream?.getVideoTracks()[0];
-            const latestCaps = latestTrack?.getCapabilities?.();
-            if (latestCaps?.focusMode?.includes("continuous")) {
-              await latestTrack.applyConstraints({
-                advanced: [{ focusMode: "continuous" }],
-              });
-            }
-          } catch (_) {}
-        }, 900);
-      }
-    } catch (error) {
-      console.warn(
-        "Tap-to-focus is not supported by this camera/browser:",
-        error,
-      );
+    if (focusModes.includes("single-shot")) {
+      focusTriggered = await tryCameraConstraint(track, {
+        focusMode: "single-shot",
+      });
+    } else if (focusModes.includes("continuous")) {
+      // Re-applying continuous focus asks the camera to run autofocus again.
+      focusTriggered = await tryCameraConstraint(track, {
+        focusMode: "continuous",
+      });
+    }
+
+    const accepted = pointAccepted || focusTriggered;
+    cameraFocusIndicator.classList.add(
+      accepted ? "focus-success" : "focus-limited",
+    );
+
+    clearTimeout(cameraFocusResetTimer);
+    if (focusTriggered && focusModes.includes("continuous")) {
+      // Do not switch back too quickly: many phones need over a second to lock.
+      cameraFocusResetTimer = setTimeout(async () => {
+        const latestTrack = cameraStream?.getVideoTracks()[0];
+        if (!latestTrack || latestTrack.readyState !== "live") return;
+        await tryCameraConstraint(latestTrack, { focusMode: "continuous" });
+      }, 2500);
+    }
+
+    if (!accepted && !cameraFocusUnsupportedNotified) {
+      cameraFocusUnsupportedNotified = true;
+      showMiniNotif("This camera only allows automatic focus in the browser");
     }
   }
 
@@ -3367,6 +3450,7 @@ function initChat(WHO) {
 
   function closeCamera(useHistoryBack = true, discardPending = true) {
     cancelCameraCountdown();
+    clearTimeout(cameraFocusResetTimer);
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
       cameraStream = null;

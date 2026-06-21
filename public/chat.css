@@ -2397,17 +2397,35 @@ img[data-lazy-src] {
   }
 }
 
-/* ─── FINAL MOBILE CAMERA CENTERING FIX ───
-   Position the complete camera panel from the viewport center. */
+
+/* ─── INPUT-MODE SEPARATION AND FOCUS FEEDBACK ─── */
+#camera-focus-indicator.focus-success {
+  border-color: #78ff9b;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(120, 255, 155, 0.7);
+}
+
+#camera-focus-indicator.focus-limited {
+  border-color: #ffd166;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(255, 209, 102, 0.65);
+}
+
+/* The custom image hold menu is a touch/mobile feature only. */
+@media (any-pointer: fine) {
+  .img-action-popover {
+    display: none !important;
+  }
+}
+
+/* Keep the complete camera interface centered on phones. */
 @media (max-width: 768px), (pointer: coarse) {
   #camera-modal {
     height: 100dvh !important;
     min-height: 100dvh !important;
     overflow: hidden !important;
-    padding:
-      max(10px, env(safe-area-inset-top))
-      10px
-      max(10px, env(safe-area-inset-bottom)) !important;
     align-items: center !important;
     justify-content: center !important;
   }
@@ -2417,61 +2435,13 @@ img[data-lazy-src] {
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
-    width: calc(100% - 20px) !important;
+    width: min(calc(100% - 20px), 480px) !important;
     max-width: 480px !important;
     margin: 0 !important;
-    padding: 0 !important;
     gap: 10px !important;
-    align-items: center !important;
-    justify-content: center !important;
-    overflow: visible !important;
-  }
-
-  #camera-stage {
-    width: 100% !important;
-    max-width: 480px !important;
-    flex: 0 1 auto;
   }
 
   #camera-stage #camera-feed {
-    width: 100% !important;
-    height: auto !important;
     max-height: min(52dvh, calc(100dvh - 220px)) !important;
-    object-fit: cover !important;
-  }
-
-  #camera-options-row {
-    width: 100% !important;
-    flex-wrap: wrap;
-    flex-shrink: 0;
-  }
-
-  #camera-controls {
-    margin-top: 0 !important;
-    flex-shrink: 0;
-  }
-
-  #camera-preview-wrap.visible {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: calc(100% - 20px) !important;
-    max-width: 480px !important;
-    max-height: calc(100dvh - 24px) !important;
-    margin: 0 !important;
-    overflow-y: auto !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  #camera-preview-img {
-    max-height: calc(100dvh - 125px) !important;
-  }
-
-  .img-action-popover {
-    max-height: calc(100dvh - 16px);
-    overflow-y: auto;
   }
 }
-
