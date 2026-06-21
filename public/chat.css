@@ -2199,7 +2199,8 @@ img[data-lazy-src] {
 
 @media (max-width: 600px) {
   #camera-modal {
-    justify-content: flex-start;
+    justify-content: center;
+    align-items: center;
   }
 
   #camera-live-wrap {
