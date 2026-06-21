@@ -1467,42 +1467,19 @@ function initChat(WHO) {
 
           if (isImageBlurred(imgUrl)) gridImg.classList.add("img-blurred");
 
-          // ── FIX: Unified touch state per image ────────────────────
-          // All touch interactions handled here cleanly.
-          // We do NOT stopPropagation on touchstart/touchmove so that:
-          //   1. Swipe-to-reply on the row still works
-          //   2. Bubble long-press reaction still works (via row-level handler)
-          // We only handle: long-press → image action menu, double-tap → react, single tap → lightbox
-
+          // ── IMAGE TOUCH INTERACTIONS ────────────────────────────────
+          // A long-press is handled only by attachReactions() on the bubble,
+          // exactly like the older version. This prevents the image actions menu
+          // and reaction capsule from competing with each other.
           let imgTapTimer = null;
           let imgLastTap = 0;
-          let imgLongPressTimer = null;
-          let imgLongPressFired = false;
           let imgTouchStartX = 0;
           let imgTouchStartY = 0;
           let imgMoved = false;
 
-          // Desktop mouse state
-          let imgMouseLongFired = false;
-          let imgMouseLongTimer = null;
-          let imgMouseClickBlocked = false;
-
-          // Mobile/touch-only: hold an image for React, Save and Blur actions.
-          // Desktop: image holds/right-clicks never open the mobile menu; use the 3 dots.
           gridImg.addEventListener("contextmenu", (e) => {
-            if (!isTouchOnlyUI()) return;
-            e.preventDefault();
-            e.stopPropagation();
-            openImageActionMenu(
-              imgUrl,
-              gridImg,
-              gridImg,
-              isSent,
-              images,
-              id,
-              row,
-              msg,
-            );
+            // Suppress the browser's native image menu on touch devices.
+            if (isTouchOnlyUI()) e.preventDefault();
           });
 
           gridImg.addEventListener(
@@ -1512,24 +1489,8 @@ function initChat(WHO) {
               imgTouchStartX = e.touches[0].clientX;
               imgTouchStartY = e.touches[0].clientY;
               imgMoved = false;
-              imgLongPressFired = false;
-              clearTimeout(imgLongPressTimer);
-              imgLongPressTimer = setTimeout(() => {
-                if (!imgMoved) {
-                  imgLongPressFired = true;
-                  if (navigator.vibrate) navigator.vibrate(30);
-                  openImageActionMenu(
-                    imgUrl,
-                    gridImg,
-                    gridImg,
-                    isSent,
-                    images,
-                    id,
-                    row,
-                    msg,
-                  );
-                }
-              }, 600);
+              // attachReactions() receives this same event through bubbling and
+              // starts the one reaction long-press timer for the whole message.
             },
             { passive: true },
           );
@@ -1542,7 +1503,6 @@ function initChat(WHO) {
               const dx = Math.abs(e.touches[0].clientX - imgTouchStartX);
               if (dy > 10 || dx > 10) {
                 imgMoved = true;
-                clearTimeout(imgLongPressTimer);
                 clearTimeout(imgTapTimer);
                 imgTapTimer = null;
               }
@@ -1553,10 +1513,8 @@ function initChat(WHO) {
           gridImg.addEventListener(
             "touchcancel",
             () => {
-              clearTimeout(imgLongPressTimer);
               clearTimeout(imgTapTimer);
               imgTapTimer = null;
-              imgLongPressFired = false;
               imgMoved = false;
             },
             { passive: true },
@@ -1566,12 +1524,13 @@ function initChat(WHO) {
             "touchend",
             (e) => {
               if (!isTouchOnlyUI()) return;
-              clearTimeout(imgLongPressTimer);
 
-              if (imgMoved || imgLongPressFired) {
-                imgLongPressFired = false;
+              // Do not interfere with row-level swipe-to-reply.
+              if (imgMoved) return;
+
+              // A reaction long-press just fired. Do not also open the lightbox.
+              if (row.__reactionHoldFired) {
                 e.preventDefault();
-                e.stopPropagation();
                 return;
               }
 
@@ -1591,14 +1550,14 @@ function initChat(WHO) {
                 clearTimeout(imgTapTimer);
                 imgTapTimer = setTimeout(() => {
                   imgTapTimer = null;
-                  openLightbox(images, idx);
+                  if (!row.__reactionHoldFired) openLightbox(images, idx);
                 }, 270);
               }
             },
             { passive: false },
           );
 
-          // Desktop uses normal click-to-open only. No hold/right-click app menu.
+          // Desktop uses click-to-open. All other actions stay in the 3-dot menu.
           gridImg.addEventListener("click", (e) => {
             if (isTouchOnlyUI()) return;
             e.stopPropagation();
@@ -2001,17 +1960,11 @@ function initChat(WHO) {
     bubble.addEventListener(
       "touchstart",
       (e) => {
-        // Keep the reaction capsule on message bubbles, but do not start it
-        // when the hold begins on an image (the image has its own mobile menu).
-        if (e.target instanceof Element && e.target.closest(".grid-img")) {
-          clearTimeout(_lp);
-          _lp = null;
-          _lpFired = false;
-          return;
-        }
-
+        // Old behavior restored: holding anywhere in the message, including
+        // directly on an image, opens the reaction capsule.
         _moved = false;
         _lpFired = false;
+        row.__reactionHoldFired = false;
         _startX = e.touches[0].clientX;
         _startY = e.touches[0].clientY;
         const sinceLastTap = Date.now() - _lastTap;
@@ -2021,6 +1974,7 @@ function initChat(WHO) {
           _lp = null;
           if (_moved) return;
           _lpFired = true;
+          row.__reactionHoldFired = true;
           openReactionBar(msgId, row, msg);
         }, 650);
       },
@@ -2061,8 +2015,15 @@ function initChat(WHO) {
         if (_moved) return;
         if (_lpFired) {
           _lpFired = false;
+          // Keep the flag through the target's touchend and clear it after
+          // the current event finishes, preventing a delayed lightbox open.
+          setTimeout(() => {
+            row.__reactionHoldFired = false;
+          }, 350);
           return;
         }
+
+        row.__reactionHoldFired = false;
 
         // Only handle double-tap-to-react on non-image parts of the bubble
         // (images handle their own double-tap)
@@ -2236,8 +2197,12 @@ function initChat(WHO) {
         startReply(msg, msgId);
       });
 
-      dropdown.appendChild(reactItem);
-      dropdown.appendChild(divider1);
+      // On phones/tablets, long-press is the reaction gesture, so the
+      // small-device menu intentionally has no separate React item.
+      if (!isMobileUI()) {
+        dropdown.appendChild(reactItem);
+        dropdown.appendChild(divider1);
+      }
       dropdown.appendChild(replyItem);
 
       if (imgUrls.length > 0) {
@@ -2265,6 +2230,25 @@ function initChat(WHO) {
 
         dropdown.appendChild(divider2);
         dropdown.appendChild(saveItem);
+
+        // Small-device individual selection. Holding the image is reserved
+        // for reactions; image visibility actions live in this menu.
+        if (isMobileUI() && imgUrls.length > 1) {
+          const blurItem = document.createElement("button");
+          blurItem.className = "msg-action-item";
+          const blurIcon = document.createElement("span");
+          blurIcon.className = "action-icon";
+          blurIcon.textContent = "🖼️";
+          blurItem.appendChild(blurIcon);
+          blurItem.appendChild(document.createTextNode(" Blur"));
+          blurItem.addEventListener("mousedown", (e) => e.stopPropagation());
+          blurItem.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closeAllDropdowns();
+            openSeparateBlurPicker(imgUrls);
+          });
+          dropdown.appendChild(blurItem);
+        }
 
         const divider3 = document.createElement("hr");
         divider3.className = "msg-action-divider";
@@ -2834,18 +2818,6 @@ function initChat(WHO) {
       messageUrls.length > 0 && messageUrls.every((url) => isImageBlurred(url));
 
     const items = [];
-
-    // Restore access to the reaction capsule for image-only messages.
-    if (msgId && msgRow && msgData) {
-      items.push({
-        icon: "😊",
-        label: "React",
-        fn: () => {
-          closePopover();
-          openReactionBar(msgId, msgRow, msgData);
-        },
-      });
-    }
 
     items.push({
       icon: "💾",

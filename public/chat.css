@@ -1758,8 +1758,17 @@ body {
 }
 
 @media (hover: none) {
+  /* Touch devices need the 3-dot menu for Save/Blur actions because a
+     long-press is reserved for the reaction capsule. */
   .msg-hover-actions {
-    display: none !important;
+    display: flex !important;
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .msg-actions-trigger {
+    width: 32px;
+    height: 32px;
   }
 }
 
@@ -2392,8 +2401,13 @@ img[data-lazy-src] {
 }
 
 @media (max-width: 768px), (pointer: coarse) {
-  .separate-blur-overlay {
-    display: none !important;
+  .separate-blur-dialog {
+    width: min(94vw, 520px);
+    max-height: 88dvh;
+  }
+
+  .separate-blur-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
