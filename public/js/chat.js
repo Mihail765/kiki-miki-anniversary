@@ -1482,7 +1482,7 @@ function initChat(WHO) {
           gridImg.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
+            openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
           });
 
           gridImg.addEventListener(
@@ -1498,7 +1498,7 @@ function initChat(WHO) {
                 if (!imgMoved) {
                   imgLongPressFired = true;
                   if (navigator.vibrate) navigator.vibrate(30);
-                  openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
+                  openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
                 }
               }, 600);
             },
@@ -1580,7 +1580,7 @@ function initChat(WHO) {
             imgMouseLongTimer = setTimeout(() => {
               imgMouseLongFired = true;
               imgMouseClickBlocked = true;
-              openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
+              openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
             }, 500);
           });
           gridImg.addEventListener("mouseup", () => {
@@ -1994,7 +1994,14 @@ function initChat(WHO) {
     bubble.addEventListener(
       "touchstart",
       (e) => {
-        // Images handle their own logic; still allow long-press on image area for reaction bar
+        // Images have their own long-press menu. Do not also start the
+        // message reaction long-press, otherwise two menus flash open.
+        if (e.target instanceof Element && e.target.closest(".grid-img")) {
+          clearTimeout(_lp);
+          _lp = null;
+          return;
+        }
+
         _moved = false;
         _lpFired = false;
         _startX = e.touches[0].clientX;
@@ -2742,7 +2749,7 @@ function initChat(WHO) {
   }
 
   // ─── IMAGE ACTION MENU (long-press on image) ──────────────────────
-  async function saveImageToDevice(url) {
+  async function saveImageToDevice(url, showNotice = true) {
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error("fetch failed");
@@ -2762,55 +2769,141 @@ function initChat(WHO) {
         URL.revokeObjectURL(objUrl);
         a.remove();
       }, 1000);
-      showMiniNotif("💾 Image saved!");
+      if (showNotice) showMiniNotif("💾 Image saved!");
     } catch (err) {
       window.open(url, "_blank", "noopener");
-      showMiniNotif("📂 Opened in new tab — long-press to save");
+      if (showNotice)
+        showMiniNotif("📂 Opened in new tab — long-press to save");
     }
   }
 
-  function openImageActionMenu(imgUrl, imgEl, anchorEl, isSentMsg) {
-    // Remove any existing popover and release its scroll lock before opening a new one
+  let _lastImageActionMenuAt = 0;
+  let _lastImageActionMenuUrl = "";
+
+  function openImageActionMenu(
+    imgUrl,
+    imgEl,
+    anchorEl,
+    isSentMsg,
+    allImageUrls = [imgUrl],
+  ) {
+    // Android Chrome can emit a synthetic contextmenu immediately after
+    // our touch long-press timer. Ignore that second event so the popup
+    // does not disappear and reappear.
+    const openedAt = Date.now();
+    if (
+      _lastImageActionMenuUrl === imgUrl &&
+      openedAt - _lastImageActionMenuAt < 900
+    ) {
+      return;
+    }
+    _lastImageActionMenuAt = openedAt;
+    _lastImageActionMenuUrl = imgUrl;
+
+    const messageUrls = [
+      ...new Set(
+        (Array.isArray(allImageUrls) ? allImageUrls : [imgUrl]).filter(Boolean),
+      ),
+    ];
+
     document.querySelectorAll(".img-action-popover").forEach((p) => p.remove());
+    closeReactionBar();
     unlockScroll();
     lockScroll();
 
     const popover = document.createElement("div");
     popover.className = "img-action-popover";
 
+    const closePopover = () => {
+      popover.remove();
+      unlockScroll();
+    };
+
     const isBlurred = isImageBlurred(imgUrl);
+    const allBlurred =
+      messageUrls.length > 0 && messageUrls.every((url) => isImageBlurred(url));
+
     const items = [
       {
         icon: "💾",
         label: "Save Image",
         fn: async () => {
-          popover.remove();
-          unlockScroll();
+          closePopover();
           await saveImageToDevice(imgUrl);
-        },
-      },
-      {
-        icon: isBlurred ? "👁️" : "🫣",
-        label: isBlurred ? "Unblur" : "Blur",
-        fn: () => {
-          toggleImageBlur(imgUrl, imgEl);
-          popover.remove();
-          unlockScroll();
-          closeReactionBar();
         },
       },
     ];
 
+    if (messageUrls.length > 1) {
+      items.push({
+        icon: "📥",
+        label: "Save All",
+        fn: async () => {
+          closePopover();
+          let saved = 0;
+          for (const url of messageUrls) {
+            try {
+              await saveImageToDevice(url, false);
+              saved += 1;
+              await new Promise((resolve) => setTimeout(resolve, 120));
+            } catch (_) {}
+          }
+          showMiniNotif(
+            saved === messageUrls.length
+              ? `💾 Saved all ${saved} images`
+              : `💾 Saved ${saved} of ${messageUrls.length} images`,
+          );
+        },
+      });
+    }
+
+    items.push({
+      icon: isBlurred ? "👁️" : "🫣",
+      label: isBlurred ? "Unblur" : "Blur",
+      fn: async () => {
+        try {
+          await toggleImageBlur(imgUrl, imgEl);
+        } catch (_) {
+          showMiniNotif("Could not save blur setting");
+        } finally {
+          closePopover();
+          closeReactionBar();
+        }
+      },
+    });
+
+    if (messageUrls.length > 1) {
+      items.push({
+        icon: allBlurred ? "👁️" : "🫣",
+        label: allBlurred ? "Unblur All" : "Blur All",
+        fn: async () => {
+          try {
+            await setImagesBlurred(messageUrls, !allBlurred);
+          } catch (_) {
+            showMiniNotif("Could not save blur setting");
+          } finally {
+            closePopover();
+            closeReactionBar();
+          }
+        },
+      });
+    }
+
     items.forEach(({ icon, label, fn }) => {
       const btn = document.createElement("button");
       btn.className = "img-action-popover-btn";
+
       const iconSpan = document.createElement("span");
       iconSpan.textContent = icon;
+
       const labelSpan = document.createElement("span");
       labelSpan.textContent = label;
+
       btn.appendChild(iconSpan);
       btn.appendChild(labelSpan);
+      btn.addEventListener("pointerdown", (e) => e.stopPropagation());
       btn.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
         fn();
       });
@@ -2821,53 +2914,42 @@ function initChat(WHO) {
 
     requestAnimationFrame(() => {
       const rect = anchorEl.getBoundingClientRect();
-      const pw = popover.offsetWidth || 150;
-      const ph = popover.offsetHeight || 96;
+      const pw = popover.offsetWidth || 160;
+      const ph = popover.offsetHeight || 188;
       const margin = 10;
       const pad = 8;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // Vertical: center on the image
       let top = rect.top + rect.height / 2 - ph / 2;
-
-      // Horizontal:
-      // Sent messages sit on the RIGHT side of the screen →
-      //   menu appears to the RIGHT of the image (outside the bubble edge).
-      // Received messages sit on the LEFT side of the screen →
-      //   menu appears to the LEFT of the image (outside the bubble edge).
       let left;
+
       if (isSentMsg) {
-        // Prefer right side of image; flip left if off-screen
         left = rect.right + margin;
         if (left + pw > vw - pad) left = rect.left - pw - margin;
       } else {
-        // Prefer left side of image; flip right if off-screen
         left = rect.left - pw - margin;
         if (left < pad) left = rect.right + margin;
       }
 
-      // Final clamp — never off any edge
       left = Math.max(pad, Math.min(left, vw - pw - pad));
       top = Math.max(pad, Math.min(top, vh - ph - pad));
 
-      popover.style.top = top + "px";
-      popover.style.left = left + "px";
+      popover.style.top = `${top}px`;
+      popover.style.left = `${left}px`;
       popover.classList.add("visible");
     });
 
     const closeOnOutside = (e) => {
       if (!popover.contains(e.target)) {
-        popover.remove();
-        unlockScroll();
-        document.removeEventListener("click", closeOnOutside, true);
-        document.removeEventListener("touchstart", closeOnOutside, true);
+        closePopover();
+        document.removeEventListener("pointerdown", closeOnOutside, true);
       }
     };
+
     setTimeout(() => {
-      document.addEventListener("click", closeOnOutside, true);
-      document.addEventListener("touchstart", closeOnOutside, true);
-    }, 50);
+      document.addEventListener("pointerdown", closeOnOutside, true);
+    }, 80);
   }
 
   // ─── CAMERA ──────────────────────────────────────────────────────
