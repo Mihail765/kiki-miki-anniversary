@@ -82,6 +82,137 @@ function initChat(WHO) {
     await setImagesBlurred([url], !isImageBlurred(url));
   }
 
+  function openSeparateBlurPicker(urls) {
+    document
+      .querySelectorAll(".separate-blur-overlay")
+      .forEach((el) => el.remove());
+    closeAllDropdowns();
+    lockScroll();
+
+    const selected = new Set(urls.filter((url) => isImageBlurred(url)));
+    const overlay = document.createElement("div");
+    overlay.className = "separate-blur-overlay";
+
+    const dialog = document.createElement("div");
+    dialog.className = "separate-blur-dialog";
+
+    const header = document.createElement("div");
+    header.className = "separate-blur-header";
+
+    const titleWrap = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = "Blur separately";
+    const subtitle = document.createElement("p");
+    subtitle.textContent = "Select the images that should stay blurred.";
+    titleWrap.appendChild(title);
+    titleWrap.appendChild(subtitle);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "separate-blur-close";
+    closeBtn.textContent = "✕";
+    closeBtn.title = "Close";
+
+    header.appendChild(titleWrap);
+    header.appendChild(closeBtn);
+    dialog.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.className = "separate-blur-grid";
+
+    const updateCard = (card, url) => {
+      const active = selected.has(url);
+      card.classList.toggle("selected", active);
+      card.setAttribute("aria-pressed", String(active));
+      const badge = card.querySelector(".separate-blur-badge");
+      if (badge) badge.textContent = active ? "Blurred" : "Visible";
+    };
+
+    urls.forEach((url, index) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "separate-blur-card";
+      card.setAttribute("aria-label", `Toggle blur for image ${index + 1}`);
+
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = `Image ${index + 1}`;
+      img.loading = "lazy";
+
+      const number = document.createElement("span");
+      number.className = "separate-blur-number";
+      number.textContent = String(index + 1);
+
+      const badge = document.createElement("span");
+      badge.className = "separate-blur-badge";
+
+      card.appendChild(img);
+      card.appendChild(number);
+      card.appendChild(badge);
+      updateCard(card, url);
+
+      card.addEventListener("click", () => {
+        if (selected.has(url)) selected.delete(url);
+        else selected.add(url);
+        updateCard(card, url);
+      });
+
+      grid.appendChild(card);
+    });
+
+    dialog.appendChild(grid);
+
+    const footer = document.createElement("div");
+    footer.className = "separate-blur-footer";
+
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "separate-blur-secondary";
+    clearBtn.textContent = "Show all";
+    clearBtn.addEventListener("click", () => {
+      selected.clear();
+      grid.querySelectorAll(".separate-blur-card").forEach((card, index) => {
+        updateCard(card, urls[index]);
+      });
+    });
+
+    const applyBtn = document.createElement("button");
+    applyBtn.type = "button";
+    applyBtn.className = "separate-blur-apply";
+    applyBtn.textContent = "Apply";
+
+    const closePicker = () => {
+      overlay.remove();
+      unlockScroll();
+    };
+
+    closeBtn.addEventListener("click", closePicker);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closePicker();
+    });
+
+    applyBtn.addEventListener("click", async () => {
+      applyBtn.disabled = true;
+      try {
+        const shouldBlur = urls.filter((url) => selected.has(url));
+        const shouldShow = urls.filter((url) => !selected.has(url));
+        if (shouldBlur.length) await setImagesBlurred(shouldBlur, true);
+        if (shouldShow.length) await setImagesBlurred(shouldShow, false);
+        closePicker();
+      } catch (_) {
+        applyBtn.disabled = false;
+        showMiniNotif("Could not save blur setting");
+      }
+    });
+
+    footer.appendChild(clearBtn);
+    footer.appendChild(applyBtn);
+    dialog.appendChild(footer);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+  }
+
   // ─── ELEMENTS ────────────────────────────────────────────────────
   const msgContainer = document.getElementById("messages-container");
 
@@ -1347,15 +1478,11 @@ function initChat(WHO) {
           let imgMouseLongFired = false;
           let imgMouseLongTimer = null;
           let imgMouseClickBlocked = false;
-          let imgIgnoreMouseUntil = 0;
 
           gridImg.addEventListener("contextmenu", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            // Android Chrome may emit contextmenu after our touch long-press.
-            // Ignore that synthetic second event so the popover opens once.
-            if (Date.now() < imgIgnoreMouseUntil) return;
-            openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
+            openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
           });
 
           gridImg.addEventListener(
@@ -1366,14 +1493,12 @@ function initChat(WHO) {
               imgTouchStartY = e.touches[0].clientY;
               imgMoved = false;
               imgLongPressFired = false;
-              imgIgnoreMouseUntil = Date.now() + 1600;
               clearTimeout(imgLongPressTimer);
               imgLongPressTimer = setTimeout(() => {
                 if (!imgMoved) {
                   imgLongPressFired = true;
-                  imgIgnoreMouseUntil = Date.now() + 1600;
                   if (navigator.vibrate) navigator.vibrate(30);
-                  openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
+                  openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
                 }
               }, 600);
             },
@@ -1449,19 +1574,13 @@ function initChat(WHO) {
           // Desktop: long press → image action menu
           gridImg.addEventListener("mousedown", (e) => {
             if (e.button !== 0) return;
-            if (
-              Date.now() < imgIgnoreMouseUntil ||
-              e.sourceCapabilities?.firesTouchEvents
-            ) {
-              return;
-            }
             e.stopPropagation(); // prevent bubble long-press on desktop for images
             imgMouseLongFired = false;
             imgMouseClickBlocked = false;
             imgMouseLongTimer = setTimeout(() => {
               imgMouseLongFired = true;
               imgMouseClickBlocked = true;
-              openImageActionMenu(imgUrl, gridImg, gridImg, isSent, images);
+              openImageActionMenu(imgUrl, gridImg, gridImg, isSent);
             }, 500);
           });
           gridImg.addEventListener("mouseup", () => {
@@ -1875,13 +1994,7 @@ function initChat(WHO) {
     bubble.addEventListener(
       "touchstart",
       (e) => {
-        // Image long-press has its own Save/Blur menu. Do not also start
-        // the message reaction long-press timer for the same touch.
-        if (e.target.closest?.(".grid-img")) {
-          clearTimeout(_lp);
-          _lp = null;
-          return;
-        }
+        // Images handle their own logic; still allow long-press on image area for reaction bar
         _moved = false;
         _lpFired = false;
         _startX = e.touches[0].clientX;
@@ -2125,51 +2238,68 @@ function initChat(WHO) {
         saveItem.appendChild(saveIcon);
         saveItem.appendChild(
           document.createTextNode(
-            " " + (imgUrls.length > 1 ? "Save All Images" : "Save Image"),
+            " " + (imgUrls.length > 1 ? "Save Images" : "Save Image"),
           ),
         );
         saveItem.addEventListener("mousedown", (e) => e.stopPropagation());
         saveItem.addEventListener("click", (e) => {
           e.stopPropagation();
           closeAllDropdowns();
-          if (imgUrls.length > 1) saveAllImagesToDevice(imgUrls);
-          else saveImageToDevice(imgUrls[0]);
+          imgUrls.forEach((url) => saveImageToDevice(url));
         });
 
         dropdown.appendChild(divider2);
         dropdown.appendChild(saveItem);
 
-        // Mobile gets a convenient Blur All / Unblur All action.
-        // Desktop keeps per-image blur through right-click or long-press.
-        if (isMobileUI()) {
-          const divider3 = document.createElement("hr");
-          divider3.className = "msg-action-divider";
+        const divider3 = document.createElement("hr");
+        divider3.className = "msg-action-divider";
 
-          const blurItem = document.createElement("button");
-          blurItem.className = "msg-action-item";
-          const blurIconEl = document.createElement("span");
-          blurIconEl.className = "action-icon";
-          const allBlurred = imgUrls.every((url) => isImageBlurred(url));
-          blurIconEl.textContent = allBlurred ? "👁️" : "🫣";
-          blurItem.appendChild(blurIconEl);
-          blurItem.appendChild(
-            document.createTextNode(
-              allBlurred ? " Unblur All Images" : " Blur All Images",
-            ),
+        const blurAllItem = document.createElement("button");
+        blurAllItem.className = "msg-action-item";
+        const blurAllIcon = document.createElement("span");
+        blurAllIcon.className = "action-icon";
+        const allBlurred = imgUrls.every((url) => isImageBlurred(url));
+        blurAllIcon.textContent = allBlurred ? "👁️" : "🫣";
+        blurAllItem.appendChild(blurAllIcon);
+        blurAllItem.appendChild(
+          document.createTextNode(
+            allBlurred ? " Unblur All Images" : " Blur All Images",
+          ),
+        );
+        blurAllItem.addEventListener("mousedown", (e) => e.stopPropagation());
+        blurAllItem.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          closeAllDropdowns();
+          try {
+            await setImagesBlurred(imgUrls, !allBlurred);
+          } catch (_) {
+            showMiniNotif("Could not save blur setting");
+          }
+        });
+
+        dropdown.appendChild(divider3);
+        dropdown.appendChild(blurAllItem);
+
+        // On larger devices restore the original separate-selection workflow.
+        // Mobile keeps its simpler Blur All entry; individual Blur remains on long-press.
+        if (!isMobileUI() && imgUrls.length > 1) {
+          const blurSeparateItem = document.createElement("button");
+          blurSeparateItem.className = "msg-action-item";
+          const blurSeparateIcon = document.createElement("span");
+          blurSeparateIcon.className = "action-icon";
+          blurSeparateIcon.textContent = "🖼️";
+          blurSeparateItem.appendChild(blurSeparateIcon);
+          blurSeparateItem.appendChild(
+            document.createTextNode(" Blur Separately"),
           );
-          blurItem.addEventListener("mousedown", (e) => e.stopPropagation());
-          blurItem.addEventListener("click", async (e) => {
+          blurSeparateItem.addEventListener("mousedown", (e) =>
+            e.stopPropagation(),
+          );
+          blurSeparateItem.addEventListener("click", (e) => {
             e.stopPropagation();
-            closeAllDropdowns();
-            try {
-              await setImagesBlurred(imgUrls, !allBlurred);
-            } catch (_) {
-              showMiniNotif("Could not save blur setting");
-            }
+            openSeparateBlurPicker(imgUrls);
           });
-
-          dropdown.appendChild(divider3);
-          dropdown.appendChild(blurItem);
+          dropdown.appendChild(blurSeparateItem);
         }
       }
 
@@ -2612,179 +2742,64 @@ function initChat(WHO) {
   }
 
   // ─── IMAGE ACTION MENU (long-press on image) ──────────────────────
-  async function fetchImageAsFile(url, index = 0) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Image download failed");
-    const blob = await res.blob();
-    const ext = blob.type.includes("webp")
-      ? "webp"
-      : blob.type.includes("png")
-        ? "png"
-        : "jpg";
-    return new File([blob], `photo_${Date.now()}_${index + 1}.${ext}`, {
-      type: blob.type || "image/jpeg",
-      lastModified: Date.now(),
-    });
-  }
-
-  async function triggerFileDownload(file) {
-    const objUrl = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = objUrl;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    await new Promise((resolve) => setTimeout(resolve, 220));
-    URL.revokeObjectURL(objUrl);
-    a.remove();
-  }
-
-  async function saveImageToDevice(url, options = {}) {
-    const { silent = false, index = 0 } = options;
+  async function saveImageToDevice(url) {
     try {
-      const file = await fetchImageAsFile(url, index);
-      await triggerFileDownload(file);
-      if (!silent) showMiniNotif("💾 Image saved!");
-      return true;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const ext = blob.type.includes("webp")
+        ? "webp"
+        : blob.type.includes("png")
+          ? "png"
+          : "jpg";
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = `photo_${Date.now()}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(objUrl);
+        a.remove();
+      }, 1000);
+      showMiniNotif("💾 Image saved!");
     } catch (err) {
-      if (!silent) {
-        window.open(url, "_blank", "noopener");
-        showMiniNotif("📂 Opened in new tab — long-press to save");
-      }
-      return false;
+      window.open(url, "_blank", "noopener");
+      showMiniNotif("📂 Opened in new tab — long-press to save");
     }
   }
 
-  async function saveAllImagesToDevice(urls) {
-    const uniqueUrls = [...new Set(urls)].filter(Boolean);
-    if (!uniqueUrls.length) return;
-
-    showMiniNotif(`Preparing ${uniqueUrls.length} images…`);
-
-    try {
-      const files = await Promise.all(
-        uniqueUrls.map((url, index) => fetchImageAsFile(url, index)),
-      );
-
-      // On supported phones this opens one native share/save sheet containing
-      // every image. If unavailable, fall back to normal sequential downloads.
-      if (isMobileUI() && navigator.share && navigator.canShare?.({ files })) {
-        try {
-          await navigator.share({ files, title: "Chat images" });
-          showMiniNotif("💾 All images are ready to save");
-          return;
-        } catch (shareError) {
-          // Cancelling the native sheet is intentional. Other share failures
-          // fall through to ordinary browser downloads.
-          if (shareError?.name === "AbortError") return;
-          console.warn(
-            "Native save/share unavailable, using downloads:",
-            shareError,
-          );
-        }
-      }
-
-      for (const file of files) {
-        await triggerFileDownload(file);
-      }
-      showMiniNotif(`💾 Saving ${files.length} images`);
-    } catch (err) {
-      console.warn("Save all failed:", err);
-      showMiniNotif("Could not save all images at once");
-    }
-  }
-
-  let _lastImageMenuUrl = null;
-  let _lastImageMenuOpenedAt = 0;
-
-  function openImageActionMenu(
-    imgUrl,
-    imgEl,
-    anchorEl,
-    isSentMsg,
-    allImageUrls = [imgUrl],
-  ) {
-    const now = Date.now();
-    const existing = document.querySelector(".img-action-popover");
-    if (
-      existing &&
-      _lastImageMenuUrl === imgUrl &&
-      now - _lastImageMenuOpenedAt < 900
-    ) {
-      return;
-    }
-    _lastImageMenuUrl = imgUrl;
-    _lastImageMenuOpenedAt = now;
-
+  function openImageActionMenu(imgUrl, imgEl, anchorEl, isSentMsg) {
+    // Remove any existing popover and release its scroll lock before opening a new one
     document.querySelectorAll(".img-action-popover").forEach((p) => p.remove());
     unlockScroll();
     lockScroll();
 
     const popover = document.createElement("div");
     popover.className = "img-action-popover";
-    popover.dataset.imgUrl = imgUrl;
 
-    const urls = [...new Set(allImageUrls)].filter(Boolean);
     const isBlurred = isImageBlurred(imgUrl);
-    const allBlurred =
-      urls.length > 0 && urls.every((url) => isImageBlurred(url));
-    const mobile = isMobileUI();
-
-    const closePopover = () => {
-      popover.remove();
-      unlockScroll();
-      closeReactionBar();
-    };
-
     const items = [
       {
         icon: "💾",
         label: "Save Image",
         fn: async () => {
-          closePopover();
+          popover.remove();
+          unlockScroll();
           await saveImageToDevice(imgUrl);
         },
       },
-    ];
-
-    if (mobile && urls.length > 1) {
-      items.push({
-        icon: "📥",
-        label: "Save All",
-        fn: async () => {
-          closePopover();
-          await saveAllImagesToDevice(urls);
+      {
+        icon: isBlurred ? "👁️" : "🫣",
+        label: isBlurred ? "Unblur" : "Blur",
+        fn: () => {
+          toggleImageBlur(imgUrl, imgEl);
+          popover.remove();
+          unlockScroll();
+          closeReactionBar();
         },
-      });
-    }
-
-    items.push({
-      icon: isBlurred ? "👁️" : "🫣",
-      label: isBlurred ? "Unblur" : "Blur",
-      fn: async () => {
-        closePopover();
-        try {
-          await toggleImageBlur(imgUrl);
-        } catch (_) {
-          showMiniNotif("Could not save blur setting");
-        }
       },
-    });
-
-    if (mobile && urls.length > 1) {
-      items.push({
-        icon: allBlurred ? "👁️" : "🫣",
-        label: allBlurred ? "Unblur All" : "Blur All",
-        fn: async () => {
-          closePopover();
-          try {
-            await setImagesBlurred(urls, !allBlurred);
-          } catch (_) {
-            showMiniNotif("Could not save blur setting");
-          }
-        },
-      });
-    }
+    ];
 
     items.forEach(({ icon, label, fn }) => {
       const btn = document.createElement("button");
@@ -2796,11 +2811,8 @@ function initChat(WHO) {
       btn.appendChild(iconSpan);
       btn.appendChild(labelSpan);
       btn.addEventListener("click", (e) => {
-        e.preventDefault();
         e.stopPropagation();
-        Promise.resolve(fn()).catch((error) =>
-          console.warn("Image action failed:", error),
-        );
+        fn();
       });
       popover.appendChild(btn);
     });
@@ -2809,23 +2821,33 @@ function initChat(WHO) {
 
     requestAnimationFrame(() => {
       const rect = anchorEl.getBoundingClientRect();
-      const pw = popover.offsetWidth;
-      const ph = popover.offsetHeight;
+      const pw = popover.offsetWidth || 150;
+      const ph = popover.offsetHeight || 96;
+      const margin = 10;
+      const pad = 8;
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const pad = 8;
-      const margin = 8;
 
+      // Vertical: center on the image
       let top = rect.top + rect.height / 2 - ph / 2;
+
+      // Horizontal:
+      // Sent messages sit on the RIGHT side of the screen →
+      //   menu appears to the RIGHT of the image (outside the bubble edge).
+      // Received messages sit on the LEFT side of the screen →
+      //   menu appears to the LEFT of the image (outside the bubble edge).
       let left;
       if (isSentMsg) {
+        // Prefer right side of image; flip left if off-screen
         left = rect.right + margin;
         if (left + pw > vw - pad) left = rect.left - pw - margin;
       } else {
+        // Prefer left side of image; flip right if off-screen
         left = rect.left - pw - margin;
         if (left < pad) left = rect.right + margin;
       }
 
+      // Final clamp — never off any edge
       left = Math.max(pad, Math.min(left, vw - pw - pad));
       top = Math.max(pad, Math.min(top, vh - ph - pad));
 
@@ -2918,9 +2940,7 @@ function initChat(WHO) {
 
     cameraTimerBtn.addEventListener("click", (event) => {
       event.stopPropagation();
-      const willOpen = !cameraTimerMenu.classList.contains("visible");
-      cameraTimerMenu.classList.toggle("visible", willOpen);
-      if (willOpen) requestAnimationFrame(positionCameraTimerMenu);
+      cameraTimerMenu.classList.toggle("visible");
     });
 
     cameraTimerMenu
@@ -2952,43 +2972,6 @@ function initChat(WHO) {
         cameraTimerMenu.classList.remove("visible");
       }
     });
-
-    window.addEventListener("resize", positionCameraTimerMenu, {
-      passive: true,
-    });
-    window.addEventListener("orientationchange", () => {
-      setTimeout(positionCameraTimerMenu, 120);
-    });
-  }
-
-  function positionCameraTimerMenu() {
-    if (!cameraTimerMenu?.classList.contains("visible") || !cameraTimerBtn) {
-      return;
-    }
-
-    const buttonRect = cameraTimerBtn.getBoundingClientRect();
-    const menuRect = cameraTimerMenu.getBoundingClientRect();
-    const margin = 10;
-    const gap = 8;
-
-    let left = buttonRect.left + buttonRect.width / 2 - menuRect.width / 2;
-    let top = buttonRect.top - menuRect.height - gap;
-
-    if (top < margin) {
-      top = buttonRect.bottom + gap;
-    }
-
-    left = Math.max(
-      margin,
-      Math.min(left, window.innerWidth - menuRect.width - margin),
-    );
-    top = Math.max(
-      margin,
-      Math.min(top, window.innerHeight - menuRect.height - margin),
-    );
-
-    cameraTimerMenu.style.left = `${left}px`;
-    cameraTimerMenu.style.top = `${top}px`;
   }
 
   function setCameraTimer(seconds) {
@@ -3083,121 +3066,62 @@ function initChat(WHO) {
     }
   }
 
-  function getNormalizedCameraPoint(clientX, clientY) {
-    const rect = cameraFeed.getBoundingClientRect();
-    const localX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    const localY = Math.max(0, Math.min(rect.height, clientY - rect.top));
-
-    const sourceW = cameraFeed.videoWidth || rect.width;
-    const sourceH = cameraFeed.videoHeight || rect.height;
-    const sourceAspect = sourceW / sourceH;
-    const displayAspect = rect.width / rect.height;
-
-    let renderedW = rect.width;
-    let renderedH = rect.height;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    // The preview uses object-fit: cover. Translate the tap back into the
-    // uncropped video coordinates before sending a point of interest.
-    if (sourceAspect > displayAspect) {
-      renderedH = rect.height;
-      renderedW = renderedH * sourceAspect;
-      offsetX = (rect.width - renderedW) / 2;
-    } else if (sourceAspect < displayAspect) {
-      renderedW = rect.width;
-      renderedH = renderedW / sourceAspect;
-      offsetY = (rect.height - renderedH) / 2;
-    }
-
-    let x = (localX - offsetX) / renderedW;
-    const y = (localY - offsetY) / renderedH;
-    x = Math.max(0, Math.min(1, x));
-    const clampedY = Math.max(0, Math.min(1, y));
-
-    if (facingMode === "user") x = 1 - x;
-    return { x, y: clampedY };
-  }
-
   async function focusCameraAtPointer(event) {
-    if (!cameraStream || cameraIsCountingDown || event.isPrimary === false)
-      return;
+    if (!cameraStream || cameraIsCountingDown) return;
     const track = cameraStream.getVideoTracks()[0];
     if (!track) return;
 
-    const stageRect = cameraStage.getBoundingClientRect();
-    const indicatorX = Math.max(
+    const rect = cameraStage.getBoundingClientRect();
+    let x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const y = Math.max(
       0,
-      Math.min(100, ((event.clientX - stageRect.left) / stageRect.width) * 100),
+      Math.min(1, (event.clientY - rect.top) / rect.height),
     );
-    const indicatorY = Math.max(
-      0,
-      Math.min(100, ((event.clientY - stageRect.top) / stageRect.height) * 100),
-    );
-    cameraFocusIndicator.style.left = `${indicatorX}%`;
-    cameraFocusIndicator.style.top = `${indicatorY}%`;
-    cameraFocusIndicator.classList.remove("show", "focus-ok", "focus-limited");
+    if (facingMode === "user") x = 1 - x;
+
+    cameraFocusIndicator.style.left = `${((event.clientX - rect.left) / rect.width) * 100}%`;
+    cameraFocusIndicator.style.top = `${((event.clientY - rect.top) / rect.height) * 100}%`;
+    cameraFocusIndicator.classList.remove("show");
     void cameraFocusIndicator.offsetWidth;
     cameraFocusIndicator.classList.add("show");
 
-    if (typeof track.applyConstraints !== "function") {
-      cameraFocusIndicator.classList.add("focus-limited");
-      return;
+    if (typeof track.getCapabilities !== "function") return;
+    const capabilities = track.getCapabilities();
+    const advanced = {};
+
+    if (capabilities.pointsOfInterest) {
+      advanced.pointsOfInterest = [{ x, y }];
     }
-
-    const { x, y } = getNormalizedCameraPoint(event.clientX, event.clientY);
-    const capabilities = track.getCapabilities?.() || {};
-    const focusModes = Array.isArray(capabilities.focusMode)
-      ? capabilities.focusMode
-      : [];
-    const focusMode = focusModes.includes("single-shot")
-      ? "single-shot"
-      : focusModes.includes("continuous")
-        ? "continuous"
-        : null;
-
-    const fullRequest = {
-      pointsOfInterest: [{ x, y }],
-    };
-    if (focusMode) fullRequest.focusMode = focusMode;
+    if (capabilities.focusMode?.includes("single-shot")) {
+      advanced.focusMode = "single-shot";
+    } else if (capabilities.focusMode?.includes("continuous")) {
+      advanced.focusMode = "continuous";
+    }
     if (capabilities.exposureMode?.includes("continuous")) {
-      fullRequest.exposureMode = "continuous";
-    }
-    if (capabilities.whiteBalanceMode?.includes("continuous")) {
-      fullRequest.whiteBalanceMode = "continuous";
+      advanced.exposureMode = "continuous";
     }
 
-    const attempts = [
-      { advanced: [fullRequest] },
-      { advanced: [{ pointsOfInterest: [{ x, y }] }] },
-    ];
-    if (focusMode) attempts.push({ advanced: [{ focusMode }] });
-
-    let applied = false;
-    for (const constraints of attempts) {
-      try {
-        await track.applyConstraints(constraints);
-        applied = true;
-        break;
-      } catch (_) {
-        // Try a smaller constraint set next. Camera implementations differ.
+    if (Object.keys(advanced).length === 0) return;
+    try {
+      await track.applyConstraints({ advanced: [advanced] });
+      if (advanced.focusMode === "single-shot") {
+        setTimeout(async () => {
+          try {
+            const latestTrack = cameraStream?.getVideoTracks()[0];
+            const latestCaps = latestTrack?.getCapabilities?.();
+            if (latestCaps?.focusMode?.includes("continuous")) {
+              await latestTrack.applyConstraints({
+                advanced: [{ focusMode: "continuous" }],
+              });
+            }
+          } catch (_) {}
+        }, 900);
       }
-    }
-
-    cameraFocusIndicator.classList.add(applied ? "focus-ok" : "focus-limited");
-
-    if (applied && focusMode === "single-shot") {
-      setTimeout(async () => {
-        try {
-          const latestTrack = cameraStream?.getVideoTracks()[0];
-          const latestCaps = latestTrack?.getCapabilities?.();
-          if (latestCaps?.focusMode?.includes("continuous")) {
-            await latestTrack.applyConstraints({
-              advanced: [{ focusMode: "continuous" }],
-            });
-          }
-        } catch (_) {}
-      }, 1400);
+    } catch (error) {
+      console.warn(
+        "Tap-to-focus is not supported by this camera/browser:",
+        error,
+      );
     }
   }
 
@@ -3361,11 +3285,6 @@ function initChat(WHO) {
 
   function closeCamera(useHistoryBack = true, discardPending = true) {
     cancelCameraCountdown();
-    if (cameraTimerMenu) {
-      cameraTimerMenu.classList.remove("visible");
-      cameraTimerMenu.style.left = "";
-      cameraTimerMenu.style.top = "";
-    }
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
       cameraStream = null;
